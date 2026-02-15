@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>Quản Lý Tài Khoản - Quản Lý Lịch Bác Sĩ</title>
+    <link rel="stylesheet" href="../assets/css/common.css">
+</head>
+<body data-current-tab="quanlytaikhoan">
+    <div class="container">
+        <div id="header-placeholder"></div>
+        <div id="quanlytaikhoan" class="tab-content active admin-only">
+            <div class="form-container">
+                <h2>👤 Quản Lý Tài Khoản</h2>
+                
+                <div class="submissions-list">
+                    <h3>📋 Danh Sách Tài Khoản Bác Sĩ</h3>
+                    <div id="accountList">
+                        <div class="empty-state">Chưa có tài khoản nào</div>
+                    </div>
+                </div>
+
+                <div class="submissions-list">
+                    <h3>🔔 Yêu Cầu Reset Mật Khẩu</h3>
+                    <div id="passwordRequestList">
+                        <div class="empty-state">Chưa có yêu cầu nào</div>
+                    </div>
+                </div>
+
+                <!-- Phân Quyền (Admin Only) -->
+                <div class="submissions-list admin-backup-only">
+                    <h3>🔐 Phân Quyền Chỉnh Sửa</h3>
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #667eea;">
+                        <p style="margin-bottom: 15px; color: #333;">Quản lý quyền chỉnh sửa dữ liệu cho từng bác sĩ ở từng tab/nút cụ thể.</p>
+                        <button class="add-btn" onclick="openPermissionsModal()" style="background: #9b59b6;">🔐 Quản Lý Phân Quyền</button>
+                    </div>
+                </div>
+
+                <!-- Backup & Restore Data (Admin Only) -->
+                <div class="submissions-list admin-backup-only">
+                    <h3>💾 Sao Lưu & Khôi Phục Dữ Liệu</h3>
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #667eea;">
+                        <p style="margin-bottom: 15px; color: #333;">Xuất tất cả dữ liệu để sao lưu hoặc khôi phục dữ liệu từ file đã xuất.</p>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <button class="add-btn" onclick="exportAllData()" style="background: #27ae60;">📥 Xuất Dữ Liệu (Export)</button>
+                            <button class="add-btn" onclick="syncToBackend && syncToBackend()" style="background: #9b59b6;">☁️ Đồng bộ lên server</button>
+                            <label class="add-btn" style="background: #3498db; cursor: pointer; margin: 0;">
+                                📤 Nhập Dữ Liệu (Import)
+                                <input type="file" accept=".json" onchange="importAllData(event)" style="display: none;">
+                            </label>
+                            <button class="add-btn" onclick="clearAllData()" style="background: #e74c3c;">⚠️ Xóa Tất Cả Dữ Liệu</button>
+                        </div>
+                        <p style="margin-top: 15px; font-size: 12px; color: #666;">
+                            <strong>Lưu ý:</strong> Dữ liệu được tự động lưu vào trình duyệt. Xuất dữ liệu để sao lưu an toàn. 
+                            Nhập dữ liệu sẽ thay thế toàn bộ dữ liệu hiện tại.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Debug panel (admin only) -->
+                <div class="submissions-list admin-debug-only">
+                    <h3>🛠️ Debug: LocalStorage</h3>
+                    <div id="debugPanel" class="debug-panel">
+                        <div class="debug-controls">
+                            <button class="add-btn" onclick="renderDebugInfo()">🔄 Làm mới</button>
+                            <button class="add-btn" onclick="copyDebugInfo()">📋 Sao chép</button>
+                            <button class="add-btn" onclick="clearDebugOutput()">🧹 Xóa</button>
+                        </div>
+                        <pre id="debugOutput" class="debug-pre">(Nhấn "Làm mới" để tải dữ liệu)</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="../assets/js/header.js"></script>
+    <script src="../assets/js/app.js"></script>
+</body>
+</html>

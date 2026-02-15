@@ -1,0 +1,29 @@
+# Ping health endpoint mỗi 5 phút để giữ web không bị sleep (Render free tier)
+# Cấu hình: Settings → Secrets → DEPLOY_URL (hoặc sửa default bên dưới)
+name: Keep Alive
+
+on:
+  schedule:
+    # Chạy mỗi 5 phút (cron: phút giờ ngày tháng thứ)
+    - cron: '*/5 * * * *'
+  workflow_dispatch:  # Cho phép chạy thủ công từ tab Actions
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping health endpoint
+        env:
+          # Thêm secret DEPLOY_URL trong Settings nếu URL khác
+          DEPLOY_URL: ${{ secrets.DEPLOY_URL }}
+        run: |
+          BASE="${DEPLOY_URL:-https://quanlylichbacsi.onrender.com}"
+          URL="${BASE%/}/health"
+          echo "Pinging $URL ..."
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 "$URL")
+          if [ "$HTTP_CODE" = "200" ]; then
+            echo "✅ OK - Web đang chạy (HTTP $HTTP_CODE)"
+          else
+            echo "⚠️ HTTP $HTTP_CODE - Kiểm tra lại URL"
+            exit 1
+          fi

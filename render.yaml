@@ -1,0 +1,28 @@
+# Render Blueprint - https://render.com/docs/blueprint-spec
+# Deploy: kết nối repo GitHub/GitLab → New Blueprint → chọn render.yaml
+# Database và Web service được tạo tự động. KHÔNG dùng Railway.
+
+databases:
+  - name: lich-truc-db
+    plan: free
+    databaseName: lich_truc
+    user: lich_truc_user
+
+services:
+  - type: web
+    name: lich-truc
+    runtime: python
+    plan: free
+
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT
+
+    healthCheckPath: /health
+
+    envVars:
+      - key: RENDER
+        value: "true"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: lich-truc-db
+          property: connectionString

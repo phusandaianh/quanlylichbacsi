@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>Quản Lý Nghỉ Phép - Quản Lý Lịch Bác Sĩ</title>
+    <link rel="stylesheet" href="../assets/css/common.css">
+</head>
+<body data-current-tab="quanlynghiphep">
+    <div class="container">
+        <div id="header-placeholder"></div>
+        <div id="quanlynghiphep" class="tab-content active">
+            <div class="form-container">
+                <h2>✅ Quản Lý Nghỉ Phép</h2>
+                <p id="quanlynghiphepDescription">Xem lịch nghỉ phép và đăng ký nghỉ phép. Click vào ngày để xem chi tiết hoặc đăng ký.</p>
+                <div id="adminCalendarContainer" style="display:flex; gap:20px; flex-wrap:wrap; max-width: 100%;"></div>
+
+                <!-- Select doctors modal -->
+                <div id="selectDoctorsModal" class="login-modal">
+                    <div class="login-box" style="max-width: 500px; max-height: 80vh; overflow-y: auto;">
+                        <div class="login-header">
+                            <h2 id="selectDoctorsModalTitle">Chọn bác sĩ nghỉ phép</h2>
+                            <button class="login-close" onclick="closeSelectDoctorsModal()">✕</button>
+                        </div>
+                        <div id="selectDoctorsList" style="padding: 20px;">
+                            <!-- Doctor checkboxes will be added here -->
+                        </div>
+                        <div style="padding: 20px; border-top: 1px solid #eee; display: flex; gap: 10px; justify-content: flex-end;">
+                            <button class="delete-btn" onclick="closeSelectDoctorsModal()">Hủy</button>
+                            <button class="submit-btn" onclick="saveSelectedDoctors()">Lưu</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Max count per weekday modal -->
+                <div id="maxCountModal" class="login-modal">
+                    <div class="login-box" style="max-width: 95%; width: 1200px; max-height: 90vh; overflow-y: auto;">
+                        <div class="login-header">
+                            <h2>Số lượng BS nghỉ</h2>
+                            <button class="login-close" onclick="closeMaxCountModal()">✕</button>
+                        </div>
+                        <div style="padding: 20px;">
+                            <p style="margin-bottom: 20px; color: #666; font-size: 14px;">
+                                Thiết lập số lượng bác sĩ được nghỉ phép cho từng cột theo ngày trong tuần (Thứ 2 - Thứ 7):
+                            </p>
+                            <div id="maxCountTable" style="display: grid; gap: 15px;">
+                                <!-- Table will be generated here -->
+                            </div>
+                        </div>
+                        <div style="padding: 20px; border-top: 1px solid #eee; display: flex; gap: 10px; justify-content: flex-end;">
+                            <button class="delete-btn" onclick="closeMaxCountModal()">Hủy</button>
+                            <button class="submit-btn" onclick="saveMaxCountSettings()">💾 Lưu</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Leave Request List Modal -->
+                <div id="leaveRequestListModal" class="login-modal">
+                    <div class="login-box" style="max-width: 98%; width: 98%; max-height: 90vh; overflow-y: auto;">
+                        <div class="login-header">
+                            <h2>📋 Danh sách duyệt nghỉ phép</h2>
+                            <button class="login-close" onclick="closeLeaveRequestListModal()">✕</button>
+                        </div>
+                        <div style="padding: 20px;">
+                            <p style="margin-bottom: 20px; color: #666; font-size: 14px;">
+                                Danh sách tất cả yêu cầu nghỉ phép trong khoảng thời gian hiển thị trên lịch, được sắp xếp theo ngày và trạng thái.
+                            </p>
+                            <div id="leaveRequestListContent" style="margin-bottom: 20px;">
+                                <!-- Danh sách sẽ được hiển thị ở đây -->
+                            </div>
+                        </div>
+                        <div style="padding: 20px; border-top: 1px solid #eee; display: flex; gap: 10px; justify-content: flex-end;">
+                            <button class="delete-btn" onclick="closeLeaveRequestListModal()">Đóng</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Holiday Calendar Modal -->
+                <div id="holidayCalendarModal" class="login-modal">
+                    <div class="login-box" style="max-width: 98%; width: 98%; max-height: 90vh; overflow-y: auto;">
+                        <div class="login-header">
+                            <h2>🏮 Lịch nghỉ lễ</h2>
+                            <button class="login-close" onclick="closeHolidayCalendarModal()">✕</button>
+                        </div>
+                        <div style="padding: 20px;">
+                            <p style="margin-bottom: 20px; color: #666; font-size: 14px;">
+                                Các ngày nghỉ lễ theo quy định nhà nước Việt Nam được đánh dấu. Click vào ô để chọn/bỏ chọn đánh dấu nghỉ lễ – ô được chọn có nền đỏ.
+                            </p>
+                            <div id="holidayCalendarContainer" style="display:flex; gap:20px; flex-wrap:wrap; max-width: 100%;"></div>
+                        </div>
+                        <div style="padding: 20px; border-top: 1px solid #eee; display: flex; gap: 10px; justify-content: flex-end;">
+                            <button class="delete-btn" onclick="closeHolidayCalendarModal()">Đóng</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Fixed Schedule Modal -->
+                <div id="fixedScheduleModal" class="login-modal">
+                    <div class="login-box" style="max-width: 98%; width: 98%; max-height: 90vh; overflow-y: auto;">
+                        <div class="login-header">
+                            <h2>📅 Lịch nghỉ cố định</h2>
+                            <button class="login-close" onclick="closeFixedScheduleModal()">✕</button>
+                        </div>
+                        <div style="padding: 20px;">
+                            <p style="margin-bottom: 20px; color: #666; font-size: 14px;">
+                                Thiết lập danh sách bác sĩ nghỉ phép cố định theo từng cột và từng ngày trong tuần (Thứ 2 - Thứ 7). Mặc định nghỉ cả ngày. Danh sách này sẽ tự động được thêm vào lịch nghỉ của từng ngày, nhưng có thể chỉnh sửa.
+                            </p>
+                            <div id="fixedScheduleTable" style="display: flex; flex-direction: row; gap: 15px; overflow-x: auto; width: 100%; min-width: 100%;">
+                                <!-- Tables will be generated here -->
+                            </div>
+                        </div>
+                        <div style="padding: 20px; border-top: 1px solid #eee; display: flex; gap: 10px; justify-content: flex-end;">
+                            <button class="delete-btn" onclick="closeFixedScheduleModal()">Hủy</button>
+                            <button class="submit-btn" onclick="saveFixedScheduleSettings()">💾 Lưu</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PDF Preview Modal -->
+                <div id="pdfPreviewModal" class="login-modal">
+                    <div class="login-box" style="max-width: 90%; max-height: 90vh; width: 800px;">
+                        <div class="login-header">
+                            <h2 id="pdfPreviewTitle">Xem trước PDF</h2>
+                            <button class="login-close" onclick="closePDFPreview()">✕</button>
+                        </div>
+                        <div id="pdfPreviewContent" style="padding: 20px; overflow-y: auto; max-height: calc(90vh - 120px); background: #f5f5f5;">
+                            <!-- Preview content will be added here -->
+                        </div>
+                        <div style="padding: 20px; border-top: 1px solid #eee; display: flex; gap: 10px; justify-content: flex-end;">
+                            <button class="delete-btn" onclick="closePDFPreview()">Hủy</button>
+                            <button class="submit-btn" onclick="savePDFFromPreview()">💾 Lưu PDF</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Admin review modal -->
+                <div id="adminReviewModal" class="login-modal">
+                    <div class="login-box">
+                        <h2>🔎 Duyệt Nghỉ Phép</h2>
+                        <div id="adminReviewList"></div>
+                        <div id="adminReviewActions" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee;">
+                            <!-- Nút chỉnh sửa lịch nghỉ phép sẽ được thêm ở đây -->
+                        </div>
+                        <div style="display:flex; gap:10px; margin-top:10px;">
+                            <button type="button" class="submit-btn" onclick="closeAdminReview()" style="background:#95a5a6; flex:1;">Đóng</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal chỉnh sửa lịch nghỉ phép cho ngày cụ thể -->
+                <div id="editDayLeaveModal" class="login-modal">
+                    <div class="login-box" style="max-width: 90%; width: 900px; max-height: 90vh; overflow-y: auto;">
+                        <div class="login-header">
+                            <h2>✏️ Chỉnh Sửa Lịch Nghỉ Phép</h2>
+                            <button class="login-close" onclick="closeEditDayLeaveModal()">✕</button>
+                        </div>
+                        <div style="padding: 20px;">
+                            <div id="editDayLeaveDateDisplay" style="font-size: 18px; font-weight: bold; margin-bottom: 20px; color: #333;"></div>
+                            <p style="margin-bottom: 20px; color: #666; font-size: 14px;">
+                                Chọn bác sĩ nghỉ phép và ca nghỉ cho từng cột. Bạn có thể hủy lịch nghỉ bằng cách bỏ chọn bác sĩ.
+                            </p>
+                            <div id="editDayLeaveContent">
+                                <!-- Nội dung sẽ được tạo động -->
+                            </div>
+                        </div>
+                        <div style="padding: 20px; border-top: 1px solid #eee; display: flex; gap: 10px; justify-content: flex-end;">
+                            <button class="delete-btn" onclick="closeEditDayLeaveModal()">Hủy</button>
+                            <button class="submit-btn" onclick="saveDayLeaveSchedule()">💾 Lưu</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="../assets/js/header.js"></script>
+    <script src="../assets/js/app.js"></script>
+</body>
+</html>

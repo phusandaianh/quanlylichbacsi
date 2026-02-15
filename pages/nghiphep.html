@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>Đăng Ký Nghỉ Phép - Quản Lý Lịch Bác Sĩ</title>
+    <link rel="stylesheet" href="../assets/css/common.css">
+</head>
+<body data-current-tab="nghiphep">
+    <div class="container">
+        <div id="header-placeholder"></div>
+        <div id="nghiphep" class="tab-content active">
+            <div class="form-container">
+                <h2>📝 Đăng Ký Nghỉ Phép</h2>
+                <p>Xem lịch nghỉ phép và đăng ký nghỉ phép. Click vào ngày để xem chi tiết hoặc đăng ký.</p>
+
+                <div id="nghiphepCalendarContainer" style="display:flex; gap:20px; flex-wrap:wrap; max-width: 100%;"></div>
+
+                <!-- Request modal -->
+                <div id="requestModal" class="login-modal">
+                    <div class="login-box">
+                        <h2>📝 Yêu Cầu Nghỉ Phép</h2>
+                        <div id="requestError" class="error-message" style="display:none;"></div>
+                        <form id="requestForm" onsubmit="submitLeaveRequest(event)">
+                            <div class="form-group">
+                                <label>Ngày</label>
+                                <div id="requestDateDisplay" style="font-weight:700"></div>
+                            </div>
+                            <div class="form-group">
+                                <label>Người gửi</label>
+                                <div id="requestDoctorName" style="font-weight:700"></div>
+                            </div>
+                            <div class="form-group">
+                                <label>Phân loại</label>
+                                <div style="display:flex; gap:10px;">
+                                    <label><input type="radio" name="period" value="morning" required> Nghỉ sáng</label>
+                                    <label><input type="radio" name="period" value="afternoon"> Nghỉ chiều</label>
+                                    <label><input type="radio" name="period" value="full"> Nghỉ cả ngày</label>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="requestNotes">Ghi chú (tùy chọn)</label>
+                                <textarea id="requestNotes"></textarea>
+                            </div>
+                            <div style="display:flex; gap:10px;">
+                                <button type="button" class="submit-btn" onclick="closeRequestModal()" style="background:#95a5a6; flex:1;">Hủy</button>
+                                <button type="submit" class="submit-btn" style="flex:1;">Gửi yêu cầu</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="../assets/js/header.js"></script>
+    <script src="../assets/js/app.js"></script>
+</body>
+</html>

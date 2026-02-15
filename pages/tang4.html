@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>Lịch tầng 4 - Quản Lý Lịch Bác Sĩ</title>
+    <link rel="stylesheet" href="../assets/css/common.css">
+</head>
+<body data-current-tab="tang4">
+    <div class="container">
+        <div id="header-placeholder"></div>
+        <div id="tang4" class="tab-content active admin-only">
+            <div class="form-container">
+                <h2>Lịch tầng 4</h2>
+                <p>Quản lý lịch làm việc tầng 4</p>
+                <div style="margin-top: 20px;">
+                    <button class="add-btn" onclick="addTang4Row()" style="margin-bottom: 15px;">➕ Thêm dòng mới</button>
+                    <div style="overflow-x: auto;">
+                        <table id="tang4Table" style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden;">
+                            <thead>
+                                <tr style="background: #667eea; color: white;">
+                                    <th style="padding: 12px; text-align: left; border: 1px solid #ddd; width: 50%;">Tên bác sĩ</th>
+                                    <th style="padding: 12px; text-align: left; border: 1px solid #ddd; width: 40%;">Tháng hỗ trợ Tầng 4</th>
+                                    <th style="padding: 12px; text-align: center; border: 1px solid #ddd; width: 100px;">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tang4TableBody">
+                                <!-- Rows will be added here -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div style="margin-top: 20px;">
+                        <label style="display: block; margin-bottom: 8px; color: #333; font-weight: 600; font-size: 14px;">Ghi chú:</label>
+                        <textarea id="tang4Notes" placeholder="Nhập ghi chú cho lịch tầng 4..." style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; font-family: inherit; min-height: 100px; resize: vertical;" onchange="updateTang4Notes(this.value)"></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="../assets/js/header.js"></script>
+    <script src="../assets/js/app.js"></script>
+</body>
+</html>

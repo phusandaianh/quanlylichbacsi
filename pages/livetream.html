@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>Lịch livetream - Quản Lý Lịch Bác Sĩ</title>
+    <link rel="stylesheet" href="../assets/css/common.css">
+</head>
+<body data-current-tab="livetream">
+    <div class="container">
+        <div id="header-placeholder"></div>
+        <div id="livetream" class="tab-content active admin-only">
+            <div class="form-container">
+                <h2>Lịch livetream</h2>
+                <p>Quản lý lịch livetream</p>
+                <div style="margin-top: 15px; margin-bottom: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button type="button" class="btn btn-primary" onclick="openLivetreamDoctorListModal()" style="padding: 8px 16px;">📋 Danh sách bác sĩ livetream</button>
+                    <button class="add-btn" onclick="addLivetreamRow()" style="margin-bottom: 0;">➕ Thêm dòng mới</button>
+                </div>
+                <div style="margin-top: 20px;">
+                    <div style="overflow-x: auto;">
+                        <table id="livetreamTable" style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden;">
+                            <thead>
+                                <tr style="background: #667eea; color: white;">
+                                    <th style="padding: 12px; text-align: left; border: 1px solid #ddd; width: 30%;">Tên người livestream</th>
+                                    <th style="padding: 12px; text-align: left; border: 1px solid #ddd; width: 40%;">Nội dung livestream</th>
+                                    <th style="padding: 12px; text-align: left; border: 1px solid #ddd; width: 20%;">Ngày tháng livestream</th>
+                                    <th style="padding: 12px; text-align: center; border: 1px solid #ddd; width: 100px;">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="livetreamTableBody">
+                                <!-- Rows will be added here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="../assets/js/header.js"></script>
+    <script src="../assets/js/app.js"></script>
+</body>
+</html>

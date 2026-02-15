@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>Partime - Quản Lý Lịch Bác Sĩ</title>
+    <link rel="stylesheet" href="../assets/css/common.css">
+</head>
+<body data-current-tab="partime">
+    <div class="container">
+        <div id="header-placeholder"></div>
+        <div id="partime" class="tab-content active">
+            <div class="form-container">
+                <div class="add-doctor-form">
+                    <h3>➕ Thêm Bác Sĩ Partime</h3>
+                    <form id="addDoctorPartime" onsubmit="addDoctor(event, 'partime')">
+                        <div class="form-row-inline">
+                            <div class="form-group">
+                                <label for="doctorNamePartime">Họ và Tên <span class="required">*</span></label>
+                                <input type="text" id="doctorNamePartime" required placeholder="Nhập họ và tên">
+                            </div>
+                            <div class="form-group">
+                                <label for="doctorDisplayNamePartime">Tên Hiển Thị <span class="required">*</span></label>
+                                <input type="text" id="doctorDisplayNamePartime" required placeholder="Tên ngắn gọn để hiển thị">
+                            </div>
+                            <div class="form-group">
+                                <label for="doctorPhonePartime">Số Điện Thoại</label>
+                                <input type="tel" id="doctorPhonePartime" placeholder="Nhập số điện thoại (tùy chọn)">
+                            </div>
+                            <div class="form-group">
+                                <button type="submit" class="add-btn">➕ Thêm</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="doctor-list">
+                    <h2>👥 Danh Sách Bác Sĩ Partime</h2>
+                    <div id="doctorListPartime">
+                        <div class="empty-state">Chưa có bác sĩ nào</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="../assets/js/header.js"></script>
+    <script src="../assets/js/app.js"></script>
+</body>
+</html>

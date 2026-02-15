@@ -1,0 +1,2677 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    -webkit-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
+    padding: 0;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    /* Safe area cho iPhone notch, tai thỏ */
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+    padding-bottom: env(safe-area-inset-bottom);
+}
+
+.container {
+    max-width: 100%;
+    width: 100%;
+    margin: 0 auto;
+    background: #f5f5f5;
+    border-radius: 0;
+    box-shadow: none;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    overflow-x: hidden;
+    overflow-y: auto;
+    position: relative;
+}
+
+/* ========== RESPONSIVE BREAKPOINTS ==========
+   Mobile: < 576px
+   Tablet: 576px - 991px  
+   Desktop: >= 992px
+   Large: >= 1200px
+*/
+
+/* Desktop: giới hạn chiều rộng tối đa, căn giữa */
+@media (min-width: 992px) {
+    .container {
+        margin-left: auto !important;
+        margin-right: auto !important;
+        width: 100%;
+    }
+}
+
+@media (min-width: 1200px) {
+    .container {
+        max-width: 1400px !important;
+        box-shadow: 0 0 30px rgba(0, 0, 0, 0.1);
+        border-radius: 12px;
+    }
+}
+
+.header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px 30px;
+    padding-top: calc(20px + env(safe-area-inset-top));
+    text-align: center;
+}
+
+.header > div:first-child {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.header h1 {
+    font-size: clamp(1rem, 4vw, 1.75rem);
+    margin-bottom: 10px;
+    margin: 0;
+    flex: 1;
+    line-height: 1.3;
+}
+
+.header p {
+    opacity: 0.9;
+    font-size: clamp(0.75rem, 2vw, 1rem);
+}
+
+.tabs {
+    display: flex;
+    background: rgba(255, 255, 255, 0.1);
+    margin-top: 20px;
+    border-radius: 10px;
+    overflow-x: auto;
+    flex-wrap: wrap;
+    padding: 8px;
+    gap: 4px;
+}
+
+.tab {
+    flex: 0 0 auto;
+    min-width: auto;
+    padding: 8px 16px;
+    background: #3498db;
+    border: none;
+    color: white;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    border-radius: 6px;
+    white-space: nowrap;
+    text-decoration: none; /* để <a> giống <button> */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tab:hover {
+    background: #2980b9;
+}
+
+.tab.active {
+    background: #2980b9;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.tab-content {
+    display: none;
+    background: white;
+    border-radius: 20px;
+    margin: 20px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    flex: 1 1 auto;
+    min-width: 0; /* Cho phép shrink trong flex */
+}
+
+.tab-content.active {
+    display: block;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.form-container {
+    padding: 40px;
+    flex: 1 1 auto;
+    position: relative;
+    min-width: 0;
+}
+
+/* Desktop: padding thoáng hơn */
+@media (min-width: 1200px) {
+    .form-container {
+        padding: 40px 50px;
+    }
+}
+
+/* Nút xuất PDF */
+.export-pdf-btn {
+    background: #e74c3c;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 2px 8px rgba(231, 76, 60, 0.3);
+    transition: all 0.3s ease;
+    z-index: 100;
+    white-space: nowrap;
+}
+
+/* Container cho các nút */
+.buttons-container {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    position: relative;
+    width: 100%;
+    justify-content: flex-end;
+}
+
+/* Nút trong container */
+.buttons-container .export-pdf-btn {
+    position: relative;
+    top: auto;
+    right: auto;
+}
+
+/* Nút đơn lẻ (không trong container) - chỉ áp dụng cho các tab khác */
+.form-container > .export-pdf-btn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+}
+
+/* Override cho nút trong container */
+.buttons-container .export-pdf-btn {
+    position: relative !important;
+    top: auto !important;
+    right: auto !important;
+}
+
+.export-pdf-btn:hover {
+    background: #c0392b;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(231, 76, 60, 0.4);
+}
+
+.export-pdf-btn:active {
+    transform: translateY(0);
+}
+
+@media (max-width: 768px) {
+    .export-pdf-btn {
+        position: relative;
+        top: auto;
+        right: auto;
+        width: 100%;
+        margin-bottom: 15px;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .export-pdf-btn {
+        padding: 12px;
+        font-size: 13px;
+    }
+}
+
+.form-group {
+    margin-bottom: 25px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: #333;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 12px 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 15px;
+    transition: all 0.3s ease;
+    font-family: inherit;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+@media (max-width: 768px) {
+    .form-row {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+}
+
+@media (max-width: 600px) {
+    .form-row {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    .container {
+        margin: 0;
+        border-radius: 0;
+        width: 100%;
+        min-height: 100vh;
+    }
+    .header h1 { 
+        font-size: 18px; 
+        line-height: 1.3;
+    }
+    .header p { 
+        font-size: 13px; 
+    }
+    .form-container { 
+        padding: 16px; 
+    }
+}
+
+@media (max-width: 768px) {
+    .tabs { 
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+    }
+    .tab { 
+        min-width: 90px;
+        font-size: 11px;
+    }
+    
+    /* Improve table scrolling on mobile */
+    div[style*="overflow-x: auto"] {
+        -webkit-overflow-scrolling: touch;
+        position: relative;
+    }
+}
+
+.required {
+    color: #e74c3c;
+}
+
+.submit-btn {
+    width: 100%;
+    padding: 15px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    margin-top: 10px;
+}
+
+.submit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+}
+
+.submit-btn:active {
+    transform: translateY(0);
+}
+
+.success-message {
+    display: none;
+    background: #d4edda;
+    color: #155724;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border: 1px solid #c3e6cb;
+}
+
+.error-message {
+    display: none;
+    background: #f8d7da;
+    color: #721c24;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border: 1px solid #f5c6cb;
+    animation: shake 0.5s;
+    font-weight: 500;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+    20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+.input-error {
+    border: 2px solid #e74c3c !important;
+    background-color: #fff5f5 !important;
+    animation: shake 0.5s;
+}
+
+.submissions-list {
+    margin-top: 30px;
+    padding-top: 30px;
+    border-top: 2px solid #e0e0e0;
+}
+
+.submissions-list h2 {
+    color: #333;
+    margin-bottom: 20px;
+    font-size: 20px;
+}
+
+.submission-item {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    border-left: 4px solid #667eea;
+}
+
+.submission-item strong {
+    color: #667eea;
+}
+
+.submission-item p {
+    margin: 5px 0;
+    color: #555;
+}
+
+.empty-state {
+    text-align: center;
+    color: #999;
+    padding: 20px;
+}
+
+.doctor-list {
+    margin-top: 20px;
+}
+
+.doctor-item {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-left: 4px solid #667eea;
+    transition: all 0.3s ease;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.doctor-item:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transform: translateX(5px);
+}
+
+.doctor-info {
+    flex: 1;
+}
+
+.doctor-info strong {
+    color: #667eea;
+    display: block;
+    margin-bottom: 5px;
+    font-size: 16px;
+}
+
+.doctor-info span {
+    color: #666;
+    font-size: 14px;
+}
+
+.delete-btn {
+    background: #e74c3c;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.delete-btn:hover {
+    background: #c0392b;
+    transform: scale(1.05);
+}
+
+.add-doctor-form {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+.add-doctor-form h3 {
+    color: #333;
+    margin-bottom: 15px;
+    font-size: 18px;
+}
+
+.form-row-inline {
+    display: grid;
+    grid-template-columns: 2fr 2fr 2fr 1fr;
+    gap: 15px;
+    align-items: end;
+}
+
+/* Tablet: 2 cột */
+@media (max-width: 1024px) and (min-width: 769px) {
+    .form-row-inline {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .form-row-inline {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    
+    .form-row-inline .add-btn {
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .form-row-inline {
+        gap: 12px;
+    }
+}
+
+.add-btn {
+    padding: 12px 20px;
+    background: #27ae60;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.add-btn:hover {
+    background: #229954;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(39, 174, 96, 0.3);
+}
+
+.edit-btn {
+    padding: 10px 14px;
+    background: #f39c12;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    margin-left: 8px;
+}
+
+.edit-btn:hover {
+    background: #d68910;
+    transform: none;
+}
+
+/* Password toggle (show/hide) */
+.password-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.password-wrapper input {
+    padding-right: 50px !important;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 20px;
+    padding: 8px;
+    color: #667eea;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    min-height: 40px;
+    pointer-events: auto !important;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    touch-action: manipulation;
+    transition: all 0.2s ease;
+}
+
+.password-toggle:hover {
+    color: #764ba2;
+    background: rgba(102, 126, 234, 0.15);
+    border-radius: 50%;
+    transform: translateY(-50%) scale(1.1);
+}
+
+.password-toggle:focus {
+    outline: 2px solid #667eea;
+    outline-offset: 2px;
+}
+
+.password-toggle:active {
+    transform: translateY(-50%) scale(0.9);
+    background: rgba(102, 126, 234, 0.25);
+}
+
+.password-toggle:focus-visible {
+    outline: 2px solid #667eea;
+    outline-offset: 2px;
+}
+
+/* Login Modal */
+.login-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    height: 100dvh;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+.login-modal.active {
+    display: flex;
+}
+
+.login-box {
+    background: white;
+    padding: 40px;
+    border-radius: 20px;
+    max-width: 400px;
+    width: 90%;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    max-height: 85vh;
+    max-height: 85dvh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 576px) {
+    .login-box {
+        width: calc(100% - 24px);
+        margin: 12px;
+        padding: 24px 20px;
+        border-radius: 16px;
+    }
+}
+
+.login-box h2 {
+    color: #333;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.login-modal-close {
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 50%;
+    background: #f0f0f0;
+    color: #555;
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    transition: background 0.2s, color 0.2s;
+}
+.login-modal-close:hover {
+    background: #e0e0e0;
+    color: #333;
+}
+
+.user-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    background: rgba(255, 255, 255, 0.1);
+    margin-top: 15px;
+    border-radius: 8px;
+}
+
+.user-info span {
+    color: white;
+    font-weight: 600;
+}
+
+.logout-btn {
+    background: #e74c3c;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.logout-btn:hover {
+    background: #c0392b;
+}
+
+.change-password-btn {
+    background: #3498db;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    margin-left: 10px;
+}
+
+.change-password-btn:hover {
+    background: #2980b9;
+}
+
+.password-request-item {
+    background: #fff3cd;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    border-left: 4px solid #ffc107;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.password-request-item p {
+    margin: 0;
+    color: #333;
+}
+
+.reset-btn {
+    background: #17a2b8;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.reset-btn:hover {
+    background: #138496;
+}
+
+.admin-only {
+    display: none;
+}
+
+.admin-only.show {
+    display: block;
+}
+
+.notif-list {
+    max-height: 300px;
+    overflow: auto;
+}
+
+/* Debug panel styles */
+.debug-panel {
+    background: #f1f3f5;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px dashed #cbd5e1;
+    margin-top: 20px;
+}
+
+.debug-controls {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.debug-pre {
+    max-height: 280px;
+    overflow: auto;
+    background: #0b1220;
+    color: #e6eef8;
+    padding: 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    white-space: pre-wrap;
+}
+
+/* cv cột1 Table Styles */
+#cvcot1Table {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+#cvcot1Table tbody tr {
+    border-bottom: 1px solid #e0e0e0;
+}
+
+#cvcot1Table tbody tr:hover {
+    background: #f8f9fa;
+}
+
+#cvcot1Table tbody td {
+    padding: 12px;
+    border: 1px solid #e0e0e0;
+}
+
+#cvcot1Table tbody input {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    font-family: inherit;
+}
+
+#cvcot1Table tbody input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+}
+
+#cvcot1Table tbody select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    font-family: inherit;
+    background: white;
+    cursor: pointer;
+}
+
+#cvcot1Table tbody select:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+}
+
+/* Đảm bảo disabled input/select hiển thị rõ ràng cho bác sĩ */
+#cvcot1Table tbody input:disabled,
+#cvcot1Table tbody select:disabled {
+    background-color: #ffffff !important;
+    color: #333333 !important;
+    opacity: 1 !important;
+    cursor: not-allowed;
+}
+
+/* Khám hỗ trợ PK Table Styles */
+#khamhotropkTable {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+#khamhotropkTable tbody tr {
+    border-bottom: 1px solid #e0e0e0;
+}
+
+#khamhotropkTable tbody tr:hover {
+    background: #f8f9fa;
+}
+
+#khamhotropkTable tbody td {
+    padding: 12px;
+    border: 1px solid #e0e0e0;
+}
+
+#khamhotropkTable tbody input {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    font-family: inherit;
+}
+
+#khamhotropkTable tbody input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+}
+
+/* Đảm bảo disabled input hiển thị rõ ràng cho bác sĩ */
+#khamhotropkTable tbody input:disabled {
+    background-color: #ffffff !important;
+    color: #333333 !important;
+    opacity: 1 !important;
+    cursor: not-allowed;
+}
+
+/* Lịch khám sớm Calendar Styles */
+#khamsomCalendarTable {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    min-width: 100%;
+}
+
+#khamsomCalendarTable tbody tr {
+    border-bottom: 1px solid #e0e0e0;
+}
+
+#khamsomCalendarTable tbody td {
+    min-height: 80px;
+    height: 80px;
+}
+
+#khamsomCalendarTable tbody input {
+    width: 100%;
+    padding: 6px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 13px;
+    font-family: inherit;
+    margin-top: 5px;
+}
+
+#khamsomCalendarTable tbody input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+}
+
+/* Đảm bảo disabled input hiển thị rõ ràng cho bác sĩ */
+#khamsomCalendarTable tbody input:disabled {
+    background-color: #ffffff !important;
+    color: #333333 !important;
+    opacity: 1 !important;
+    cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+    #khamsomCalendarTable {
+        font-size: 12px;
+    }
+    
+    #khamsomCalendarTable tbody td {
+        min-height: 70px;
+        height: 70px;
+        padding: 5px;
+    }
+    
+    #khamsomCalendarTable tbody input {
+        font-size: 11px;
+        padding: 4px;
+    }
+}
+
+/* Lịch khám sản VIP / Siêu âm VIP (sáng-chiều) */
+#khamsanvipCalendarTable, #sieuamvipCalendarTable {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    min-width: 100%;
+}
+#khamsanvipCalendarTable tbody td, #sieuamvipCalendarTable tbody td {
+    min-height: 100px;
+    vertical-align: top;
+}
+#khamsanvipCalendarTable tbody input, #sieuamvipCalendarTable tbody input {
+    width: 100%;
+    padding: 4px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 12px;
+    font-family: inherit;
+}
+#khamsanvipCalendarTable tbody input:focus, #sieuamvipCalendarTable tbody input:focus {
+    outline: none;
+    border-color: #667eea;
+}
+#khamsanvipCalendarTable tbody input:disabled, #sieuamvipCalendarTable tbody input:disabled {
+    background-color: #ffffff !important;
+    color: #333333 !important;
+    cursor: not-allowed;
+}
+
+/* Lịch khám cầu giấy 20h (giống khám sớm) */
+#khamcaugiay20hCalendarTable {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    min-width: 100%;
+}
+#khamcaugiay20hCalendarTable tbody td {
+    min-height: 80px;
+    height: 80px;
+}
+#khamcaugiay20hCalendarTable tbody input {
+    width: 100%;
+    padding: 6px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 13px;
+    font-family: inherit;
+}
+#khamcaugiay20hCalendarTable tbody input:focus {
+    outline: none;
+    border-color: #667eea;
+}
+#khamcaugiay20hCalendarTable tbody input:disabled {
+    background-color: #ffffff !important;
+    color: #333333 !important;
+    cursor: not-allowed;
+}
+
+/* Lịch trực trưa Calendar Styles */
+#tructruaCalendarTable {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    min-width: 100%;
+}
+
+#tructruaCalendarTable tbody tr {
+    border-bottom: 1px solid #e0e0e0;
+}
+
+#tructruaCalendarTable tbody td {
+    min-height: 80px;
+    height: 80px;
+}
+
+#tructruaCalendarTable tbody input {
+    width: 100%;
+    padding: 6px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 13px;
+    font-family: inherit;
+    margin-top: 5px;
+}
+
+#tructruaCalendarTable tbody input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+}
+
+/* Đảm bảo disabled input hiển thị rõ ràng cho bác sĩ */
+#tructruaCalendarTable tbody input:disabled {
+    background-color: #ffffff !important;
+    color: #333333 !important;
+    opacity: 1 !important;
+    cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+    #tructruaCalendarTable {
+        font-size: 12px;
+    }
+    
+    #tructruaCalendarTable tbody td {
+        min-height: 70px;
+        height: 70px;
+        padding: 5px;
+    }
+    
+    #tructruaCalendarTable tbody input {
+        font-size: 11px;
+        padding: 4px;
+    }
+}
+
+/* Lịch tiểu phẫu Calendar Styles */
+#tieuphauCalendarTable {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    min-width: 100%;
+}
+
+#tieuphauCalendarTable tbody tr {
+    border-bottom: 1px solid #e0e0e0;
+}
+
+#tieuphauCalendarTable tbody td {
+    min-height: 80px;
+    height: 80px;
+}
+
+#tieuphauCalendarTable tbody input {
+    width: 100%;
+    padding: 6px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 13px;
+    font-family: inherit;
+    margin-top: 5px;
+}
+
+#tieuphauCalendarTable tbody input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+}
+
+/* Đảm bảo disabled input hiển thị rõ ràng cho bác sĩ */
+#tieuphauCalendarTable tbody input:disabled {
+    background-color: #ffffff !important;
+    color: #333333 !important;
+    opacity: 1 !important;
+    cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+    #tieuphauCalendarTable {
+        font-size: 12px;
+    }
+    
+    #tieuphauCalendarTable tbody td {
+        min-height: 70px;
+        height: 70px;
+        padding: 5px;
+    }
+    
+    #tieuphauCalendarTable tbody input {
+        font-size: 11px;
+        padding: 4px;
+    }
+}
+
+/* cv cột2+3 Table Styles */
+#cvcot23Table {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+#cvcot23Table tbody tr {
+    border-bottom: 1px solid #e0e0e0;
+}
+
+#cvcot23Table tbody tr:hover {
+    background: #f8f9fa;
+}
+
+#cvcot23Table tbody td {
+    padding: 12px;
+    border: 1px solid #e0e0e0;
+}
+
+#cvcot23Table tbody input {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    font-family: inherit;
+}
+
+#cvcot23Table tbody input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+}
+
+#cvcot23Table tbody select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    font-family: inherit;
+    background: white;
+    cursor: pointer;
+}
+
+#cvcot23Table tbody select:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+}
+
+/* Đảm bảo disabled input/select hiển thị rõ ràng cho bác sĩ */
+#cvcot23Table tbody input:disabled,
+#cvcot23Table tbody select:disabled {
+    background-color: #ffffff !important;
+    color: #333333 !important;
+    opacity: 1 !important;
+    cursor: not-allowed;
+}
+
+/* Đảm bảo tất cả text hiển thị rõ ràng cho bác sĩ */
+.doctor-item,
+.doctor-info,
+.doctor-info strong,
+.doctor-info span,
+.submission-item,
+.password-request-item,
+.tab-content,
+.form-container,
+.form-container h2,
+.form-container h3,
+.form-container p {
+    opacity: 1 !important;
+    color: #333333 !important;
+}
+
+/* Đảm bảo tất cả input/select disabled hiển thị rõ ràng */
+input:disabled,
+select:disabled,
+textarea:disabled {
+    background-color: #ffffff !important;
+    color: #333333 !important;
+    opacity: 1 !important;
+}
+
+/* Nút trở về đầu trang */
+.back-to-top {
+    position: fixed;
+    bottom: calc(30px + env(safe-area-inset-bottom));
+    right: calc(30px + env(safe-area-inset-right));
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    opacity: 0;
+    visibility: hidden;
+}
+
+.back-to-top-arrow {
+    font-size: 24px;
+    display: inline-block;
+    transform: scaleX(3);
+    line-height: 1;
+}
+
+.back-to-top.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.back-to-top:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+}
+
+.back-to-top:active {
+    transform: translateY(-2px);
+}
+
+/* Nút đi đến cuối trang */
+.back-to-bottom {
+    position: fixed;
+    bottom: calc(30px + env(safe-area-inset-bottom));
+    right: calc(90px + env(safe-area-inset-right));
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    opacity: 0;
+    visibility: hidden;
+}
+
+.back-to-bottom-arrow {
+    font-size: 24px;
+    display: inline-block;
+    transform: scaleX(3);
+    line-height: 1;
+}
+
+.back-to-bottom.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.back-to-bottom:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+}
+
+.back-to-bottom:active {
+    transform: translateY(-2px);
+}
+
+@media (max-width: 768px) {
+    .back-to-top {
+        bottom: calc(20px + env(safe-area-inset-bottom));
+        right: calc(20px + env(safe-area-inset-right));
+        width: 45px;
+        height: 45px;
+    }
+
+    .back-to-top-arrow {
+        font-size: 20px;
+    }
+
+    .back-to-bottom {
+        bottom: calc(20px + env(safe-area-inset-bottom));
+        right: calc(75px + env(safe-area-inset-right));
+        width: 45px;
+        height: 45px;
+    }
+
+    .back-to-bottom-arrow {
+        font-size: 20px;
+    }
+}
+
+/* ========== RESPONSIVE DESIGN - MOBILE & TABLET ========== */
+
+/* General table responsive improvements */
+table {
+    border-collapse: collapse;
+    width: 100%;
+    table-layout: auto;
+}
+
+/* Table wrapper for horizontal scroll */
+.table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 0 -10px;
+    padding: 0 10px;
+}
+
+@media (min-width: 769px) {
+    .table-wrapper {
+        margin: 0;
+        padding: 0;
+    }
+}
+
+/* ========== CALENDAR GRID - Responsive ========== */
+.calendar-grid {
+    display: grid !important;
+    gap: 8px;
+    min-width: 0;
+}
+
+/* Tablet: 7 cột, gap nhỏ hơn */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .calendar-grid {
+        grid-template-columns: repeat(7, 1fr) !important;
+        gap: 6px !important;
+    }
+}
+
+/* Mobile: 4 cột (2 tuần đầu + 2 tuần sau) hoặc 7 cột nhỏ */
+@media (max-width: 768px) {
+    .calendar-grid {
+        grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+        gap: 4px !important;
+    }
+    .calendar-grid > div {
+        font-size: 11px;
+        padding: 4px 2px;
+        min-height: 44px;
+    }
+}
+
+/* Điện thoại nhỏ: giữ 7 cột nhưng tối thiểu hơn */
+@media (max-width: 480px) {
+    .calendar-grid {
+        grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+        gap: 3px !important;
+    }
+    .calendar-grid > div {
+        font-size: 10px;
+        padding: 3px 1px;
+    }
+}
+
+/* ========== CALENDAR CONTAINERS - Responsive ========== */
+#nghiphepCalendarContainer,
+#adminCalendarContainer,
+#lichnghiphepCalendarContainer,
+#ngaycongCalendarContainer,
+#khamcaugiay20hCalendarContainer {
+    gap: 12px !important;
+    padding-bottom: env(safe-area-inset-bottom, 10px);
+    display: flex !important;
+    flex-wrap: wrap !important;
+}
+
+@media (max-width: 768px) {
+    #nghiphepCalendarContainer,
+    #adminCalendarContainer,
+    #lichnghiphepCalendarContainer,
+    #ngaycongCalendarContainer,
+    #khamcaugiay20hCalendarContainer {
+        gap: 10px !important;
+    }
+}
+
+@media (max-width: 480px) {
+    #nghiphepCalendarContainer,
+    #adminCalendarContainer,
+    #lichnghiphepCalendarContainer,
+    #ngaycongCalendarContainer,
+    #khamcaugiay20hCalendarContainer {
+        gap: 8px !important;
+    }
+}
+
+/* Lịch làm việc - scroll ngang mượt trên mobile/tablet */
+#lichlamviecContainer {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 0 -10px;
+    padding: 0 10px;
+    width: 100%;
+}
+
+@media (min-width: 1025px) {
+    #lichlamviecContainer {
+        margin: 0;
+        padding: 0;
+    }
+}
+
+/* Lịch làm việc - bảng responsive */
+@media (max-width: 768px) {
+    #lichlamviecContainer table {
+        font-size: 11px;
+        min-width: 600px;
+    }
+    #lichlamviecContainer th,
+    #lichlamviecContainer td {
+        padding: 6px 4px;
+        min-width: 80px;
+    }
+}
+
+@media (max-width: 480px) {
+    #lichlamviecContainer table {
+        font-size: 10px;
+        min-width: 500px;
+    }
+    #lichlamviecContainer th,
+    #lichlamviecContainer td {
+        padding: 4px 2px;
+        min-width: 70px;
+    }
+}
+
+/* ========== TABLET (768px - 1024px) ========== */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .header {
+        padding: 18px 24px;
+    }
+    
+    .header h1 {
+        font-size: 1.4rem;
+    }
+    
+    .form-container {
+        padding: 28px 24px;
+    }
+    
+    .tab {
+        font-size: 11px;
+        padding: 8px 14px;
+        min-width: 85px;
+    }
+    
+    .tab-content {
+        margin: 16px;
+        border-radius: 16px;
+    }
+    
+    .buttons-container {
+        gap: 8px;
+    }
+    
+    .export-pdf-btn,
+    .add-btn {
+        padding: 10px 16px;
+        font-size: 13px;
+    }
+    
+    /* Container tablet - thêm padding ngang */
+    .container {
+        padding: 0 8px;
+    }
+}
+
+/* Tablet và màn hình nhỏ (768px - 1024px) */
+@media (max-width: 1024px) {
+    .header {
+        padding: 15px 20px;
+    }
+    
+    .header h1 {
+        font-size: 24px;
+    }
+    
+    .form-container {
+        padding: 30px 20px;
+    }
+    
+    .tab {
+        font-size: 11px;
+        padding: 8px 12px;
+    }
+}
+
+/* Mobile và tablet nhỏ (max-width: 768px) */
+@media (max-width: 768px) {
+    /* Header improvements */
+    .header {
+        padding: 15px 15px;
+    }
+    
+    .header > div:first-child {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+    
+    .header h1 {
+        font-size: 20px;
+        margin-bottom: 8px;
+        line-height: 1.3;
+        text-align: center;
+    }
+    
+    .header > div:first-child > div {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .header > div:first-child > div > button,
+    .header > div:first-child > button {
+        width: 100%;
+        margin: 0;
+    }
+    
+    .header p {
+        font-size: 14px;
+    }
+    
+    /* User info responsive */
+    .user-info {
+        flex-direction: column;
+        gap: 10px;
+        align-items: flex-start;
+        padding: 12px;
+    }
+    
+    .user-info > div {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        width: 100%;
+    }
+    
+    .change-password-btn,
+    .logout-btn {
+        font-size: 11px;
+        padding: 8px 12px;
+        margin-left: 0;
+        flex: 1 1 auto;
+        min-width: 100px;
+    }
+    
+    /* Tabs responsive */
+    .tabs {
+        padding: 6px;
+        gap: 3px;
+        margin-top: 15px;
+    }
+    
+    .tab {
+        font-size: 10px;
+        padding: 8px 10px;
+        min-width: 80px;
+    }
+    
+    /* Form container */
+    .tab-content {
+        margin: 10px;
+        border-radius: 15px;
+    }
+    
+    .form-container {
+        padding: 20px 15px;
+    }
+    
+    /* Form elements */
+    .form-group {
+        margin-bottom: 20px;
+    }
+    
+    .form-group label {
+        font-size: 13px;
+    }
+    
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        padding: 10px 12px;
+        font-size: 14px;
+    }
+    
+    /* Buttons - touch friendly */
+    .submit-btn,
+    .add-btn,
+    .edit-btn,
+    .delete-btn {
+        padding: 12px 16px;
+        font-size: 14px;
+        min-height: 44px; /* Minimum touch target size */
+    }
+    
+    /* Tables responsive */
+    table {
+        font-size: 12px;
+    }
+    
+    table th,
+    table td {
+        padding: 8px 6px;
+        font-size: 11px;
+    }
+    
+    /* Login modal */
+    .login-box {
+        padding: 30px 20px;
+        width: 95%;
+        max-width: 400px;
+        margin: 20px;
+    }
+    
+    /* Password wrapper */
+    .password-toggle {
+        min-width: 44px;
+        min-height: 44px;
+    }
+}
+
+/* Điện thoại vừa (481px - 576px) */
+@media (min-width: 481px) and (max-width: 576px) {
+    .header h1 {
+        font-size: 1.1rem;
+    }
+    .tab {
+        font-size: 10px;
+        padding: 7px 10px;
+        min-width: 75px;
+    }
+    .form-container {
+        padding: 18px 12px;
+    }
+}
+
+/* Mobile nhỏ (max-width: 480px) */
+@media (max-width: 480px) {
+    /* Header */
+    .header {
+        padding: 12px 10px;
+    }
+    
+    .header h1 {
+        font-size: 16px;
+        margin-bottom: 6px;
+    }
+    
+    .header p {
+        font-size: 12px;
+    }
+    
+    /* Tabs - scrollable */
+    .tabs {
+        padding: 5px;
+        gap: 2px;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .tab {
+        font-size: 9px;
+        padding: 6px 8px;
+        min-width: 70px;
+    }
+    
+    /* Form container */
+    .tab-content {
+        margin: 5px;
+        border-radius: 10px;
+    }
+    
+    .form-container {
+        padding: 15px 10px;
+    }
+    
+    /* Form elements */
+    .form-group {
+        margin-bottom: 15px;
+    }
+    
+    .form-group label {
+        font-size: 12px;
+        margin-bottom: 6px;
+    }
+    
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        padding: 10px;
+        font-size: 14px; /* Prevent zoom on iOS */
+        border-radius: 6px;
+    }
+    
+    /* Buttons full width on mobile */
+    .submit-btn,
+    .add-btn {
+        width: 100%;
+        padding: 14px;
+        font-size: 15px;
+    }
+    
+    /* Tables - better mobile display */
+    table {
+        font-size: 11px;
+        display: block;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    table th,
+    table td {
+        padding: 6px 4px;
+        font-size: 10px;
+        white-space: nowrap;
+    }
+    
+    /* Table wrapper */
+    div[style*="overflow-x: auto"] {
+        -webkit-overflow-scrolling: touch;
+        margin: 0 -10px;
+        padding: 0 10px;
+    }
+    
+    /* Login modal */
+    .login-box {
+        padding: 25px 15px;
+        width: 100%;
+        max-width: 100%;
+        margin: 10px;
+        border-radius: 15px;
+    }
+    
+    .login-box h2 {
+        font-size: 20px;
+    }
+    
+    /* User info buttons stack */
+    .user-info > div {
+        flex-direction: column;
+    }
+    
+    .change-password-btn,
+    .logout-btn {
+        width: 100%;
+        margin-left: 0;
+        margin-top: 5px;
+    }
+    
+    /* Export PDF button */
+    .export-pdf-btn {
+        width: 100%;
+        justify-content: center;
+        padding: 12px;
+    }
+    
+    /* Password request items */
+    .password-request-item {
+        flex-direction: column;
+        gap: 10px;
+        padding: 12px;
+    }
+    
+    .reset-btn {
+        width: 100%;
+    }
+    
+    /* Back to top button */
+    .back-to-top {
+        width: 40px;
+        height: 40px;
+        bottom: 15px;
+        right: 15px;
+    }
+    
+    .back-to-top-arrow {
+        font-size: 18px;
+    }
+}
+
+/* Landscape mobile (max-width: 768px and orientation: landscape) */
+@media (max-width: 768px) and (orientation: landscape) {
+    .header {
+        padding: 10px 15px;
+    }
+    
+    .header h1 {
+        font-size: 18px;
+    }
+    
+    .tabs {
+        margin-top: 10px;
+    }
+    
+    .form-container {
+        padding: 15px 20px;
+    }
+}
+
+/* Container padding cho mobile - tránh sát mép */
+@media (max-width: 576px) {
+    .container {
+        padding-left: env(safe-area-inset-left, 0);
+        padding-right: env(safe-area-inset-right, 0);
+    }
+    .tab-content {
+        margin-left: 6px;
+        margin-right: 6px;
+    }
+}
+
+/* Cải thiện scroll cho modal trên mobile */
+@media (max-width: 768px) {
+    .login-modal,
+    .quydinh-modal,
+    .bvta-modal {
+        padding: 10px;
+        align-items: flex-start;
+        padding-top: env(safe-area-inset-top, 20px);
+    }
+    .login-modal.active .login-box,
+    .quydinh-modal.active .quydinh-box,
+    .bvta-modal.active .bvta-box {
+        margin: auto 10px 20px;
+    }
+}
+
+/* Touch device improvements */
+@media (hover: none) and (pointer: coarse) {
+    /* Larger touch targets */
+    button,
+    .tab,
+    .submit-btn,
+    .add-btn,
+    .edit-btn,
+    .delete-btn,
+    .change-password-btn,
+    .logout-btn {
+        min-height: 44px;
+        min-width: 44px;
+    }
+    
+    /* Remove hover effects on touch devices */
+    button:hover,
+    .tab:hover {
+        transform: none;
+    }
+    
+    /* Better focus states for touch */
+    button:focus,
+    input:focus,
+    select:focus,
+    textarea:focus {
+        outline: 3px solid #667eea;
+        outline-offset: 2px;
+    }
+}
+
+/* Quy định chung Modal */
+.quydinh-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 2000;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.quydinh-modal.active {
+    display: flex;
+}
+
+.quydinh-box {
+    background: white;
+    border-radius: 20px;
+    max-width: 1200px;
+    width: 100%;
+    max-height: 90vh;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.quydinh-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.quydinh-header h2 {
+    margin: 0;
+    font-size: 24px;
+}
+
+.quydinh-close {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.quydinh-close:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: rotate(90deg);
+}
+
+.quydinh-tabs-container {
+    background: #f5f5f5;
+    padding: 15px 20px;
+    border-bottom: 2px solid #e0e0e0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    overflow-x: auto;
+    flex-wrap: wrap;
+}
+
+.quydinh-tabs {
+    display: flex;
+    gap: 8px;
+    flex: 1;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.quydinh-tab {
+    padding: 10px 20px;
+    background: white;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    color: #333;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+    position: relative;
+    min-width: 120px;
+    text-align: center;
+}
+
+.quydinh-tab:hover {
+    background: #f0f0f0;
+    border-color: #667eea;
+}
+
+.quydinh-tab.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-color: #667eea;
+}
+
+.quydinh-tab-actions {
+    display: flex;
+    gap: 5px;
+    margin-left: auto;
+}
+
+.quydinh-tab-edit,
+.quydinh-tab-delete {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 5px 8px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    opacity: 0.7;
+}
+
+.quydinh-tab-edit:hover {
+    background: #3498db;
+    color: white;
+    opacity: 1;
+}
+
+.quydinh-tab-delete:hover {
+    background: #e74c3c;
+    color: white;
+    opacity: 1;
+}
+
+.quydinh-add-tab-btn {
+    padding: 10px 20px;
+    background: #27ae60;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.quydinh-add-tab-btn:hover {
+    background: #229954;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+}
+
+.quydinh-content {
+    flex: 1;
+    padding: 30px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.quydinh-tab-content {
+    display: none;
+}
+
+.quydinh-tab-content.active {
+    display: block;
+}
+
+.quydinh-editor {
+    width: 100%;
+    min-height: 400px;
+    padding: 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 15px;
+    font-family: inherit;
+    resize: vertical;
+    line-height: 1.6;
+}
+
+.quydinh-editor:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.quydinh-save-btn {
+    margin-top: 20px;
+    padding: 12px 30px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.quydinh-save-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+/* Modal for add/edit tab */
+.tab-edit-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 3000;
+    justify-content: center;
+    align-items: center;
+}
+
+.tab-edit-modal.active {
+    display: flex;
+}
+
+.tab-edit-box {
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+    max-width: 500px;
+    width: 90%;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.tab-edit-box h3 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+.tab-edit-box input {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 15px;
+    margin-bottom: 20px;
+}
+
+.tab-edit-box input:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.tab-edit-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.tab-edit-actions button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.tab-edit-cancel {
+    background: #95a5a6;
+    color: white;
+}
+
+.tab-edit-cancel:hover {
+    background: #7f8c8d;
+}
+
+.tab-edit-save {
+    background: #27ae60;
+    color: white;
+}
+
+.tab-edit-save:hover {
+    background: #229954;
+}
+
+/* ========== BVTA LINK MODAL ========== */
+.bvta-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 2000;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.bvta-modal.active {
+    display: flex;
+}
+
+.bvta-box {
+    background: white;
+    border-radius: 20px;
+    max-width: 1000px;
+    width: 100%;
+    max-height: 90vh;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.bvta-header {
+    background: #0072bc;
+    color: white;
+    padding: 20px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.bvta-header h2 {
+    margin: 0;
+    font-size: 24px;
+}
+
+.bvta-close {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.bvta-close:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: rotate(90deg);
+}
+
+.bvta-content {
+    flex: 1;
+    padding: 30px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    background: #f5f9ff;
+}
+
+.bvta-header-bar {
+    background: #0072bc;
+    padding: 18px 0 14px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    border-radius: 12px;
+    margin-bottom: 30px;
+}
+
+.bvta-header-row {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.bvta-quick-link-btn {
+    display: inline-block;
+    padding: 12px 28px;
+    font-size: 1.1em;
+    border: none;
+    border-radius: 8px;
+    background: #fff;
+    color: #0072bc;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    text-decoration: none;
+}
+
+.bvta-quick-link-btn:hover {
+    background: #005f9e;
+    color: #fff;
+    transform: translateY(-2px) scale(1.04);
+}
+
+.bvta-container {
+    max-width: 600px;
+    margin: 0 auto 30px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+    padding: 32px 24px;
+    text-align: center;
+}
+
+.bvta-container h1 {
+    color: #0072bc;
+    margin-bottom: 32px;
+    font-size: 1.5em;
+}
+
+#bvta-du-kien-sinh form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    text-align: left;
+}
+
+#bvta-du-kien-sinh label {
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 6px;
+    display: block;
+}
+
+#bvta-du-kien-sinh input[type="date"],
+#bvta-du-kien-sinh select {
+    padding: 10px;
+    font-size: 1rem;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+#bvta-du-kien-sinh button {
+    padding: 12px;
+    font-size: 1rem;
+    background-color: #0072bc;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+#bvta-du-kien-sinh button:hover {
+    background-color: #005f9e;
+}
+
+#bvta-ketQuaDinhTuoiThai {
+    margin-top: 20px;
+}
+
+#bvta-ketQuaDinhTuoiThai p {
+    font-size: 1.05rem;
+    margin-top: 10px;
+    padding: 10px;
+    border-radius: 8px;
+    background: #f0f8ff;
+    border: 1px solid #cce5ff;
+}
+
+/* Responsive for BVTA modal */
+@media (max-width: 768px) {
+    .bvta-box {
+        max-width: 100%;
+        max-height: 100vh;
+        border-radius: 0;
+    }
+
+    .bvta-header {
+        padding: 15px 20px;
+    }
+
+    .bvta-header h2 {
+        font-size: 18px;
+    }
+
+    .bvta-content {
+        padding: 20px 15px;
+    }
+
+    .bvta-header-row {
+        flex-direction: column;
+        gap: 10px;
+        align-items: stretch;
+    }
+
+    .bvta-quick-link-btn {
+        width: 100%;
+        padding: 10px;
+        font-size: 1em;
+    }
+
+    .bvta-container {
+        margin: 0 auto 20px;
+        padding: 24px 18px;
+    }
+
+    .bvta-container h1 {
+        font-size: 1.3em;
+    }
+
+    #bvta-du-kien-sinh input[type="date"],
+    #bvta-du-kien-sinh button,
+    #bvta-du-kien-sinh select {
+        font-size: 1rem;
+        padding: 12px;
+    }
+
+    #bvta-ketQuaDinhTuoiThai p {
+        font-size: 1rem;
+    }
+}
+
+/* Responsive for Quy định chung modal */
+@media (max-width: 768px) {
+    .quydinh-box {
+        max-width: 100%;
+        max-height: 100vh;
+        border-radius: 0;
+    }
+
+    .quydinh-header {
+        padding: 15px 20px;
+    }
+
+    .quydinh-header h2 {
+        font-size: 18px;
+    }
+
+    .quydinh-tabs-container {
+        padding: 10px 15px;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .quydinh-tabs {
+        width: 100%;
+        overflow-x: auto;
+    }
+
+    .quydinh-tab {
+        min-width: 100px;
+        font-size: 12px;
+        padding: 8px 15px;
+    }
+
+    .quydinh-add-tab-btn {
+        width: 100%;
+        padding: 10px;
+    }
+
+    .quydinh-content {
+        padding: 20px 15px;
+    }
+
+    .quydinh-editor {
+        min-height: 300px;
+        font-size: 14px;
+    }
+
+    .quydinh-save-btn {
+        width: 100%;
+        padding: 14px;
+    }
+}
+
+/* Print styles */
+@media print {
+    .header,
+    .tabs,
+    .export-pdf-btn,
+    .back-to-top,
+    button:not(.print-keep) {
+        display: none !important;
+    }
+    
+    .tab-content {
+        margin: 0;
+        box-shadow: none;
+        border-radius: 0;
+    }
+    
+    .form-container {
+        padding: 20px;
+    }
+}
+
+/* High DPI displays */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    .header h1 {
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+}
+
+/* ========== RESPONSIVE TỐI ƯU: ĐIỆN THOẠI / MÁY TÍNH BẢNG / DESKTOP ========== */
+
+.calendar-grid {
+    min-width: 0;
+}
+
+/* Tablet (768px - 1024px) - Máy tính bảng */
+@media (min-width: 768px) and (max-width: 1024px) {
+    .header {
+        padding: 18px 20px;
+    }
+    
+    .header h1 {
+        font-size: clamp(1.1rem, 2.5vw, 1.5rem);
+    }
+    
+    .tabs {
+        gap: 6px;
+        padding: 10px;
+    }
+    
+    .tab {
+        font-size: 11px;
+        padding: 9px 14px;
+        min-width: 85px;
+    }
+    
+    .tab-content {
+        margin: 15px;
+        border-radius: 16px;
+    }
+    
+    .form-container {
+        padding: 25px 20px;
+    }
+    
+    .buttons-container {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    
+    .export-pdf-btn {
+        padding: 10px 16px;
+        font-size: 13px;
+    }
+}
+
+/* Modal responsive - điện thoại & máy tính bảng */
+@media (max-width: 1024px) {
+    #fixedScheduleModal .login-box,
+    #maxCountModal .login-box,
+    #editDayLeaveModal .login-box {
+        width: calc(100% - 24px) !important;
+        max-width: none !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .login-modal .login-box,
+    .quydinh-modal .quydinh-box,
+    .bvta-modal .bvta-box,
+    #selectDoctorsModal .login-box,
+    #editDayLeaveModal .login-box,
+    #fixedScheduleModal .login-box,
+    #maxCountModal .login-box {
+        width: calc(100% - 24px) !important;
+        max-width: none !important;
+        margin: 12px !important;
+        padding: 24px 16px !important;
+        max-height: 85vh;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
+@media (max-width: 480px) {
+    .login-modal .login-box,
+    .quydinh-modal .quydinh-box,
+    #selectDoctorsModal .login-box,
+    #editDayLeaveModal .login-box,
+    #fixedScheduleModal .login-box,
+    #maxCountModal .login-box {
+        width: calc(100% - 20px) !important;
+        margin: 10px !important;
+        padding: 20px 14px !important;
+    }
+}
+
+/* Touch targets - tối thiểu 44x44px cho mobile */
+@media (pointer: coarse) {
+    .tab,
+    .add-btn,
+    .submit-btn,
+    .edit-btn,
+    .delete-btn,
+    .export-pdf-btn,
+    .change-password-btn,
+    .logout-btn,
+    button.add-btn {
+        min-height: 44px;
+        min-width: 44px;
+    }
+    
+    .tab {
+        padding: 10px 14px;
+    }
+}
+
+/* Viewport meta - đảm bảo có trong HTML (đã có trong QuanlynhanlucBS) */
+/* Tránh zoom khi focus input trên iOS */
+@media (max-width: 768px) {
+    .form-group input,
+    .form-group select {
+        font-size: 16px !important; /* Ngăn iOS zoom khi focus */
+    }
+}
+
+/* Fixed schedule modal - bảng scroll ngang trên tablet */
+@media (max-width: 1024px) {
+    #fixedScheduleModal #fixedScheduleTable {
+        flex-direction: column;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    #fixedScheduleModal .login-box {
+        overflow-x: auto;
+    }
+}
+
+/* Container chính - safe area cho notch điện thoại */
+@supports (padding: max(0px)) {
+    .container {
+        padding-left: max(0px, env(safe-area-inset-left));
+        padding-right: max(0px, env(safe-area-inset-right));
+    }
+}
+
+/* Viền đỏ cho lịch làm việc của cả một ngày */
+#lichlamviecContainer .day-column {
+    position: relative;
+}
+
+/* Viền đỏ bên trái cho tất cả các cộtngày */
+#lichlamviecContainer .day-column {
+    border-left: 3px solid #ff0000 !important;
+}
+
+/* Viền đỏ bên phải cho tất cả các cộtngày */
+#lichlamviecContainer .day-column {
+    border-right: 3px solid #ff0000 !important;
+}
+
+/* Viền đỏ phía trên cho header của cộtngày */
+#lichlamviecContainer thead .day-column {
+    border-top: 3px solid #ff0000 !important;
+}
+
+/* Viền đỏ phía dưới cho ô cuối cùng của mỗi cộtngày */
+#lichlamviecContainer tbody tr:last-child .day-column {
+    border-bottom: 3px solid #ff0000 !important;
+}

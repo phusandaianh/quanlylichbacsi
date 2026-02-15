@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>Lịch hội chẩn cột1 - Quản Lý Lịch Bác Sĩ</title>
+    <link rel="stylesheet" href="../assets/css/common.css">
+</head>
+<body data-current-tab="hoichancot1">
+    <div class="container">
+        <div id="header-placeholder"></div>
+        <div id="hoichancot1" class="tab-content active admin-only">
+            <div class="form-container">
+                <h2>Lịch hội chẩn cột1</h2>
+                <p>Quản lý lịch hội chẩn cột1</p>
+                <div style="margin-top: 20px;">
+                    <h3 style="margin-bottom: 15px; color: #333;">1. Lịch hội chẩn theo ngày trong tuần</h3>
+                    <div style="overflow-x: auto;">
+                        <table id="hoichancot1ScheduleTable" style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; margin-bottom: 30px;">
+                            <thead>
+                                <tr style="background: #667eea; color: white;">
+                                    <th style="padding: 12px; text-align: left; border: 1px solid #ddd; width: 15%;">Buổi</th>
+                                    <th style="padding: 12px; text-align: center; border: 1px solid #ddd; width: 14%;">Thứ 2</th>
+                                    <th style="padding: 12px; text-align: center; border: 1px solid #ddd; width: 14%;">Thứ 3</th>
+                                    <th style="padding: 12px; text-align: center; border: 1px solid #ddd; width: 14%;">Thứ 4</th>
+                                    <th style="padding: 12px; text-align: center; border: 1px solid #ddd; width: 14%;">Thứ 5</th>
+                                    <th style="padding: 12px; text-align: center; border: 1px solid #ddd; width: 14%;">Thứ 6</th>
+                                    <th style="padding: 12px; text-align: center; border: 1px solid #ddd; width: 14%;">Thứ 7</th>
+                                </tr>
+                            </thead>
+                            <tbody id="hoichancot1ScheduleTableBody">
+                                <!-- Rows will be added here -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <h3 style="margin-bottom: 15px; color: #333;">2. Ghi chú</h3>
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #667eea;">
+                        <div id="hoichancot1Notes" style="line-height: 1.8;">
+                            <!-- Notes will be added here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="../assets/js/header.js"></script>
+    <script src="../assets/js/app.js"></script>
+</body>
+</html>

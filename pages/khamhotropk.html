@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>Khám hỗ trợ PK - Quản Lý Lịch Bác Sĩ</title>
+    <link rel="stylesheet" href="../assets/css/common.css">
+</head>
+<body data-current-tab="khamhotropk">
+    <div class="container">
+        <div id="header-placeholder"></div>
+        <div id="khamhotropk" class="tab-content active admin-only">
+            <div class="form-container">
+                <h2>Khám hỗ trợ PK</h2>
+                <p>Quản lý lịch khám hỗ trợ phòng khám</p>
+                <div style="margin-top: 20px;">
+                    <button class="add-btn" onclick="addKhamHoTroPKRow()" style="margin-bottom: 15px;">➕ Thêm dòng mới</button>
+                    <div style="overflow-x: auto;">
+                        <table id="khamhotropkTable" style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden;">
+                            <thead>
+                                <tr style="background: #667eea; color: white;">
+                                    <th style="padding: 12px; text-align: left; border: 1px solid #ddd; width: 40%;">Tên bác sĩ</th>
+                                    <th style="padding: 12px; text-align: left; border: 1px solid #ddd; width: 50%;">Nội dung hỗ trợ PK</th>
+                                    <th style="padding: 12px; text-align: center; border: 1px solid #ddd; width: 100px;">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="khamhotropkTableBody">
+                                <!-- Rows will be added here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="../assets/js/header.js"></script>
+    <script src="../assets/js/app.js"></script>
+</body>
+</html>

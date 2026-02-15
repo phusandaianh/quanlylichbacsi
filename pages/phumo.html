@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>Lịch phụ mổ - Quản Lý Lịch Bác Sĩ</title>
+    <link rel="stylesheet" href="../assets/css/common.css">
+</head>
+<body data-current-tab="phumo">
+    <div class="container">
+        <div id="header-placeholder"></div>
+        <div id="phumo" class="tab-content active admin-only">
+            <div class="form-container">
+                <h2>Lịch phụ mổ</h2>
+                <p>Quản lý lịch phụ mổ</p>
+                <div style="margin-top: 20px;">
+                    <div style="overflow-x: auto;">
+                        <table id="phumoTable" style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden;">
+                            <thead>
+                                <tr style="background: #667eea; color: white;">
+                                    <th style="padding: 12px; text-align: center; border: 1px solid #ddd;">Thứ 2</th>
+                                    <th style="padding: 12px; text-align: center; border: 1px solid #ddd;">Thứ 3</th>
+                                    <th style="padding: 12px; text-align: center; border: 1px solid #ddd;">Thứ 4</th>
+                                    <th style="padding: 12px; text-align: center; border: 1px solid #ddd;">Thứ 5</th>
+                                    <th style="padding: 12px; text-align: center; border: 1px solid #ddd;">Thứ 6</th>
+                                    <th style="padding: 12px; text-align: center; border: 1px solid #ddd;">Thứ 7</th>
+                                </tr>
+                            </thead>
+                            <tbody id="phumoTableBody">
+                                <!-- Row will be added here -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div style="margin-top: 20px;">
+                        <label style="display: block; margin-bottom: 8px; color: #333; font-weight: 600; font-size: 14px;">Ghi chú:</label>
+                        <textarea id="phumoNotes" placeholder="Nhập ghi chú cho lịch phụ mổ..." style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; font-family: inherit; min-height: 100px; resize: vertical;" onchange="updatePhumoNotes(this.value)"></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="../assets/js/header.js"></script>
+    <script src="../assets/js/app.js"></script>
+</body>
+</html>

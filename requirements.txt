@@ -1,0 +1,13 @@
+# FastAPI + Uvicorn
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+
+# Database
+SQLAlchemy>=2.0.0
+psycopg2-binary>=2.9.9
+
+# Utils
+pydantic>=2.0
+python-dotenv>=1.0.0
+passlib[bcrypt]>=1.7.4
+gunicorn

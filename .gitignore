@@ -1,0 +1,10 @@
+# Biến môi trường (mật khẩu SMTP, v.v.)
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+*.db

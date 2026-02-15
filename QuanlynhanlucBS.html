@@ -1,0 +1,3519 @@
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Đăng Ký Nghỉ Phép - Bác Sĩ</title>
+    <link rel="stylesheet" href="assets/css/common.css">
+    <!-- Thư viện xuất PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            -webkit-text-size-adjust: 100%;
+            -ms-text-size-adjust: 100%;
+            text-size-adjust: 100%;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 0;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .container {
+            max-width: 100%;
+            width: 100%;
+            margin: 0;
+            background: #f5f5f5;
+            border-radius: 0;
+            box-shadow: none;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            overflow-x: hidden;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 30px;
+            text-align: center;
+        }
+
+        .header > div:first-child {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+            margin: 0;
+            flex: 1;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 16px;
+        }
+
+        .tabs {
+            display: flex;
+            background: rgba(255, 255, 255, 0.1);
+            margin-top: 20px;
+            border-radius: 10px;
+            overflow-x: auto;
+            flex-wrap: wrap;
+            padding: 8px;
+            gap: 4px;
+        }
+
+        .tab {
+            flex: 0 0 auto;
+            min-width: auto;
+            padding: 8px 16px;
+            background: #3498db;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border-radius: 6px;
+            white-space: nowrap;
+            text-decoration: none; /* để <a> giống <button> */
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .tab:hover {
+            background: #2980b9;
+        }
+
+        .tab.active {
+            background: #2980b9;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .tab-content {
+            display: none;
+            background: white;
+            border-radius: 20px;
+            margin: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .tab-content.active {
+            display: block;
+            flex: 1 1 auto;
+            overflow: auto;
+        }
+
+        .form-container {
+            padding: 40px;
+            flex: 1 1 auto;
+            position: relative;
+        }
+        
+        /* Nút xuất PDF */
+        .export-pdf-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 8px rgba(231, 76, 60, 0.3);
+            transition: all 0.3s ease;
+            z-index: 100;
+            white-space: nowrap;
+        }
+        
+        /* Container cho các nút */
+        .buttons-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            position: relative;
+            width: 100%;
+            justify-content: flex-end;
+        }
+        
+        /* Nút trong container */
+        .buttons-container .export-pdf-btn {
+            position: relative;
+            top: auto;
+            right: auto;
+        }
+        
+        /* Nút đơn lẻ (không trong container) - chỉ áp dụng cho các tab khác */
+        .form-container > .export-pdf-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+        
+        /* Override cho nút trong container */
+        .buttons-container .export-pdf-btn {
+            position: relative !important;
+            top: auto !important;
+            right: auto !important;
+        }
+        
+        .export-pdf-btn:hover {
+            background: #c0392b;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(231, 76, 60, 0.4);
+        }
+        
+        .export-pdf-btn:active {
+            transform: translateY(0);
+        }
+        
+        @media (max-width: 768px) {
+            .export-pdf-btn {
+                position: relative;
+                top: auto;
+                right: auto;
+                width: 100%;
+                margin-bottom: 15px;
+                justify-content: center;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .export-pdf-btn {
+                padding: 12px;
+                font-size: 13px;
+            }
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 600px) {
+            .form-row {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            .container {
+                margin: 0;
+                border-radius: 0;
+                width: 100%;
+                min-height: 100vh;
+            }
+            .header h1 { 
+                font-size: 18px; 
+                line-height: 1.3;
+            }
+            .header p { 
+                font-size: 13px; 
+            }
+            .form-container { 
+                padding: 16px; 
+            }
+        }
+
+        @media (max-width: 768px) {
+            .tabs { 
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: thin;
+            }
+            .tab { 
+                min-width: 90px;
+                font-size: 11px;
+            }
+            
+            /* Improve table scrolling on mobile */
+            div[style*="overflow-x: auto"] {
+                -webkit-overflow-scrolling: touch;
+                position: relative;
+            }
+        }
+
+        .required {
+            color: #e74c3c;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            margin-top: 10px;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+
+        .success-message {
+            display: none;
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #c3e6cb;
+        }
+
+        .error-message {
+            display: none;
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #f5c6cb;
+            animation: shake 0.5s;
+            font-weight: 500;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+        
+        .input-error {
+            border: 2px solid #e74c3c !important;
+            background-color: #fff5f5 !important;
+            animation: shake 0.5s;
+        }
+
+        .submissions-list {
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 2px solid #e0e0e0;
+        }
+
+        .submissions-list h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 20px;
+        }
+
+        .submission-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border-left: 4px solid #667eea;
+        }
+
+        .submission-item strong {
+            color: #667eea;
+        }
+
+        .submission-item p {
+            margin: 5px 0;
+            color: #555;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #999;
+            padding: 20px;
+        }
+
+        .doctor-list {
+            margin-top: 20px;
+        }
+
+        .doctor-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 4px solid #667eea;
+            transition: all 0.3s ease;
+        }
+
+        .doctor-item:hover {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            transform: translateX(5px);
+        }
+
+        .doctor-info {
+            flex: 1;
+        }
+
+        .doctor-info strong {
+            color: #667eea;
+            display: block;
+            margin-bottom: 5px;
+            font-size: 16px;
+        }
+
+        .doctor-info span {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .delete-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .delete-btn:hover {
+            background: #c0392b;
+            transform: scale(1.05);
+        }
+
+        .add-doctor-form {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .add-doctor-form h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .form-row-inline {
+            display: grid;
+            grid-template-columns: 2fr 2fr 2fr 1fr;
+            gap: 15px;
+            align-items: end;
+        }
+
+        @media (max-width: 768px) {
+            .form-row-inline {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            
+            .form-row-inline .add-btn {
+                width: 100%;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .form-row-inline {
+                gap: 12px;
+            }
+        }
+
+        .add-btn {
+            padding: 12px 20px;
+            background: #27ae60;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .add-btn:hover {
+            background: #229954;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(39, 174, 96, 0.3);
+        }
+
+        .edit-btn {
+            padding: 10px 14px;
+            background: #f39c12;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+
+        .edit-btn:hover {
+            background: #d68910;
+            transform: none;
+        }
+
+        /* Password toggle (show/hide) */
+        .password-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+
+        .password-wrapper input {
+            padding-right: 50px !important;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 20px;
+            padding: 8px;
+            color: #667eea;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 40px;
+            min-height: 40px;
+            pointer-events: auto !important;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            touch-action: manipulation;
+            transition: all 0.2s ease;
+        }
+
+        .password-toggle:hover {
+            color: #764ba2;
+            background: rgba(102, 126, 234, 0.15);
+            border-radius: 50%;
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .password-toggle:focus {
+            outline: 2px solid #667eea;
+            outline-offset: 2px;
+        }
+
+        .password-toggle:active {
+            transform: translateY(-50%) scale(0.9);
+            background: rgba(102, 126, 234, 0.25);
+        }
+        
+        .password-toggle:focus-visible {
+            outline: 2px solid #667eea;
+            outline-offset: 2px;
+        }
+
+        /* Login Modal */
+        .login-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .login-modal.active {
+            display: flex;
+        }
+
+        .login-box {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-height: 90vh;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .login-box h2 {
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .user-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            margin-top: 15px;
+            border-radius: 8px;
+        }
+
+        .user-info span {
+            color: white;
+            font-weight: 600;
+        }
+
+        .logout-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .logout-btn:hover {
+            background: #c0392b;
+        }
+
+        .change-password-btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
+        .change-password-btn:hover {
+            background: #2980b9;
+        }
+
+        .password-request-item {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            border-left: 4px solid #ffc107;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .password-request-item p {
+            margin: 0;
+            color: #333;
+        }
+
+        .reset-btn {
+            background: #17a2b8;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .reset-btn:hover {
+            background: #138496;
+        }
+
+        .admin-only {
+            display: none;
+        }
+
+        .admin-only.show {
+            display: block;
+        }
+
+        .notif-list {
+            max-height: 300px;
+            overflow: auto;
+        }
+
+        /* Debug panel styles */
+        .debug-panel {
+            background: #f1f3f5;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px dashed #cbd5e1;
+            margin-top: 20px;
+        }
+
+        .debug-controls {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .debug-pre {
+            max-height: 280px;
+            overflow: auto;
+            background: #0b1220;
+            color: #e6eef8;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            white-space: pre-wrap;
+        }
+
+        /* cv cột1 Table Styles */
+        #cvcot1Table {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        #cvcot1Table tbody tr {
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        #cvcot1Table tbody tr:hover {
+            background: #f8f9fa;
+        }
+
+        #cvcot1Table tbody td {
+            padding: 12px;
+            border: 1px solid #e0e0e0;
+        }
+
+        #cvcot1Table tbody input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        #cvcot1Table tbody input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+        }
+
+        #cvcot1Table tbody select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            font-family: inherit;
+            background: white;
+            cursor: pointer;
+        }
+
+        #cvcot1Table tbody select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+        }
+
+        /* Đảm bảo disabled input/select hiển thị rõ ràng cho bác sĩ */
+        #cvcot1Table tbody input:disabled,
+        #cvcot1Table tbody select:disabled {
+            background-color: #ffffff !important;
+            color: #333333 !important;
+            opacity: 1 !important;
+            cursor: not-allowed;
+        }
+
+        /* Khám hỗ trợ PK Table Styles */
+        #khamhotropkTable {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        #khamhotropkTable tbody tr {
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        #khamhotropkTable tbody tr:hover {
+            background: #f8f9fa;
+        }
+
+        #khamhotropkTable tbody td {
+            padding: 12px;
+            border: 1px solid #e0e0e0;
+        }
+
+        #khamhotropkTable tbody input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        #khamhotropkTable tbody input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+        }
+
+        /* Đảm bảo disabled input hiển thị rõ ràng cho bác sĩ */
+        #khamhotropkTable tbody input:disabled {
+            background-color: #ffffff !important;
+            color: #333333 !important;
+            opacity: 1 !important;
+            cursor: not-allowed;
+        }
+
+        /* Lịch khám sớm Calendar Styles */
+        #khamsomCalendarTable {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            min-width: 100%;
+        }
+
+        #khamsomCalendarTable tbody tr {
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        #khamsomCalendarTable tbody td {
+            min-height: 80px;
+            height: 80px;
+        }
+
+        #khamsomCalendarTable tbody input {
+            width: 100%;
+            padding: 6px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 13px;
+            font-family: inherit;
+            margin-top: 5px;
+        }
+
+        #khamsomCalendarTable tbody input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+        }
+
+        /* Đảm bảo disabled input hiển thị rõ ràng cho bác sĩ */
+        #khamsomCalendarTable tbody input:disabled {
+            background-color: #ffffff !important;
+            color: #333333 !important;
+            opacity: 1 !important;
+            cursor: not-allowed;
+        }
+
+        @media (max-width: 768px) {
+            #khamsomCalendarTable {
+                font-size: 12px;
+            }
+            
+            #khamsomCalendarTable tbody td {
+                min-height: 70px;
+                height: 70px;
+                padding: 5px;
+            }
+            
+            #khamsomCalendarTable tbody input {
+                font-size: 11px;
+                padding: 4px;
+            }
+        }
+
+        /* Lịch khám sản VIP / Siêu âm VIP (sáng-chiều) */
+        #khamsanvipCalendarTable, #sieuamvipCalendarTable {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            min-width: 100%;
+        }
+        #khamsanvipCalendarTable tbody td, #sieuamvipCalendarTable tbody td {
+            min-height: 100px;
+            vertical-align: top;
+        }
+        #khamsanvipCalendarTable tbody input, #sieuamvipCalendarTable tbody input {
+            width: 100%;
+            padding: 4px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 12px;
+            font-family: inherit;
+        }
+        #khamsanvipCalendarTable tbody input:focus, #sieuamvipCalendarTable tbody input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        #khamsanvipCalendarTable tbody input:disabled, #sieuamvipCalendarTable tbody input:disabled {
+            background-color: #ffffff !important;
+            color: #333333 !important;
+            cursor: not-allowed;
+        }
+
+        /* Lịch khám cầu giấy 20h (giống khám sớm) */
+        #khamcaugiay20hCalendarTable {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            min-width: 100%;
+        }
+        #khamcaugiay20hCalendarTable tbody td {
+            min-height: 80px;
+            height: 80px;
+        }
+        #khamcaugiay20hCalendarTable tbody input {
+            width: 100%;
+            padding: 6px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 13px;
+            font-family: inherit;
+        }
+        #khamcaugiay20hCalendarTable tbody input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        #khamcaugiay20hCalendarTable tbody input:disabled {
+            background-color: #ffffff !important;
+            color: #333333 !important;
+            cursor: not-allowed;
+        }
+
+        /* Lịch trực trưa Calendar Styles */
+        #tructruaCalendarTable {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            min-width: 100%;
+        }
+
+        #tructruaCalendarTable tbody tr {
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        #tructruaCalendarTable tbody td {
+            min-height: 80px;
+            height: 80px;
+        }
+
+        #tructruaCalendarTable tbody input {
+            width: 100%;
+            padding: 6px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 13px;
+            font-family: inherit;
+            margin-top: 5px;
+        }
+
+        #tructruaCalendarTable tbody input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+        }
+
+        /* Đảm bảo disabled input hiển thị rõ ràng cho bác sĩ */
+        #tructruaCalendarTable tbody input:disabled {
+            background-color: #ffffff !important;
+            color: #333333 !important;
+            opacity: 1 !important;
+            cursor: not-allowed;
+        }
+
+        @media (max-width: 768px) {
+            #tructruaCalendarTable {
+                font-size: 12px;
+            }
+            
+            #tructruaCalendarTable tbody td {
+                min-height: 70px;
+                height: 70px;
+                padding: 5px;
+            }
+            
+            #tructruaCalendarTable tbody input {
+                font-size: 11px;
+                padding: 4px;
+            }
+        }
+
+        /* Lịch tiểu phẫu Calendar Styles */
+        #tieuphauCalendarTable {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            min-width: 100%;
+        }
+
+        #tieuphauCalendarTable tbody tr {
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        #tieuphauCalendarTable tbody td {
+            min-height: 80px;
+            height: 80px;
+        }
+
+        #tieuphauCalendarTable tbody input {
+            width: 100%;
+            padding: 6px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 13px;
+            font-family: inherit;
+            margin-top: 5px;
+        }
+
+        #tieuphauCalendarTable tbody input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+        }
+
+        /* Đảm bảo disabled input hiển thị rõ ràng cho bác sĩ */
+        #tieuphauCalendarTable tbody input:disabled {
+            background-color: #ffffff !important;
+            color: #333333 !important;
+            opacity: 1 !important;
+            cursor: not-allowed;
+        }
+
+        @media (max-width: 768px) {
+            #tieuphauCalendarTable {
+                font-size: 12px;
+            }
+            
+            #tieuphauCalendarTable tbody td {
+                min-height: 70px;
+                height: 70px;
+                padding: 5px;
+            }
+            
+            #tieuphauCalendarTable tbody input {
+                font-size: 11px;
+                padding: 4px;
+            }
+        }
+
+        /* cv cột2+3 Table Styles */
+        #cvcot23Table {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        #cvcot23Table tbody tr {
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        #cvcot23Table tbody tr:hover {
+            background: #f8f9fa;
+        }
+
+        #cvcot23Table tbody td {
+            padding: 12px;
+            border: 1px solid #e0e0e0;
+        }
+
+        #cvcot23Table tbody input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        #cvcot23Table tbody input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+        }
+
+        #cvcot23Table tbody select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            font-family: inherit;
+            background: white;
+            cursor: pointer;
+        }
+
+        #cvcot23Table tbody select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+        }
+
+        /* Đảm bảo disabled input/select hiển thị rõ ràng cho bác sĩ */
+        #cvcot23Table tbody input:disabled,
+        #cvcot23Table tbody select:disabled {
+            background-color: #ffffff !important;
+            color: #333333 !important;
+            opacity: 1 !important;
+            cursor: not-allowed;
+        }
+
+        /* Đảm bảo tất cả text hiển thị rõ ràng cho bác sĩ */
+        .doctor-item,
+        .doctor-info,
+        .doctor-info strong,
+        .doctor-info span,
+        .submission-item,
+        .password-request-item,
+        .tab-content,
+        .form-container,
+        .form-container h2,
+        .form-container h3,
+        .form-container p {
+            opacity: 1 !important;
+            color: #333333 !important;
+        }
+
+        /* Đảm bảo tất cả input/select disabled hiển thị rõ ràng */
+        input:disabled,
+        select:disabled,
+        textarea:disabled {
+            background-color: #ffffff !important;
+            color: #333333 !important;
+            opacity: 1 !important;
+        }
+
+        /* Nút trở về đầu trang */
+        .back-to-top {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .back-to-top-arrow {
+            font-size: 24px;
+            display: inline-block;
+            transform: scaleX(3);
+            line-height: 1;
+        }
+
+        .back-to-top.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .back-to-top:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .back-to-top:active {
+            transform: translateY(-2px);
+        }
+
+        /* Nút đi đến cuối trang */
+        .back-to-bottom {
+            position: fixed;
+            bottom: 30px;
+            right: 90px;
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .back-to-bottom-arrow {
+            font-size: 24px;
+            display: inline-block;
+            transform: scaleX(3);
+            line-height: 1;
+        }
+
+        .back-to-bottom.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .back-to-bottom:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .back-to-bottom:active {
+            transform: translateY(-2px);
+        }
+
+        @media (max-width: 768px) {
+            .back-to-top {
+                bottom: 20px;
+                right: 20px;
+                width: 45px;
+                height: 45px;
+            }
+
+            .back-to-top-arrow {
+                font-size: 20px;
+            }
+
+            .back-to-bottom {
+                bottom: 20px;
+                right: 75px;
+                width: 45px;
+                height: 45px;
+            }
+
+            .back-to-bottom-arrow {
+                font-size: 20px;
+            }
+        }
+
+        /* ========== RESPONSIVE DESIGN - MOBILE & TABLET ========== */
+        
+        /* General table responsive improvements */
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            table-layout: auto;
+        }
+        
+        /* Table wrapper for horizontal scroll */
+        .table-wrapper {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            margin: 0 -10px;
+            padding: 0 10px;
+        }
+        
+        @media (min-width: 769px) {
+            .table-wrapper {
+                margin: 0;
+                padding: 0;
+            }
+        }
+        
+        /* Tablet và màn hình nhỏ (768px - 1024px) */
+        @media (max-width: 1024px) {
+            .header {
+                padding: 15px 20px;
+            }
+            
+            .header h1 {
+                font-size: 24px;
+            }
+            
+            .form-container {
+                padding: 30px 20px;
+            }
+            
+            .tab {
+                font-size: 11px;
+                padding: 8px 12px;
+            }
+        }
+
+        /* Mobile và tablet nhỏ (max-width: 768px) */
+        @media (max-width: 768px) {
+            /* Header improvements */
+            .header {
+                padding: 15px 15px;
+            }
+            
+            .header > div:first-child {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+            }
+            
+            .header h1 {
+                font-size: 20px;
+                margin-bottom: 8px;
+                line-height: 1.3;
+                text-align: center;
+            }
+            
+            .header > div:first-child > div {
+                width: 100%;
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            }
+            
+            .header > div:first-child > div > button,
+            .header > div:first-child > button {
+                width: 100%;
+                margin: 0;
+            }
+            
+            .header p {
+                font-size: 14px;
+            }
+            
+            /* User info responsive */
+            .user-info {
+                flex-direction: column;
+                gap: 10px;
+                align-items: flex-start;
+                padding: 12px;
+            }
+            
+            .user-info > div {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+                width: 100%;
+            }
+            
+            .change-password-btn,
+            .logout-btn {
+                font-size: 11px;
+                padding: 8px 12px;
+                margin-left: 0;
+                flex: 1 1 auto;
+                min-width: 100px;
+            }
+            
+            /* Tabs responsive */
+            .tabs {
+                padding: 6px;
+                gap: 3px;
+                margin-top: 15px;
+            }
+            
+            .tab {
+                font-size: 10px;
+                padding: 8px 10px;
+                min-width: 80px;
+            }
+            
+            /* Form container */
+            .tab-content {
+                margin: 10px;
+                border-radius: 15px;
+            }
+            
+            .form-container {
+                padding: 20px 15px;
+            }
+            
+            /* Form elements */
+            .form-group {
+                margin-bottom: 20px;
+            }
+            
+            .form-group label {
+                font-size: 13px;
+            }
+            
+            .form-group input,
+            .form-group select,
+            .form-group textarea {
+                padding: 10px 12px;
+                font-size: 14px;
+            }
+            
+            /* Buttons - touch friendly */
+            .submit-btn,
+            .add-btn,
+            .edit-btn,
+            .delete-btn {
+                padding: 12px 16px;
+                font-size: 14px;
+                min-height: 44px; /* Minimum touch target size */
+            }
+            
+            /* Tables responsive */
+            table {
+                font-size: 12px;
+            }
+            
+            table th,
+            table td {
+                padding: 8px 6px;
+                font-size: 11px;
+            }
+            
+            /* Login modal */
+            .login-box {
+                padding: 30px 20px;
+                width: 95%;
+                max-width: 400px;
+                margin: 20px;
+            }
+            
+            /* Password wrapper */
+            .password-toggle {
+                min-width: 44px;
+                min-height: 44px;
+            }
+        }
+
+        /* Mobile nhỏ (max-width: 480px) */
+        @media (max-width: 480px) {
+            /* Header */
+            .header {
+                padding: 12px 10px;
+            }
+            
+            .header h1 {
+                font-size: 16px;
+                margin-bottom: 6px;
+            }
+            
+            .header p {
+                font-size: 12px;
+            }
+            
+            /* Tabs - scrollable */
+            .tabs {
+                padding: 5px;
+                gap: 2px;
+                -webkit-overflow-scrolling: touch;
+            }
+            
+            .tab {
+                font-size: 9px;
+                padding: 6px 8px;
+                min-width: 70px;
+            }
+            
+            /* Form container */
+            .tab-content {
+                margin: 5px;
+                border-radius: 10px;
+            }
+            
+            .form-container {
+                padding: 15px 10px;
+            }
+            
+            /* Form elements */
+            .form-group {
+                margin-bottom: 15px;
+            }
+            
+            .form-group label {
+                font-size: 12px;
+                margin-bottom: 6px;
+            }
+            
+            .form-group input,
+            .form-group select,
+            .form-group textarea {
+                padding: 10px;
+                font-size: 14px; /* Prevent zoom on iOS */
+                border-radius: 6px;
+            }
+            
+            /* Buttons full width on mobile */
+            .submit-btn,
+            .add-btn {
+                width: 100%;
+                padding: 14px;
+                font-size: 15px;
+            }
+            
+            /* Tables - better mobile display */
+            table {
+                font-size: 11px;
+                display: block;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            
+            table th,
+            table td {
+                padding: 6px 4px;
+                font-size: 10px;
+                white-space: nowrap;
+            }
+            
+            /* Table wrapper */
+            div[style*="overflow-x: auto"] {
+                -webkit-overflow-scrolling: touch;
+                margin: 0 -10px;
+                padding: 0 10px;
+            }
+            
+            /* Login modal */
+            .login-box {
+                padding: 25px 15px;
+                width: 100%;
+                max-width: 100%;
+                margin: 10px;
+                border-radius: 15px;
+            }
+            
+            .login-box h2 {
+                font-size: 20px;
+            }
+            
+            /* User info buttons stack */
+            .user-info > div {
+                flex-direction: column;
+            }
+            
+            .change-password-btn,
+            .logout-btn {
+                width: 100%;
+                margin-left: 0;
+                margin-top: 5px;
+            }
+            
+            /* Export PDF button */
+            .export-pdf-btn {
+                width: 100%;
+                justify-content: center;
+                padding: 12px;
+            }
+            
+            /* Password request items */
+            .password-request-item {
+                flex-direction: column;
+                gap: 10px;
+                padding: 12px;
+            }
+            
+            .reset-btn {
+                width: 100%;
+            }
+            
+            /* Back to top button */
+            .back-to-top {
+                width: 40px;
+                height: 40px;
+                bottom: 15px;
+                right: 15px;
+            }
+            
+            .back-to-top-arrow {
+                font-size: 18px;
+            }
+        }
+
+        /* Landscape mobile (max-width: 768px and orientation: landscape) */
+        @media (max-width: 768px) and (orientation: landscape) {
+            .header {
+                padding: 10px 15px;
+            }
+            
+            .header h1 {
+                font-size: 18px;
+            }
+            
+            .tabs {
+                margin-top: 10px;
+            }
+            
+            .form-container {
+                padding: 15px 20px;
+            }
+        }
+
+        /* Touch device improvements */
+        @media (hover: none) and (pointer: coarse) {
+            /* Larger touch targets */
+            button,
+            .tab,
+            .submit-btn,
+            .add-btn,
+            .edit-btn,
+            .delete-btn,
+            .change-password-btn,
+            .logout-btn {
+                min-height: 44px;
+                min-width: 44px;
+            }
+            
+            /* Remove hover effects on touch devices */
+            button:hover,
+            .tab:hover {
+                transform: none;
+            }
+            
+            /* Better focus states for touch */
+            button:focus,
+            input:focus,
+            select:focus,
+            textarea:focus {
+                outline: 3px solid #667eea;
+                outline-offset: 2px;
+            }
+        }
+
+        /* Quy định chung Modal */
+        .quydinh-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .quydinh-modal.active {
+            display: flex;
+        }
+
+        .quydinh-box {
+            background: white;
+            border-radius: 20px;
+            max-width: 1200px;
+            width: 100%;
+            max-height: 90vh;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .quydinh-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .quydinh-header h2 {
+            margin: 0;
+            font-size: 24px;
+        }
+
+        .quydinh-close {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .quydinh-close:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: rotate(90deg);
+        }
+
+        .quydinh-tabs-container {
+            background: #f5f5f5;
+            padding: 15px 20px;
+            border-bottom: 2px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            overflow-x: auto;
+            flex-wrap: wrap;
+        }
+
+        .quydinh-tabs {
+            display: flex;
+            gap: 8px;
+            flex: 1;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .quydinh-tab {
+            padding: 10px 20px;
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            position: relative;
+            min-width: 120px;
+            text-align: center;
+        }
+
+        .quydinh-tab:hover {
+            background: #f0f0f0;
+            border-color: #667eea;
+        }
+
+        .quydinh-tab.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: #667eea;
+        }
+
+        .quydinh-tab-actions {
+            display: flex;
+            gap: 5px;
+            margin-left: auto;
+        }
+
+        .quydinh-tab-edit,
+        .quydinh-tab-delete {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 5px 8px;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+            opacity: 0.7;
+        }
+
+        .quydinh-tab-edit:hover {
+            background: #3498db;
+            color: white;
+            opacity: 1;
+        }
+
+        .quydinh-tab-delete:hover {
+            background: #e74c3c;
+            color: white;
+            opacity: 1;
+        }
+
+        .quydinh-add-tab-btn {
+            padding: 10px 20px;
+            background: #27ae60;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .quydinh-add-tab-btn:hover {
+            background: #229954;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+        }
+
+        .quydinh-content {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .quydinh-tab-content {
+            display: none;
+        }
+
+        .quydinh-tab-content.active {
+            display: block;
+        }
+
+        .quydinh-editor {
+            width: 100%;
+            min-height: 400px;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 15px;
+            font-family: inherit;
+            resize: vertical;
+            line-height: 1.6;
+        }
+
+        .quydinh-editor:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .quydinh-save-btn {
+            margin-top: 20px;
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .quydinh-save-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Modal for add/edit tab */
+        .tab-edit-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 3000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .tab-edit-modal.active {
+            display: flex;
+        }
+
+        .tab-edit-box {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .tab-edit-box h3 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .tab-edit-box input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 15px;
+            margin-bottom: 20px;
+        }
+
+        .tab-edit-box input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .tab-edit-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .tab-edit-actions button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .tab-edit-cancel {
+            background: #95a5a6;
+            color: white;
+        }
+
+        .tab-edit-cancel:hover {
+            background: #7f8c8d;
+        }
+
+        .tab-edit-save {
+            background: #27ae60;
+            color: white;
+        }
+
+        .tab-edit-save:hover {
+            background: #229954;
+        }
+
+        /* ========== BVTA LINK MODAL ========== */
+        .bvta-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .bvta-modal.active {
+            display: flex;
+        }
+
+        .bvta-box {
+            background: white;
+            border-radius: 20px;
+            max-width: 1000px;
+            width: 100%;
+            max-height: 90vh;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .bvta-header {
+            background: #0072bc;
+            color: white;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .bvta-header h2 {
+            margin: 0;
+            font-size: 24px;
+        }
+
+        .bvta-close {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .bvta-close:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: rotate(90deg);
+        }
+
+        .bvta-content {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            background: #f5f9ff;
+        }
+
+        .bvta-header-bar {
+            background: #0072bc;
+            padding: 18px 0 14px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+        }
+
+        .bvta-header-row {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .bvta-quick-link-btn {
+            display: inline-block;
+            padding: 12px 28px;
+            font-size: 1.1em;
+            border: none;
+            border-radius: 8px;
+            background: #fff;
+            color: #0072bc;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            text-decoration: none;
+        }
+
+        .bvta-quick-link-btn:hover {
+            background: #005f9e;
+            color: #fff;
+            transform: translateY(-2px) scale(1.04);
+        }
+
+        .bvta-container {
+            max-width: 600px;
+            margin: 0 auto 30px;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+            padding: 32px 24px;
+            text-align: center;
+        }
+
+        .bvta-container h1 {
+            color: #0072bc;
+            margin-bottom: 32px;
+            font-size: 1.5em;
+        }
+
+        #bvta-du-kien-sinh form {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            text-align: left;
+        }
+
+        #bvta-du-kien-sinh label {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 6px;
+            display: block;
+        }
+
+        #bvta-du-kien-sinh input[type="date"],
+        #bvta-du-kien-sinh select {
+            padding: 10px;
+            font-size: 1rem;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        #bvta-du-kien-sinh button {
+            padding: 12px;
+            font-size: 1rem;
+            background-color: #0072bc;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        #bvta-du-kien-sinh button:hover {
+            background-color: #005f9e;
+        }
+
+        #bvta-ketQuaDinhTuoiThai {
+            margin-top: 20px;
+        }
+
+        #bvta-ketQuaDinhTuoiThai p {
+            font-size: 1.05rem;
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 8px;
+            background: #f0f8ff;
+            border: 1px solid #cce5ff;
+        }
+
+        /* Responsive for BVTA modal */
+        @media (max-width: 768px) {
+            .bvta-box {
+                max-width: 100%;
+                max-height: 100vh;
+                border-radius: 0;
+            }
+
+            .bvta-header {
+                padding: 15px 20px;
+            }
+
+            .bvta-header h2 {
+                font-size: 18px;
+            }
+
+            .bvta-content {
+                padding: 20px 15px;
+            }
+
+            .bvta-header-row {
+                flex-direction: column;
+                gap: 10px;
+                align-items: stretch;
+            }
+
+            .bvta-quick-link-btn {
+                width: 100%;
+                padding: 10px;
+                font-size: 1em;
+            }
+
+            .bvta-container {
+                margin: 0 auto 20px;
+                padding: 24px 18px;
+            }
+
+            .bvta-container h1 {
+                font-size: 1.3em;
+            }
+
+            #bvta-du-kien-sinh input[type="date"],
+            #bvta-du-kien-sinh button,
+            #bvta-du-kien-sinh select {
+                font-size: 1rem;
+                padding: 12px;
+            }
+
+            #bvta-ketQuaDinhTuoiThai p {
+                font-size: 1rem;
+            }
+        }
+
+        /* Responsive for Quy định chung modal */
+        @media (max-width: 768px) {
+            .quydinh-box {
+                max-width: 100%;
+                max-height: 100vh;
+                border-radius: 0;
+            }
+
+            .quydinh-header {
+                padding: 15px 20px;
+            }
+
+            .quydinh-header h2 {
+                font-size: 18px;
+            }
+
+            .quydinh-tabs-container {
+                padding: 10px 15px;
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .quydinh-tabs {
+                width: 100%;
+                overflow-x: auto;
+            }
+
+            .quydinh-tab {
+                min-width: 100px;
+                font-size: 12px;
+                padding: 8px 15px;
+            }
+
+            .quydinh-add-tab-btn {
+                width: 100%;
+                padding: 10px;
+            }
+
+            .quydinh-content {
+                padding: 20px 15px;
+            }
+
+            .quydinh-editor {
+                min-height: 300px;
+                font-size: 14px;
+            }
+
+            .quydinh-save-btn {
+                width: 100%;
+                padding: 14px;
+            }
+        }
+
+        /* Print styles */
+        @media print {
+            .header,
+            .tabs,
+            .export-pdf-btn,
+            .back-to-top,
+            button:not(.print-keep) {
+                display: none !important;
+            }
+            
+            .tab-content {
+                margin: 0;
+                box-shadow: none;
+                border-radius: 0;
+            }
+            
+            .form-container {
+                padding: 20px;
+            }
+        }
+
+        /* High DPI displays */
+        @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+            .header h1 {
+                -webkit-font-smoothing: antialiased;
+                -moz-osx-font-smoothing: grayscale;
+            }
+        }
+
+        /* Viền đỏ cho lịch làm việc của cả một ngày */
+        #lichlamviecContainer .day-column {
+            position: relative;
+        }
+        
+        /* Viền đỏ bên trái cho tất cả các cộtngày */
+        #lichlamviecContainer .day-column {
+            border-left: 3px solid #ff0000 !important;
+        }
+        
+        /* Viền đỏ bên phải cho tất cả các cộtngày */
+        #lichlamviecContainer .day-column {
+            border-right: 3px solid #ff0000 !important;
+        }
+        
+        /* Viền đỏ phía trên cho header của cộtngày */
+        #lichlamviecContainer thead .day-column {
+            border-top: 3px solid #ff0000 !important;
+        }
+        
+        /* Viền đỏ phía dưới cho ô cuối cùng của mỗi cộtngày */
+        #lichlamviecContainer tbody tr:last-child .day-column {
+            border-bottom: 3px solid #ff0000 !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                <h1 style="margin: 0; flex: 1;">🏥 Quản Lý Lịch làm việc Bác Sĩ & Đăng Ký Nghỉ Phép</h1>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <button class="change-password-btn" onclick="openBVTA()" style="margin: 0;">🔗 BVTA_link</button>
+                    <button class="change-password-btn" onclick="openQuyDinhChung()" style="margin: 0;">📋 Quy định chung</button>
+                </div>
+            </div>
+            <div id="userInfo" class="user-info" style="display: none;">
+                <span id="userNameDisplay"></span>
+                <div>
+                    <button id="notifBtn" class="change-password-btn" onclick="openNotifications()" style="margin-right:8px;">🔔 <span id="notifCount" style="font-weight:700; margin-left:6px; color:#fff; background:#e74c3c; padding:2px 6px; border-radius:10px; font-size:12px; display:none;">0</span></button>
+                    <button class="change-password-btn" onclick="showChangePassword()">Đổi Mật Khẩu</button>
+                    <button class="change-password-btn" id="fullscreenBtn" onclick="toggleFullScreen()" style="margin-left:8px;">⛶ Toàn màn hình</button>
+                    <button class="logout-btn" onclick="logout()">Đăng Xuất</button>
+                </div>
+            </div>
+            <div class="tabs">
+                <a class="tab" data-tab="" href="/">Trang chủ</a>
+                <a class="tab admin-only" data-tab="lanhdao" href="pages/lanhdao.html">Lãnh đạo</a>
+                <a class="tab admin-only active" data-tab="cot1" href="pages/cot1.html">cột1</a>
+                <a class="tab admin-only" data-tab="cot2" href="pages/cot2.html">cột2</a>
+                <a class="tab admin-only" data-tab="cot3" href="pages/cot3.html">cột3</a>
+                <a class="tab admin-only" data-tab="partime" href="pages/partime.html">Partime</a>
+                <a class="tab admin-only" data-tab="khac" href="pages/khac.html">Bác Sĩ Khác</a>
+                <a class="tab admin-only" data-tab="quanlytaikhoan" href="pages/quanlytaikhoan.html">Quản Lý Tài Khoản</a>
+                <a class="tab" data-tab="quanlynghiphep" href="pages/quanlynghiphep.html">Quản Lý Nghỉ Phép</a>
+                <a class="tab" data-tab="lichnghiphep" href="pages/lichnghiphep.html">Lịch Nghỉ Phép</a>
+                <a class="tab" data-tab="ngaycong" href="pages/ngaycong.html">Ngày Công Làm Việc</a>
+                <a class="tab admin-only" data-tab="khamcaugiay" href="pages/khamcaugiay.html">Lịch khám Cầu Giấy</a>
+                <a class="tab admin-only" data-tab="khamcaugiay20h" href="pages/khamcaugiay20h.html">Lịch khám cầu giấy 20h</a>
+                <a class="tab admin-only" data-tab="khamlongbien" href="pages/khamlongbien.html">Lịch khám Long Biên</a>
+                <a class="tab admin-only" data-tab="tructrua" href="pages/tructrua.html">Lịch trực trưa</a>
+                <a class="tab admin-only" data-tab="tieuphau" href="pages/tieuphau.html">Lịch tiểu phẫu</a>
+                <a class="tab admin-only" data-tab="khamsom" href="pages/khamsom.html">Lịch khám sớm</a>
+                <a class="tab admin-only" data-tab="khamsanvip" href="pages/khamsanvip.html">Lịch khám sản VIP</a>
+                <a class="tab admin-only" data-tab="sieuamvip" href="pages/sieuamvip.html">Lịch siêu âm VIP</a>
+                <a class="tab admin-only" data-tab="phumo" href="pages/phumo.html">Lịch phụ mổ</a>
+                <a class="tab admin-only" data-tab="tang4" href="pages/tang4.html">Lịch tầng 4</a>
+                <a class="tab admin-only" data-tab="cvcot1" href="pages/cvcot1.html">cv cột1</a>
+                <a class="tab admin-only" data-tab="hoichancot1" href="pages/hoichancot1.html">Lịch hội chẩn cột1</a>
+                <a class="tab admin-only" data-tab="livetream" href="pages/livetream.html">Lịch livetream</a>
+                <a class="tab admin-only" data-tab="cvcot23" href="pages/cvcot23.html">cv cột2+3</a>
+                <a class="tab admin-only" data-tab="khamhotropk" href="pages/khamhotropk.html">Khám hỗ trợ PK</a>
+                <a class="tab admin-only" data-tab="tructhuongtru" href="pages/tructhuongtru.html">Lịch trực thường trú</a>
+                <a class="tab admin-only" data-tab="lamviechangngay" href="pages/lamviechangngay.html">Lịch khám chủ nhật</a>
+                <a class="tab admin-only" data-tab="lichlamviec" href="pages/lichlamviec.html">Lịch làm việc</a>
+                <a class="tab" data-tab="nghiphep" id="nghiphepTab" href="pages/nghiphep.html" style="display: none;">Đăng Ký Nghỉ Phép</a>
+            </div>
+        </div>
+
+        <!-- Quy định chung Modal -->
+        <div id="quydinhModal" class="quydinh-modal">
+            <div class="quydinh-box">
+                <div class="quydinh-header">
+                    <h2>📋 Quy định chung</h2>
+                    <button class="quydinh-close" onclick="closeQuyDinhChung()">✕</button>
+                </div>
+                <div class="quydinh-tabs-container">
+                    <div class="quydinh-tabs" id="quydinhTabsList">
+                        <!-- Tabs will be dynamically generated here -->
+                    </div>
+                    <button class="quydinh-add-tab-btn" onclick="showAddTabModal()">+ Thêm Tab</button>
+                </div>
+                <div class="quydinh-content" id="quydinhContent">
+                    <!-- Tab content will be dynamically generated here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Edit Modal -->
+        <div id="tabEditModal" class="tab-edit-modal">
+            <div class="tab-edit-box">
+                <h3 id="tabEditTitle">Thêm Tab Mới</h3>
+                <input type="text" id="tabEditInput" placeholder="Nhập tên tab">
+                <div class="tab-edit-actions">
+                    <button class="tab-edit-cancel" onclick="closeTabEditModal()">Hủy</button>
+                    <button class="tab-edit-save" onclick="saveTabEdit()">Lưu</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- BVTA Link Modal -->
+        <div id="bvtaModal" class="bvta-modal">
+            <div class="bvta-box">
+                <div class="bvta-header">
+                    <h2>🔗 Liên kết nhanh BVTA</h2>
+                    <button class="bvta-close" onclick="closeBVTA()">✕</button>
+                </div>
+                <div class="bvta-content">
+                    <!-- Header Links -->
+                    <div class="bvta-header-bar">
+                        <div class="bvta-header-row">
+                            <a class="bvta-quick-link-btn" href="https://otm.bvta.vn/" target="_blank">Lịch mổ</a>
+                            <a class="bvta-quick-link-btn" href="https://hrm-v2-new.bvta.vn/Account/Login/" target="_blank">HCNS</a>
+                            <a class="bvta-quick-link-btn" href="https://bs-noitru.bvta.vn/" target="_blank">Điều trị nội trú BS</a>
+                            <a class="bvta-quick-link-btn" href="https://dd-noitru.bvta.vn/" target="_blank">Điều trị nội trú DD</a>
+                            <a class="bvta-quick-link-btn" href="https://his.bvta.vn/" target="_blank">Văn bản BVTA</a>
+                            <a class="bvta-quick-link-btn" href="https://tamanhhospital.vn/" target="_blank">Website BVTA</a>
+                            <a class="bvta-quick-link-btn" href="https://www.facebook.com/benhvientamanh/?locale=vi_VN" target="_blank">FB</a>
+                        </div>
+                        <div class="bvta-header-row">
+                            <a class="bvta-quick-link-btn" href="https://cas2.bvta.vn/LichBacSi/index/" target="_blank">Lịch bác sĩ CAS2</a>
+                            <a class="bvta-quick-link-btn" href="/nurse-schedule" target="_blank">Lịch điều dưỡng</a>
+                            <a class="bvta-quick-link-btn" href="#bvta-du-kien-sinh" onclick="document.getElementById('bvta-du-kien-sinh').scrollIntoView({behavior: 'smooth'}); return false;">Dự kiến sinh</a>
+                        </div>
+                    </div>
+
+                    <!-- WiFi Info -->
+                    <div class="bvta-container">
+                        <h1>Kết nối wifi "TAH - Noi Bo" để truy cập Website</h1>
+                    </div>
+
+                    <!-- Form Dự Kiến Sinh -->
+                    <div class="bvta-container" id="bvta-du-kien-sinh">
+                        <h1>Dự Kiến Sinh</h1>
+                        <form id="bvtaDuKienSinhForm">
+                            <div>
+                                <label for="bvta-ngayChuyenPhoi">Ngày chuyển phôi:</label>
+                                <input type="date" id="bvta-ngayChuyenPhoi">
+                            </div>
+                            <div>
+                                <label for="bvta-loaiPhoi">Loại phôi:</label>
+                                <select id="bvta-loaiPhoi">
+                                    <option value="3">Phôi ngày 3</option>
+                                    <option value="5">Phôi ngày 5</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="bvta-ngayBomIUI">Ngày bơm IUI:</label>
+                                <input type="date" id="bvta-ngayBomIUI">
+                            </div>
+                            <div>
+                                <label for="bvta-ngayDauKyKinh">Ngày đầu kỳ kinh cuối:</label>
+                                <input type="date" id="bvta-ngayDauKyKinh">
+                            </div>
+                            <hr style="margin:20px 0;">
+                            <div>
+                                <label for="bvta-ngayDuSinh">Ngày dự sinh (EDD):</label>
+                                <input type="date" id="bvta-ngayDuSinh">
+                            </div>
+                            <button type="submit">Tính Dự Kiến Sinh / Tuổi Thai</button>
+                        </form>
+                        <div id="bvta-ketQuaDinhTuoiThai"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Login Modal -->
+        <div id="loginModal" class="login-modal active">
+            <div class="login-box">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <h2 style="margin: 0;">🔐 Đăng Nhập</h2>
+                    <button type="button" class="login-modal-close" onclick="closeLoginModal()" aria-label="Đóng" title="Đóng">✕</button>
+                </div>
+                <div id="loginErrorMessage" class="error-message" style="display: none;"></div>
+                <form id="loginForm" onsubmit="handleLogin(event)">
+                    <div class="form-group">
+                        <label for="loginUsername">Tên Đăng Nhập <span class="required">*</span></label>
+                        <input type="text" id="loginUsername" required placeholder="Nhập họ và tên">
+                    </div>
+                    <div class="form-group">
+                        <label for="loginPassword">Mật Khẩu <span class="required">*</span></label>
+                        <div class="password-wrapper">
+                            <input type="password" id="loginPassword" required placeholder="Nhập mật khẩu">
+                            <button type="button" class="password-toggle" onclick="togglePassword('loginPassword', this)" aria-label="Hiện mật khẩu">👁️</button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <button type="button" onclick="requestPasswordReset()" style="background: none; border: none; color: #667eea; cursor: pointer; text-decoration: underline; padding: 0; font-size: 14px;">
+                            Quên mật khẩu? Yêu cầu admin cấp lại
+                        </button>
+                    </div>
+                    <div class="form-group" style="margin-top: 8px;">
+                        <button type="button" onclick="openAdminResetModal()" style="background: none; border: none; color: #95a5a6; cursor: pointer; text-decoration: underline; padding: 0; font-size: 13px;">
+                            Admin quên mật khẩu? Đặt lại qua email
+                        </button>
+                    </div>
+                    <button type="submit" class="submit-btn">Đăng Nhập</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Admin reset password via email -->
+        <div id="adminResetModal" class="login-modal">
+            <div class="login-box" style="max-width: 420px;">
+                <h2>🔐 Đặt lại mật khẩu Admin</h2>
+                <p style="font-size: 14px; color: #666; margin-bottom: 15px;">Nhập email admin đã đăng ký. Mật khẩu tạm sẽ được gửi qua email (hoặc hiển thị sau khi gửi).</p>
+                <p style="font-size: 13px; color: #856404; background: #fff3cd; padding: 8px 10px; border-radius: 6px; margin-bottom: 15px;">⚠️ Sau khi đặt lại, <strong>mật khẩu cũ không thể dùng lại</strong> — chỉ mật khẩu tạm mới hợp lệ. Chỉ thực hiện nếu bạn là admin.</p>
+                <div id="adminResetErrorMessage" class="error-message" style="display: none;"></div>
+                <div id="adminResetSuccessMessage" class="success-message" style="display: none;"></div>
+                <form id="adminResetForm" onsubmit="handleAdminResetSubmit(event)">
+                    <div class="form-group">
+                        <label for="adminResetEmail">Email admin <span class="required">*</span></label>
+                        <input type="email" id="adminResetEmail" required placeholder="hang....@gmail.com" autocomplete="email">
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button type="button" class="submit-btn" onclick="closeAdminResetModal()" style="background: #95a5a6; flex: 1;">Hủy</button>
+                        <button type="submit" id="adminResetSubmitBtn" class="submit-btn" style="flex: 1;">Gửi đặt lại mật khẩu</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Change Password Modal -->
+        <div id="changePasswordModal" class="login-modal">
+            <div class="login-box">
+                <h2>🔑 Đổi Mật Khẩu</h2>
+                <div id="changePasswordErrorMessage" class="error-message" style="display: none;"></div>
+                <div id="changePasswordSuccessMessage" class="success-message" style="display: none;"></div>
+                <form id="changePasswordForm" onsubmit="handleChangePassword(event)">
+                    <div class="form-group">
+                        <label for="currentPassword">Mật Khẩu Hiện Tại <span class="required">*</span></label>
+                        <div class="password-wrapper">
+                            <input type="password" id="currentPassword" required>
+                            <button type="button" class="password-toggle" onclick="togglePassword('currentPassword', this)" aria-label="Hiện mật khẩu">👁️</button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="newPassword">Mật Khẩu Mới <span class="required">*</span></label>
+                        <div class="password-wrapper">
+                            <input type="password" id="newPassword" required minlength="4">
+                            <button type="button" class="password-toggle" onclick="togglePassword('newPassword', this)" aria-label="Hiện mật khẩu">👁️</button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="confirmPassword">Xác Nhận Mật Khẩu Mới <span class="required">*</span></label>
+                        <div class="password-wrapper">
+                            <input type="password" id="confirmPassword" required minlength="4">
+                            <button type="button" class="password-toggle" onclick="togglePassword('confirmPassword', this)" aria-label="Hiện mật khẩu">👁️</button>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button type="button" class="submit-btn" onclick="closeChangePassword()" style="background: #95a5a6; flex: 1;">Hủy</button>
+                        <button type="submit" class="submit-btn" style="flex: 1;">Đổi Mật Khẩu</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Notifications Modal -->
+        <div id="notifModal" class="login-modal">
+            <div class="login-box">
+                <h2>🔔 Thông báo</h2>
+                <div id="notifList" class="notif-list" style="margin-top:10px;"></div>
+                <div style="display:flex; gap:10px; margin-top:10px;">
+                    <button class="submit-btn" onclick="closeNotifications()" style="flex:1; background:#95a5a6">Đóng</button>
+                    <button class="add-btn" onclick="clearNotifications()" style="flex:1; background:#e74c3c">Xóa tất cả</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Edit Doctor Modal -->
+        <div id="editDoctorModal" class="login-modal">
+            <div class="login-box">
+                <h2>✏️ Sửa Thông Tin Bác Sĩ</h2>
+                <div id="editDoctorError" class="error-message" style="display: none;"></div>
+                <div id="editDoctorSuccess" class="success-message" style="display: none;"></div>
+                <form id="editDoctorForm" onsubmit="saveEditDoctor(event)">
+                    <input type="hidden" id="editDoctorType">
+                    <input type="hidden" id="editDoctorId">
+                    <div class="form-group">
+                        <label for="editDoctorName">Họ và Tên <span class="required">*</span></label>
+                        <input type="text" id="editDoctorName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editDoctorDisplayName">Tên Hiển Thị <span class="required">*</span></label>
+                        <input type="text" id="editDoctorDisplayName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editDoctorPhone">Số Điện Thoại</label>
+                        <input type="tel" id="editDoctorPhone">
+                    </div>
+                    <div style="display:flex; gap:10px;">
+                        <button type="button" class="submit-btn" onclick="closeEditDoctor()" style="background:#95a5a6; flex:1;">Hủy</button>
+                        <button type="submit" class="submit-btn" style="flex:1;">Lưu</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Permissions Modal -->
+        <div id="permissionsModal" class="login-modal">
+            <div class="login-box" style="max-width: 800px; max-height: 90vh; overflow-y: auto;">
+                <h2>🔐 Phân Quyền Chỉnh Sửa</h2>
+                <p style="margin-bottom: 15px; color: #666; font-size: 14px;">Chọn quyền chỉnh sửa cho từng bác sĩ ở từng tab/nút:</p>
+                <div id="permissionsContent" style="margin-bottom: 20px;">
+                    <!-- Content will be added here -->
+                </div>
+                <div style="display:flex; gap:10px;">
+                    <button type="button" class="submit-btn" onclick="closePermissionsModal()" style="background:#95a5a6; flex:1;">Đóng</button>
+                    <button type="button" class="submit-btn" onclick="saveAllPermissions()" style="flex:1; background:#27ae60;">💾 Lưu Tất Cả</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Lãnh đạo -->
+        <div id="lanhdao" class="tab-content admin-only">
+            <div class="form-container">
+                <div class="add-doctor-form">
+                    <h3>➕ Thêm Lãnh Đạo Khoa</h3>
+                    <form id="addDoctorLanhdao" onsubmit="addDoctor(event, 'lanhdao')">
+                        <div class="form-row-inline">
+                            <div class="form-group">
+                                <label for="doctorNameLanhdao">Họ và Tên <span class="required">*</span></label>
+                                <input type="text" id="doctorNameLanhdao" required placeholder="Nhập họ và tên">
+                            </div>
+                            <div class="form-group">
+                                <label for="doctorDisplayNameLanhdao">Tên Hiển Thị <span class="required">*</span></label>
+                                <input type="text" id="doctorDisplayNameLanhdao" required placeholder="Tên ngắn gọn để hiển thị">
+                            </div>
+                            <div class="form-group">
+                                <label for="doctorPhoneLanhdao">Số Điện Thoại</label>
+                                <input type="tel" id="doctorPhoneLanhdao" placeholder="Nhập số điện thoại (tùy chọn)">
+                            </div>
+                            <div class="form-group">
+                                <button type="submit" class="add-btn">➕ Thêm</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="doctor-list">
+                    <h2>👥 Danh Sách Lãnh Đạo Khoa</h2>
+                    <div id="doctorListLanhdao">
+                        <div class="empty-state">Chưa có lãnh đạo nào</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab cột1 -->
+        <div id="cot1" class="tab-content active">
+            <div class="form-container">
+                <div class="add-doctor-form">
+                    <h3>➕ Thêm Bác Sĩ cột1</h3>
+                    <form id="addDoctorcot1" onsubmit="addDoctor(event, 'cot1')">
+                        <div class="form-row-inline">
+                            <div class="form-group">
+                                <label for="doctorNamecot1">Họ và Tên <span class="required">*</span></label>
+                                <input type="text" id="doctorNamecot1" required placeholder="Nhập họ và tên">
+                            </div>
+                            <div class="form-group">
+                                <label for="doctorDisplayNamecot1">Tên Hiển Thị <span class="required">*</span></label>
+                                <input type="text" id="doctorDisplayNamecot1" required placeholder="Tên ngắn gọn để hiển thị">
+                            </div>
+                            <div class="form-group">
+                                <label for="doctorPhonecot1">Số Điện Thoại</label>
+                                <input type="tel" id="doctorPhonecot1" placeholder="Nhập số điện thoại (tùy chọn)">
+                            </div>
+                            <div class="form-group">
+                                <button type="submit" class="add-btn">➕ Thêm</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="doctor-list">
+                    <h2>👥 Danh Sách Bác Sĩ cột1</h2>
+                    <div id="doctorListcot1">
+                        <div class="empty-state">Chưa có bác sĩ nào</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab cột2 -->
+        <div id="cot2" class="tab-content">
+            <div class="form-container">
+                <div class="add-doctor-form">
+                    <h3>➕ Thêm Bác Sĩ cột2</h3>
+                    <form id="addDoctorcot2" onsubmit="addDoctor(event, 'cot2')">
+                        <div class="form-row-inline">
+                            <div class="form-group">
+                                <label for="doctorNamecot2">Họ và Tên <span class="required">*</span></label>
+                                <input type="text" id="doctorNamecot2" required placeholder="Nhập họ và tên">
+                            </div>
+                            <div class="form-group">
+                                <label for="doctorDisplayNamecot2">Tên Hiển Thị <span class="required">*</span></label>
+                                <input type="text" id="doctorDisplayNamecot2" required placeholder="Tên ngắn gọn để hiển thị">
+                            </div>
+                            <div class="form-group">
+                                <label for="doctorPhonecot2">Số Điện Thoại</label>
+                                <input type="tel" id="doctorPhonecot2" placeholder="Nhập số điện thoại (tùy chọn)">
+                            </div>
+                            <div class="form-group">
+                                <button type="submit" class="add-btn">➕ Thêm</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="doctor-list">
+                    <h2>👥 Danh Sách Bác Sĩ cột2</h2>
+                    <div id="doctorListcot2">
+                        <div class="empty-state">Chưa có bác sĩ nào</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab cột3 -->
+        <div id="cot3" class="tab-content">
+            <div class="form-container">
+                <div class="add-doctor-form">
+                    <h3>➕ Thêm Bác Sĩ cột3</h3>
+                    <form id="addDoctorcot3" onsubmit="addDoctor(event, 'cot3')">
+                        <div class="form-row-inline">
+                            <div class="form-group">
+                                <label for="doctorNamecot3">Họ và Tên <span class="required">*</span></label>
+                                <input type="text" id="doctorNamecot3" required placeholder="Nhập họ và tên">
+                            </div>
+                            <div class="form-group">
+                                <label for="doctorDisplayNamecot3">Tên Hiển Thị <span class="required">*</span></label>
+                                <input type="text" id="doctorDisplayNamecot3" required placeholder="Tên ngắn gọn để hiển thị">
+                            </div>
+                            <div class="form-group">
+                                <label for="doctorPhonecot3">Số Điện Thoại</label>
+                                <input type="tel" id="doctorPhonecot3" placeholder="Nhập số điện thoại (tùy chọn)">
+                            </div>
+                            <div class="form-group">
+                                <button type="submit" class="add-btn">➕ Thêm</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="doctor-list">
+                    <h2>👥 Danh Sách Bác Sĩ cột3</h2>
+                    <div id="doctorListcot3">
+                        <div class="empty-state">Chưa có bác sĩ nào</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Partime -->
+        <div id="partime" class="tab-content">
+            <div class="form-container">
+                <div class="add-doctor-form">
+                    <h3>➕ Thêm Bác Sĩ Partime</h3>
+                    <form id="addDoctorPartime" onsubmit="addDoctor(event, 'partime')">
+                        <div class="form-row-inline">
+                            <div class="form-group">
+                                <label for="doctorNamePartime">Họ và Tên <span class="required">*</span></label>
+                                <input type="text" id="doctorNamePartime" required placeholder="Nhập họ và tên">
+                            </div>
+                            <div class="form-group">
+                                <label for="doctorDisplayNamePartime">Tên Hiển Thị <span class="required">*</span></label>
+                                <input type="text" id="doctorDisplayNamePartime" required placeholder="Tên ngắn gọn để hiển thị">
+                            </div>
+                            <div class="form-group">
+                                <label for="doctorPhonePartime">Số Điện Thoại</label>
+                                <input type="tel" id="doctorPhonePartime" placeholder="Nhập số điện thoại (tùy chọn)">
+                            </div>
+                            <div class="form-group">
+                                <button type="submit" class="add-btn">➕ Thêm</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="doctor-list">
+                    <h2>👥 Danh Sách Bác Sĩ Partime</h2>
+                    <div id="doctorListPartime">
+                        <div class="empty-state">Chưa có bác sĩ nào</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Bác Sĩ Khác -->
+        <div id="khac" class="tab-content">
+            <div class="form-container">
+                <div class="add-doctor-form">
+                    <h3>➕ Thêm Bác Sĩ Khác</h3>
+                    <form id="addDoctorKhac" onsubmit="addDoctor(event, 'khac')">
+                        <div class="form-row-inline">
+                            <div class="form-group">
+                                <label for="doctorNameKhac">Họ và Tên <span class="required">*</span></label>
+                                <input type="text" id="doctorNameKhac" required placeholder="Nhập họ và tên">
+                            </div>
+                            <div class="form-group">
+                                <label for="doctorDisplayNameKhac">Tên Hiển Thị <span class="required">*</span></label>
+                                <input type="text" id="doctorDisplayNameKhac" required placeholder="Tên ngắn gọn để hiển thị">
+                            </div>
+                            <div class="form-group">
+                                <label for="doctorPhoneKhac">Số Điện Thoại</label>
+                                <input type="tel" id="doctorPhoneKhac" placeholder="Nhập số điện thoại (tùy chọn)">
+                            </div>
+                            <div class="form-group">
+                                <button type="submit" class="add-btn">➕ Thêm</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="doctor-list">
+                    <h2>👥 Danh Sách Bác Sĩ Khác</h2>
+                    <div id="doctorListKhac">
+                        <div class="empty-state">Chưa có bác sĩ nào</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Quản Lý Tài Khoản (Admin Only) -->
+        <div id="quanlytaikhoan" class="tab-content admin-only">
+            <div class="form-container">
+                <h2>👤 Quản Lý Tài Khoản</h2>
+                
+                <div class="submissions-list">
+                    <h3>📋 Danh Sách Tài Khoản Bác Sĩ</h3>
+                    <div id="accountList">
+                        <div class="empty-state">Chưa có tài khoản nào</div>
+                    </div>
+                </div>
+
+                <div class="submissions-list">
+                    <h3>🔔 Yêu Cầu Reset Mật Khẩu</h3>
+                    <div id="passwordRequestList">
+                        <div class="empty-state">Chưa có yêu cầu nào</div>
+                    </div>
+                </div>
+
+                <!-- Phân Quyền (Admin Only) -->
+                <div class="submissions-list admin-backup-only">
+                    <h3>🔐 Phân Quyền Chỉnh Sửa</h3>
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #667eea;">
+                        <p style="margin-bottom: 15px; color: #333;">Quản lý quyền chỉnh sửa dữ liệu cho từng bác sĩ ở từng tab/nút cụ thể.</p>
+                        <button class="add-btn" onclick="openPermissionsModal()" style="background: #9b59b6;">🔐 Quản Lý Phân Quyền</button>
+                    </div>
+                </div>
+
+                <!-- Backup & Restore Data (Admin Only) -->
+                <div class="submissions-list admin-backup-only">
+                    <h3>💾 Sao Lưu & Khôi Phục Dữ Liệu</h3>
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #667eea;">
+                        <p style="margin-bottom: 15px; color: #333;">Xuất tất cả dữ liệu để sao lưu hoặc khôi phục dữ liệu từ file đã xuất.</p>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <button class="add-btn" onclick="exportAllData()" style="background: #27ae60;">📥 Xuất Dữ Liệu (Export)</button>
+                            <button class="add-btn" onclick="syncToBackend && syncToBackend()" style="background: #9b59b6;">☁️ Đồng bộ lên server</button>
+                            <label class="add-btn" style="background: #3498db; cursor: pointer; margin: 0;">
+                                📤 Nhập Dữ Liệu (Import)
+                                <input type="file" accept=".json" onchange="importAllData(event)" style="display: none;">
+                            </label>
+                            <button class="add-btn" onclick="clearAllData()" style="background: #e74c3c;">⚠️ Xóa Tất Cả Dữ Liệu</button>
+                        </div>
+                        <p style="margin-top: 15px; font-size: 12px; color: #666;">
+                            <strong>Lưu ý:</strong> Dữ liệu được tự động lưu vào trình duyệt. Xuất dữ liệu để sao lưu an toàn. 
+                            Nhập dữ liệu sẽ thay thế toàn bộ dữ liệu hiện tại.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Debug panel (admin only) -->
+                <div class="submissions-list admin-debug-only">
+                    <h3>🛠️ Debug: LocalStorage</h3>
+                    <div id="debugPanel" class="debug-panel">
+                        <div class="debug-controls">
+                            <button class="add-btn" onclick="renderDebugInfo()">🔄 Làm mới</button>
+                            <button class="add-btn" onclick="copyDebugInfo()">📋 Sao chép</button>
+                            <button class="add-btn" onclick="clearDebugOutput()">🧹 Xóa</button>
+                        </div>
+                        <pre id="debugOutput" class="debug-pre">(Nhấn "Làm mới" để tải dữ liệu)</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Đăng Ký Nghỉ Phép -->
+            <div id="nghiphep" class="tab-content">
+            <div class="form-container">
+                <h2>📝 Đăng Ký Nghỉ Phép</h2>
+                <p>Xem lịch nghỉ phép và đăng ký nghỉ phép. Click vào ngày để xem chi tiết hoặc đăng ký.</p>
+
+                <div id="nghiphepCalendarContainer" style="display:flex; gap:20px; flex-wrap:wrap; max-width: 100%;"></div>
+
+                <!-- Request modal -->
+                <div id="requestModal" class="login-modal">
+                    <div class="login-box">
+                        <h2>📝 Yêu Cầu Nghỉ Phép</h2>
+                        <div id="requestError" class="error-message" style="display:none;"></div>
+                        <form id="requestForm" onsubmit="submitLeaveRequest(event)">
+                            <div class="form-group">
+                                <label>Ngày</label>
+                                <div id="requestDateDisplay" style="font-weight:700"></div>
+                            </div>
+                            <div class="form-group">
+                                <label>Người gửi</label>
+                                <div id="requestDoctorName" style="font-weight:700"></div>
+                            </div>
+                            <div class="form-group">
+                                <label>Phân loại</label>
+                                <div style="display:flex; gap:10px;">
+                                    <label><input type="radio" name="period" value="morning" required> Nghỉ sáng</label>
+                                    <label><input type="radio" name="period" value="afternoon"> Nghỉ chiều</label>
+                                    <label><input type="radio" name="period" value="full"> Nghỉ cả ngày</label>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="requestNotes">Ghi chú (tùy chọn)</label>
+                                <textarea id="requestNotes"></textarea>
+                            </div>
+                            <div style="display:flex; gap:10px;">
+                                <button type="button" class="submit-btn" onclick="closeRequestModal()" style="background:#95a5a6; flex:1;">Hủy</button>
+                                <button type="submit" class="submit-btn" style="flex:1;">Gửi yêu cầu</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Quản lý nghỉ phép (Admin và Bác sĩ đều xem được) -->
+        <div id="quanlynghiphep" class="tab-content">
+            <div class="form-container">
+                <h2>✅ Quản Lý Nghỉ Phép</h2>
+                <p id="quanlynghiphepDescription">Xem lịch nghỉ phép và đăng ký nghỉ phép. Click vào ngày để xem chi tiết hoặc đăng ký.</p>
+                <div id="adminCalendarContainer" style="display:flex; gap:20px; flex-wrap:wrap; max-width: 100%;"></div>
+
+                <!-- Select doctors modal -->
+                <div id="selectDoctorsModal" class="login-modal">
+                    <div class="login-box" style="max-width: 500px; max-height: 80vh; overflow-y: auto;">
+                        <div class="login-header">
+                            <h2 id="selectDoctorsModalTitle">Chọn bác sĩ nghỉ phép</h2>
+                            <button class="login-close" onclick="closeSelectDoctorsModal()">✕</button>
+                        </div>
+                        <div id="selectDoctorsList" style="padding: 20px;">
+                            <!-- Doctor checkboxes will be added here -->
+                        </div>
+                        <div style="padding: 20px; border-top: 1px solid #eee; display: flex; gap: 10px; justify-content: flex-end;">
+                            <button class="delete-btn" onclick="closeSelectDoctorsModal()">Hủy</button>
+                            <button class="submit-btn" onclick="saveSelectedDoctors()">Lưu</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Max count per weekday modal -->
+                <div id="maxCountModal" class="login-modal">
+                    <div class="login-box" style="max-width: 95%; width: 1200px; max-height: 90vh; overflow-y: auto;">
+                        <div class="login-header">
+                            <h2>Số lượng BS nghỉ</h2>
+                            <button class="login-close" onclick="closeMaxCountModal()">✕</button>
+                        </div>
+                        <div style="padding: 20px;">
+                            <p style="margin-bottom: 20px; color: #666; font-size: 14px;">
+                                Thiết lập số lượng bác sĩ được nghỉ phép cho từng cộttheo ngày trong tuần (Thứ 2 - Thứ 7):
+                            </p>
+                            <div id="maxCountTable" style="display: grid; gap: 15px;">
+                                <!-- Table will be generated here -->
+                            </div>
+                        </div>
+                        <div style="padding: 20px; border-top: 1px solid #eee; display: flex; gap: 10px; justify-content: flex-end;">
+                            <button class="delete-btn" onclick="closeMaxCountModal()">Hủy</button>
+                            <button class="submit-btn" onclick="saveMaxCountSettings()">💾 Lưu</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Leave Request List Modal -->
+                <div id="leaveRequestListModal" class="login-modal">
+                    <div class="login-box" style="max-width: 98%; width: 98%; max-height: 90vh; overflow-y: auto;">
+                        <div class="login-header">
+                            <h2>📋 Danh sách duyệt nghỉ phép</h2>
+                            <button class="login-close" onclick="closeLeaveRequestListModal()">✕</button>
+                        </div>
+                        <div style="padding: 20px;">
+                            <p style="margin-bottom: 20px; color: #666; font-size: 14px;">
+                                Danh sách tất cả yêu cầu nghỉ phép trong khoảng thời gian hiển thị trên lịch, được sắp xếp theo ngày và trạng thái.
+                            </p>
+                            <div id="leaveRequestListContent" style="margin-bottom: 20px;">
+                                <!-- Danh sách sẽ được hiển thị ở đây -->
+                            </div>
+                        </div>
+                        <div style="padding: 20px; border-top: 1px solid #eee; display: flex; gap: 10px; justify-content: flex-end;">
+                            <button class="delete-btn" onclick="closeLeaveRequestListModal()">Đóng</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Holiday Calendar Modal -->
+                <div id="holidayCalendarModal" class="login-modal">
+                    <div class="login-box" style="max-width: 98%; width: 98%; max-height: 90vh; overflow-y: auto;">
+                        <div class="login-header">
+                            <h2>🏮 Lịch nghỉ lễ</h2>
+                            <button class="login-close" onclick="closeHolidayCalendarModal()">✕</button>
+                        </div>
+                        <div style="padding: 20px;">
+                            <p style="margin-bottom: 20px; color: #666; font-size: 14px;">
+                                Các ngày nghỉ lễ theo quy định nhà nước Việt Nam được đánh dấu. Click vào ô để chọn/bỏ chọn đánh dấu nghỉ lễ – ô được chọn có nền đỏ.
+                            </p>
+                            <div id="holidayCalendarContainer" style="display:flex; gap:20px; flex-wrap:wrap; max-width: 100%;"></div>
+                        </div>
+                        <div style="padding: 20px; border-top: 1px solid #eee; display: flex; gap: 10px; justify-content: flex-end;">
+                            <button class="delete-btn" onclick="closeHolidayCalendarModal()">Đóng</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Fixed Schedule Modal -->
+                <div id="fixedScheduleModal" class="login-modal">
+                    <div class="login-box" style="max-width: 98%; width: 98%; max-height: 90vh; overflow-y: auto;">
+                        <div class="login-header">
+                            <h2>📅 Lịch nghỉ cố định</h2>
+                            <button class="login-close" onclick="closeFixedScheduleModal()">✕</button>
+                        </div>
+                        <div style="padding: 20px;">
+                            <p style="margin-bottom: 20px; color: #666; font-size: 14px;">
+                                Thiết lập danh sách bác sĩ nghỉ phép cố định theo từng cột và từng ngày trong tuần (Thứ 2 - Thứ 7). Mặc định nghỉ cả ngày. Danh sách này sẽ tự động được thêm vào lịch nghỉ của từng ngày, nhưng có thể chỉnh sửa.
+                            </p>
+                            <div id="fixedScheduleTable" style="display: flex; flex-direction: row; gap: 15px; overflow-x: auto; width: 100%; min-width: 100%;">
+                                <!-- Tables will be generated here -->
+                            </div>
+                        </div>
+                        <div style="padding: 20px; border-top: 1px solid #eee; display: flex; gap: 10px; justify-content: flex-end;">
+                            <button class="delete-btn" onclick="closeFixedScheduleModal()">Hủy</button>
+                            <button class="submit-btn" onclick="saveFixedScheduleSettings()">💾 Lưu</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PDF Preview Modal -->
+                <div id="pdfPreviewModal" class="login-modal">
+                    <div class="login-box" style="max-width: 90%; max-height: 90vh; width: 800px;">
+                        <div class="login-header">
+                            <h2 id="pdfPreviewTitle">Xem trước PDF</h2>
+                            <button class="login-close" onclick="closePDFPreview()">✕</button>
+                        </div>
+                        <div id="pdfPreviewContent" style="padding: 20px; overflow-y: auto; max-height: calc(90vh - 120px); background: #f5f5f5;">
+                            <!-- Preview content will be added here -->
+                        </div>
+                        <div style="padding: 20px; border-top: 1px solid #eee; display: flex; gap: 10px; justify-content: flex-end;">
+                            <button class="delete-btn" onclick="closePDFPreview()">Hủy</button>
+                            <button class="submit-btn" onclick="savePDFFromPreview()">💾 Lưu PDF</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Admin review modal -->
+                <div id="adminReviewModal" class="login-modal">
+                    <div class="login-box">
+                        <h2>🔎 Duyệt Nghỉ Phép</h2>
+                        <div id="adminReviewList"></div>
+                        <div id="adminReviewActions" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee;">
+                            <!-- Nút chỉnh sửa lịch nghỉ phép sẽ được thêm ở đây -->
+                        </div>
+                        <div style="display:flex; gap:10px; margin-top:10px;">
+                            <button type="button" class="submit-btn" onclick="closeAdminReview()" style="background:#95a5a6; flex:1;">Đóng</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal chỉnh sửa lịch nghỉ phép cho ngày cụ thể -->
+                <div id="editDayLeaveModal" class="login-modal">
+                    <div class="login-box" style="max-width: 90%; width: 900px; max-height: 90vh; overflow-y: auto;">
+                        <div class="login-header">
+                            <h2>✏️ Chỉnh Sửa Lịch Nghỉ Phép</h2>
+                            <button class="login-close" onclick="closeEditDayLeaveModal()">✕</button>
+                        </div>
+                        <div style="padding: 20px;">
+                            <div id="editDayLeaveDateDisplay" style="font-size: 18px; font-weight: bold; margin-bottom: 20px; color: #333;"></div>
+                            <p style="margin-bottom: 20px; color: #666; font-size: 14px;">
+                                Chọn bác sĩ nghỉ phép và ca nghỉ cho từng cột. Bạn có thể hủy lịch nghỉ bằng cách bỏ chọn bác sĩ.
+                            </p>
+                            <div id="editDayLeaveContent">
+                                <!-- Nội dung sẽ được tạo động -->
+                            </div>
+                        </div>
+                        <div style="padding: 20px; border-top: 1px solid #eee; display: flex; gap: 10px; justify-content: flex-end;">
+                            <button class="delete-btn" onclick="closeEditDayLeaveModal()">Hủy</button>
+                            <button class="submit-btn" onclick="saveDayLeaveSchedule()">💾 Lưu</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Lịch nghỉ phép (Xem lịch nghỉ phép cá nhân) -->
+        <div id="lichnghiphep" class="tab-content">
+            <div class="form-container">
+                <h2>📅 Lịch Nghỉ Phép</h2>
+                <p id="lichnghiphepDescription">Xem lịch nghỉ phép theo từng ngày. Admin có thể chọn bác sĩ để xem lịch của họ.</p>
+                
+                <!-- Dropdown chọn bác sĩ (chỉ hiển thị cho admin) -->
+                <div id="lichnghiphepDoctorSelector" style="margin-bottom: 20px; display: none;">
+                    <label for="selectedDoctorForSchedule" style="font-weight: 600; margin-right: 10px;">Chọn bác sĩ:</label>
+                    <select id="selectedDoctorForSchedule" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px; min-width: 200px;">
+                        <option value="">-- Chọn bác sĩ --</option>
+                    </select>
+                </div>
+                
+                <div id="lichnghiphepCalendarContainer" style="display:flex; gap:20px; flex-wrap:wrap; max-width: 100%;"></div>
+            </div>
+        </div>
+
+        <!-- Tab Ngày Công Làm Việc -->
+        <div id="ngaycong" class="tab-content">
+            <div class="form-container">
+                <h2>📊 Ngày Công Làm Việc</h2>
+                <p id="ngaycongDescription">Xem ngày công làm việc theo từng ngày. Admin có thể chọn bác sĩ để xem ngày công của họ.</p>
+                
+                <!-- Dropdown chọn bác sĩ (chỉ hiển thị cho admin) -->
+                <div id="ngaycongDoctorSelector" style="margin-bottom: 20px; display: none;">
+                    <label for="selectedDoctorForWorkDays" style="font-weight: 600; margin-right: 10px;">Chọn bác sĩ:</label>
+                    <select id="selectedDoctorForWorkDays" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px; min-width: 200px;">
+                        <option value="">-- Chọn bác sĩ --</option>
+                    </select>
+                </div>
+                
+                <!-- Bảng quản lý ca làm việc (chỉ hiển thị cho admin) -->
+                <div id="workShiftsManagement" style="margin-bottom: 30px; display: none;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h3 style="margin: 0;">⚙️ Quản lý Ca Làm Việc</h3>
+                        <button id="addWorkShiftBtn" class="add-btn" style="padding: 8px 16px;">+ Thêm Ca Mới</button>
+                    </div>
+                    <div id="workShiftsTableContainer" style="background: #fff; border-radius: 8px; padding: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                        <table id="workShiftsTable" style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="background: #f8f9fa; border-bottom: 2px solid #dee2e6;">
+                                    <th style="padding: 12px; text-align: left; font-weight: 600;">STT</th>
+                                    <th style="padding: 12px; text-align: left; font-weight: 600;">Tên Ca</th>
+                                    <th style="padding: 12px; text-align: left; font-weight: 600;">Số Công</th>
+                                    <th style="padding: 12px; text-align: center; font-weight: 600;">Thao Tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="workShiftsTableBody">
+                                <!-- Danh sách ca sẽ được render ở đây -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div id="ngaycongCalendarContainer" style="display:flex; gap:20px; flex-wrap:wrap; max-width: 100%;"></div>
+            </div>
+        </div>
+        
+        <!-- Modal thêm/sửa ca làm việc -->
+        <div id="workShiftModal" class="modal" style="display: none;">
+            <div class="modal-content" style="max-width: 500px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2 id="workShiftModalTitle" style="margin: 0;">Thêm Ca Làm Việc</h2>
+                    <span class="close" id="closeWorkShiftModal" style="cursor: pointer; font-size: 28px; font-weight: bold; color: #aaa;">&times;</span>
+                </div>
+                <form id="workShiftForm">
+                    <input type="hidden" id="workShiftId" value="">
+                    <div style="margin-bottom: 15px;">
+                        <label for="workShiftName" style="display: block; margin-bottom: 5px; font-weight: 600;">Tên Ca:</label>
+                        <input type="text" id="workShiftName" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px;" placeholder="Ví dụ: Ca sáng, Ca chiều, Ca đêm">
+                    </div>
+                    <div style="margin-bottom: 20px;">
+                        <label for="workShiftValue" style="display: block; margin-bottom: 5px; font-weight: 600;">Số Công:</label>
+                        <input type="number" id="workShiftValue" required min="0" step="0.1" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px;" placeholder="Ví dụ: 0.5, 1.0">
+                        <small style="color: #666; font-size: 12px;">Nhập số công tương ứng với ca này (ví dụ: 0.5 cho nửa ngày, 1.0 cho cả ngày)</small>
+                    </div>
+                    <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                        <button type="button" id="cancelWorkShiftBtn" class="cancel-btn" style="padding: 10px 20px;">Hủy</button>
+                        <button type="submit" class="add-btn" style="padding: 10px 20px;">Lưu</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Tab Lịch khám Cầu Giấy -->
+        <div id="khamcaugiay" class="tab-content admin-only">
+            <div class="form-container">
+                <h2>Lịch khám Cầu Giấy</h2>
+                <p>Quản lý lịch khám tại cơ sở Cầu Giấy</p>
+            </div>
+        </div>
+
+        <!-- Tab Lịch khám cầu giấy 20h (giống lịch khám sớm) -->
+        <div id="khamcaugiay20h" class="tab-content admin-only">
+            <div class="form-container">
+                <h2>Lịch khám cầu giấy 20h</h2>
+                <p>Quản lý lịch khám cầu giấy 20h – một bác sĩ mỗi ngày</p>
+                <div style="margin-top: 20px;">
+                    <div id="khamcaugiay20hCalendarContainer" style="display:flex; gap:20px; flex-wrap:wrap; max-width: 100%; overflow-x: auto;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Lịch khám Long Biên -->
+        <div id="khamlongbien" class="tab-content admin-only">
+            <div class="form-container">
+                <h2>Lịch khám Long Biên</h2>
+                <p>Quản lý lịch khám tại cơ sở Long Biên</p>
+            </div>
+        </div>
+
+        <!-- Tab Lịch trực trưa -->
+        <div id="tructrua" class="tab-content admin-only">
+            <div class="form-container">
+                <h2>Lịch trực trưa</h2>
+                <p>Quản lý lịch trực ca trưa</p>
+                
+                <div style="margin-top: 20px;">
+                    <div id="tructruaCalendarContainer" style="overflow-x: auto;">
+                        <!-- Calendar will be generated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Lịch tiểu phẫu -->
+        <div id="tieuphau" class="tab-content admin-only">
+            <div class="form-container">
+                <h2>Lịch tiểu phẫu</h2>
+                <p>Quản lý lịch tiểu phẫu</p>
+                
+                <div style="margin-top: 20px;">
+                    <div id="tieuphauCalendarContainer" style="overflow-x: auto;">
+                        <!-- Calendar will be generated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Lịch khám sớm -->
+        <div id="khamsom" class="tab-content admin-only">
+            <div class="form-container">
+                <h2>Lịch khám sớm</h2>
+                <p>Quản lý lịch khám sớm</p>
+                
+                <div style="margin-top: 20px;">
+                    <div id="khamsomCalendarContainer" style="overflow-x: auto;">
+                        <!-- Calendar will be generated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Lịch khám sản VIP (sáng/chiều) -->
+        <div id="khamsanvip" class="tab-content admin-only">
+            <div class="form-container">
+                <h2>Lịch khám sản VIP</h2>
+                <p>Quản lý lịch khám sản VIP – mỗi ngày 2 ca: sáng và chiều</p>
+                <div style="margin-top: 20px;">
+                    <div id="khamsanvipCalendarContainer" style="overflow-x: auto;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Lịch siêu âm VIP (sáng/chiều) -->
+        <div id="sieuamvip" class="tab-content admin-only">
+            <div class="form-container">
+                <h2>Lịch siêu âm VIP</h2>
+                <p>Quản lý lịch siêu âm VIP – mỗi ngày 2 ca: sáng và chiều</p>
+                <div style="margin-top: 20px;">
+                    <div id="sieuamvipCalendarContainer" style="overflow-x: auto;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Lịch phụ mổ -->
+        <div id="phumo" class="tab-content admin-only">
+            <div class="form-container">
+                <h2>Lịch phụ mổ</h2>
+                <p>Quản lý lịch phụ mổ</p>
+                
+                <div style="margin-top: 20px;">
+                    <div style="overflow-x: auto;">
+                        <table id="phumoTable" style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden;">
+                            <thead>
+                                <tr style="background: #667eea; color: white;">
+                                    <th style="padding: 12px; text-align: center; border: 1px solid #ddd;">Thứ 2</th>
+                                    <th style="padding: 12px; text-align: center; border: 1px solid #ddd;">Thứ 3</th>
+                                    <th style="padding: 12px; text-align: center; border: 1px solid #ddd;">Thứ 4</th>
+                                    <th style="padding: 12px; text-align: center; border: 1px solid #ddd;">Thứ 5</th>
+                                    <th style="padding: 12px; text-align: center; border: 1px solid #ddd;">Thứ 6</th>
+                                    <th style="padding: 12px; text-align: center; border: 1px solid #ddd;">Thứ 7</th>
+                                </tr>
+                            </thead>
+                            <tbody id="phumoTableBody">
+                                <!-- Row will be added here -->
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Dòng ghi chú -->
+                    <div style="margin-top: 20px;">
+                        <label style="display: block; margin-bottom: 8px; color: #333; font-weight: 600; font-size: 14px;">Ghi chú:</label>
+                        <textarea id="phumoNotes" 
+                                  placeholder="Nhập ghi chú cho lịch phụ mổ..."
+                                  style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; font-family: inherit; min-height: 100px; resize: vertical;"
+                                  onchange="updatePhumoNotes(this.value)"></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Lịch tầng 4 -->
+        <div id="tang4" class="tab-content admin-only">
+            <div class="form-container">
+                <h2>Lịch tầng 4</h2>
+                <p>Quản lý lịch làm việc tầng 4</p>
+                
+                <div style="margin-top: 20px;">
+                    <button class="add-btn" onclick="addTang4Row()" style="margin-bottom: 15px;">➕ Thêm dòng mới</button>
+                    
+                    <div style="overflow-x: auto;">
+                        <table id="tang4Table" style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden;">
+                            <thead>
+                                <tr style="background: #667eea; color: white;">
+                                    <th style="padding: 12px; text-align: left; border: 1px solid #ddd; width: 50%;">Tên bác sĩ</th>
+                                    <th style="padding: 12px; text-align: left; border: 1px solid #ddd; width: 40%;">Tháng hỗ trợ Tầng 4</th>
+                                    <th style="padding: 12px; text-align: center; border: 1px solid #ddd; width: 100px;">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tang4TableBody">
+                                <!-- Rows will be added here -->
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Dòng ghi chú -->
+                    <div style="margin-top: 20px;">
+                        <label style="display: block; margin-bottom: 8px; color: #333; font-weight: 600; font-size: 14px;">Ghi chú:</label>
+                        <textarea id="tang4Notes" 
+                                  placeholder="Nhập ghi chú cho lịch tầng 4..."
+                                  style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; font-family: inherit; min-height: 100px; resize: vertical;"
+                                  onchange="updateTang4Notes(this.value)"></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab cv cột1 -->
+        <div id="cvcot1" class="tab-content admin-only">
+            <div class="form-container">
+                <h2>Lịch cv cột1</h2>
+                <p>Quản lý lịch cv cột1 - Thông tin bác sĩ và công việc cụ thể</p>
+                
+                <div style="margin-top: 20px;">
+                    <button class="add-btn" onclick="addcvcot1Row()" style="margin-bottom: 15px;">➕ Thêm dòng mới</button>
+                    
+                    <div style="overflow-x: auto;">
+                        <table id="cvcot1Table" style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden;">
+                            <thead>
+                                <tr style="background: #667eea; color: white;">
+                                    <th style="padding: 12px; text-align: left; border: 1px solid #ddd; width: 50%;">Bác sĩ</th>
+                                    <th style="padding: 12px; text-align: left; border: 1px solid #ddd; width: 50%;">công việc cụ thể</th>
+                                    <th style="padding: 12px; text-align: center; border: 1px solid #ddd; width: 100px;">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="cvcot1TableBody">
+                                <!-- Rows will be added here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Lịch hội chẩn cột1 -->
+        <div id="hoichancot1" class="tab-content admin-only">
+            <div class="form-container">
+                <h2>Lịch hội chẩn cột1</h2>
+                <p>Quản lý lịch hội chẩn cột1</p>
+                
+                <div style="margin-top: 20px;">
+                    <h3 style="margin-bottom: 15px; color: #333;">1. Lịch hội chẩn theo ngày trong tuần</h3>
+                    <div style="overflow-x: auto;">
+                        <table id="hoichancot1ScheduleTable" style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; margin-bottom: 30px;">
+                            <thead>
+                                <tr style="background: #667eea; color: white;">
+                                    <th style="padding: 12px; text-align: left; border: 1px solid #ddd; width: 15%;">Buổi</th>
+                                    <th style="padding: 12px; text-align: center; border: 1px solid #ddd; width: 14%;">Thứ 2</th>
+                                    <th style="padding: 12px; text-align: center; border: 1px solid #ddd; width: 14%;">Thứ 3</th>
+                                    <th style="padding: 12px; text-align: center; border: 1px solid #ddd; width: 14%;">Thứ 4</th>
+                                    <th style="padding: 12px; text-align: center; border: 1px solid #ddd; width: 14%;">Thứ 5</th>
+                                    <th style="padding: 12px; text-align: center; border: 1px solid #ddd; width: 14%;">Thứ 6</th>
+                                    <th style="padding: 12px; text-align: center; border: 1px solid #ddd; width: 14%;">Thứ 7</th>
+                                </tr>
+                            </thead>
+                            <tbody id="hoichancot1ScheduleTableBody">
+                                <!-- Rows will be added here -->
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <h3 style="margin-bottom: 15px; color: #333;">2. Ghi chú</h3>
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #667eea;">
+                        <div id="hoichancot1Notes" style="line-height: 1.8;">
+                            <!-- Notes will be added here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Lịch livetream -->
+        <div id="livetream" class="tab-content admin-only">
+            <div class="form-container">
+                <h2>Lịch livetream</h2>
+                <p>Quản lý lịch livetream</p>
+                <div style="margin-top: 15px; margin-bottom: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button type="button" class="btn btn-primary" onclick="openLivetreamDoctorListModal()" style="padding: 8px 16px;">📋 Danh sách bác sĩ livetream</button>
+                    <button class="add-btn" onclick="addLivetreamRow()" style="margin-bottom: 0;">➕ Thêm dòng mới</button>
+                </div>
+                <div style="margin-top: 20px;">
+                    
+                    <div style="overflow-x: auto;">
+                        <table id="livetreamTable" style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden;">
+                            <thead>
+                                <tr style="background: #667eea; color: white;">
+                                    <th style="padding: 12px; text-align: left; border: 1px solid #ddd; width: 30%;">Tên người livestream</th>
+                                    <th style="padding: 12px; text-align: left; border: 1px solid #ddd; width: 40%;">Nội dung livestream</th>
+                                    <th style="padding: 12px; text-align: left; border: 1px solid #ddd; width: 20%;">Ngày tháng livestream</th>
+                                    <th style="padding: 12px; text-align: center; border: 1px solid #ddd; width: 100px;">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="livetreamTableBody">
+                                <!-- Rows will be added here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Lịch cv cột2+3-->
+        <div id="cvcot23" class="tab-content admin-only">
+            <div class="form-container">
+                <h2>Lịch cv cột2+3</h2>
+                <p>Quản lý lịch cv cột2+3 - Thông tin bác sĩ và công việc cụ thể</p>
+                
+                <div style="margin-top: 20px;">
+                    <button class="add-btn" onclick="addcvcot23Row()" style="margin-bottom: 15px;">➕ Thêm dòng mới</button>
+                    
+                    <div style="overflow-x: auto;">
+                        <table id="cvcot23Table" style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden;">
+                            <thead>
+                                <tr style="background: #667eea; color: white;">
+                                    <th style="padding: 12px; text-align: left; border: 1px solid #ddd; width: 50%;">Bác sĩ</th>
+                                    <th style="padding: 12px; text-align: left; border: 1px solid #ddd; width: 50%;">công việc cụ thể</th>
+                                    <th style="padding: 12px; text-align: center; border: 1px solid #ddd; width: 100px;">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="cvcot23TableBody">
+                                <!-- Rows will be added here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Khám hỗ trợ PK -->
+        <div id="khamhotropk" class="tab-content admin-only">
+            <div class="form-container">
+                <h2>Khám hỗ trợ PK</h2>
+                <p>Quản lý lịch khám hỗ trợ phòng khám</p>
+                
+                <div style="margin-top: 20px;">
+                    <button class="add-btn" onclick="addKhamHoTroPKRow()" style="margin-bottom: 15px;">➕ Thêm dòng mới</button>
+                    
+                    <div style="overflow-x: auto;">
+                        <table id="khamhotropkTable" style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden;">
+                            <thead>
+                                <tr style="background: #667eea; color: white;">
+                                    <th style="padding: 12px; text-align: left; border: 1px solid #ddd; width: 40%;">Tên bác sĩ</th>
+                                    <th style="padding: 12px; text-align: left; border: 1px solid #ddd; width: 50%;">Nội dung hỗ trợ PK</th>
+                                    <th style="padding: 12px; text-align: center; border: 1px solid #ddd; width: 100px;">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="khamhotropkTableBody">
+                                <!-- Rows will be added here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Lịch trực thường trú -->
+        <div id="tructhuongtru" class="tab-content admin-only">
+            <div class="form-container">
+                <h2>Lịch trực thường trú</h2>
+                <p>Quản lý lịch trực thường trú</p>
+                <div style="margin-top: 15px; margin-bottom: 15px;">
+                    <button type="button" class="btn btn-primary" onclick="openTructhuongtruDoctorListModal()" style="padding: 8px 16px;">📋 Danh sách bác sĩ trực thường trú</button>
+                </div>
+                <div style="margin-top: 20px;">
+                    <div style="overflow-x: auto;">
+                        <table id="tructhuongtruTable" style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden;">
+                            <thead>
+                                <tr style="background: #667eea; color: white;">
+                                    <th style="padding: 12px; text-align: center; border: 1px solid #ddd;">Thứ 2</th>
+                                    <th style="padding: 12px; text-align: center; border: 1px solid #ddd;">Thứ 3</th>
+                                    <th style="padding: 12px; text-align: center; border: 1px solid #ddd;">Thứ 4</th>
+                                    <th style="padding: 12px; text-align: center; border: 1px solid #ddd;">Thứ 5</th>
+                                    <th style="padding: 12px; text-align: center; border: 1px solid #ddd;">Thứ 6</th>
+                                    <th style="padding: 12px; text-align: center; border: 1px solid #ddd;">Thứ 7</th>
+                                    <th style="padding: 12px; text-align: center; border: 1px solid #ddd;">Chủ nhật</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tructhuongtruTableBody">
+                                <!-- Row will be added here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Lịch khám chủ nhật -->
+        <div id="lamviechangngay" class="tab-content admin-only">
+            <div class="form-container">
+                <h2>Lịch khám chủ nhật</h2>
+                <p>Quản lý lịch khám chủ nhật - 7 chủ nhật từ tuần hiện tại</p>
+                <div style="margin-top: 15px; margin-bottom: 15px;">
+                    <button type="button" class="btn btn-primary" onclick="openLamviechangngayDoctorListModal()" style="padding: 8px 16px;">
+                        📋 Danh sách bác sĩ khám chủ nhật
+                    </button>
+                </div>
+                <div style="margin-top: 20px;">
+                    <div style="overflow-x: auto;">
+                        <table id="lamviechangngayTable" style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden;">
+                            <thead>
+                                <tr id="lamviechangngayTableHeader" style="background: #667eea; color: white;">
+                                    <!-- Headers will be added dynamically -->
+                                </tr>
+                            </thead>
+                            <tbody id="lamviechangngayTableBody">
+                                <!-- Rows will be added here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Lịch làm việc -->
+        <div id="lichlamviec" class="tab-content admin-only">
+            <div class="form-container">
+                <h2>📋 Lịch làm việc</h2>
+                <p>Lịch làm việc 10 ngày từ ngày hiện tại</p>
+                
+                <div style="margin-top: 20px;" id="lichlamviecContainer">
+                    <!-- Các bảng sẽ được tạo động, mỗi bảng 2 ngày -->
+                </div>
+            </div>
+        </div>
+
+        <script src="assets/js/app.js"></script>
+    
+    <!-- Nút trở về đầu trang -->
+    <button id="backToTopBtn" class="back-to-top" onclick="scrollToTop()" title="Trở về đầu trang">
+        <span class="back-to-top-arrow">↑</span>
+    </button>
+    
+    <!-- Nút đi đến cuối trang -->
+    <button id="backToBottomBtn" class="back-to-bottom" onclick="scrollToBottom()" title="Đi đến cuối trang">
+        <span class="back-to-bottom-arrow">↓</span>
+    </button>
+</body>
+</html>

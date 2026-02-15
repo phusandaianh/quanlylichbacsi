@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>Lịch Nghỉ Phép - Quản Lý Lịch Bác Sĩ</title>
+    <link rel="stylesheet" href="../assets/css/common.css">
+</head>
+<body data-current-tab="lichnghiphep">
+    <div class="container">
+        <div id="header-placeholder"></div>
+        <div id="lichnghiphep" class="tab-content active">
+            <div class="form-container">
+                <h2>📅 Lịch Nghỉ Phép</h2>
+                <p id="lichnghiphepDescription">Xem lịch nghỉ phép theo từng ngày. Admin có thể chọn bác sĩ để xem lịch của họ.</p>
+                
+                <!-- Dropdown chọn bác sĩ (chỉ hiển thị cho admin) -->
+                <div id="lichnghiphepDoctorSelector" style="margin-bottom: 20px; display: none;">
+                    <label for="selectedDoctorForSchedule" style="font-weight: 600; margin-right: 10px;">Chọn bác sĩ:</label>
+                    <select id="selectedDoctorForSchedule" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px; min-width: 200px;">
+                        <option value="">-- Chọn bác sĩ --</option>
+                    </select>
+                </div>
+                
+                <div id="lichnghiphepCalendarContainer" style="display:flex; gap:20px; flex-wrap:wrap; max-width: 100%;"></div>
+            </div>
+        </div>
+    </div>
+    <script src="../assets/js/header.js"></script>
+    <script src="../assets/js/app.js"></script>
+</body>
+</html>
