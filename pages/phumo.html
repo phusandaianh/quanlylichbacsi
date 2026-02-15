@@ -12,7 +12,11 @@
         <div id="phumo" class="tab-content active admin-only">
             <div class="form-container">
                 <h2>Lịch phụ mổ</h2>
-                <p>Quản lý lịch phụ mổ</p>
+                <p>Quản lý lịch phụ mổ – mỗi ngày có thể có nhiều bác sĩ phụ mổ</p>
+                <div style="margin-top: 15px; margin-bottom: 15px;">
+                    <button type="button" class="add-btn" onclick="openPhumoDoctorListModal()" style="margin-right: 10px;">📋 Danh sách bác sĩ phụ mổ</button>
+                    <button class="add-btn" onclick="addPhumoRow()">➕ Thêm dòng mới</button>
+                </div>
                 <div style="margin-top: 20px;">
                     <div style="overflow-x: auto;">
                         <table id="phumoTable" style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden;">
@@ -24,10 +28,11 @@
                                     <th style="padding: 12px; text-align: center; border: 1px solid #ddd;">Thứ 5</th>
                                     <th style="padding: 12px; text-align: center; border: 1px solid #ddd;">Thứ 6</th>
                                     <th style="padding: 12px; text-align: center; border: 1px solid #ddd;">Thứ 7</th>
+                                    <th style="padding: 12px; text-align: center; border: 1px solid #ddd; width: 100px;">Thao tác</th>
                                 </tr>
                             </thead>
                             <tbody id="phumoTableBody">
-                                <!-- Row will be added here -->
+                                <!-- Rows will be added here -->
                             </tbody>
                         </table>
                     </div>

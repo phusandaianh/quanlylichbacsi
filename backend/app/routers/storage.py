@@ -17,9 +17,9 @@ STORAGE_KEYS_ORDER = [
     "doctorsLanhdao", "doctorscot1", "doctorscot2", "doctorscot3", "doctorsPartime", "doctorsKhac",
     "accounts", "passwordRequests", "leaveSubmissions", "permissions", "permissionTabs",
     "quanlynghiphepData", "maxCountByWeekday", "fixedScheduleData", "holidayMarkedDates", "holidayLabels",
-    "cvcot1Data", "cvcot23Data", "khamhotropkData", "khamsomData", "khamcaugiay20hData",
+    "cvcot1Data", "cvcot23Data", "khamhotropkData", "khamsomData", "khamcaugiayData", "khamcaugiay20hData", "khamlongbienData",
     "khamsanvipData", "sieuamvipData", "tructruaData", "tieuphauData", "livetreamData", "livetreamDoctorList",
-    "tang4Data", "tang4Notes", "hoichancot1ScheduleData",     "phumoData", "tructhuongtruData", "tructhuongtruDoctorList",
+    "tang4Data", "tang4Notes", "hoichancot1ScheduleData",     "phumoData", "phumoDoctorList", "tructhuongtruData", "tructhuongtruDoctorList",
     "lamviechangngayData", "lamviechangngayDoctorList", "lichlamviecData", "quydinhData",
 ]
 

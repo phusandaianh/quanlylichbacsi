@@ -41,7 +41,9 @@
             cvcot23Data: 'cvcot23Data',
             khamhotropkData: 'khamhotropkData',
             khamsomData: 'khamsomData',
+            khamcaugiayData: 'khamcaugiayData',
             khamcaugiay20hData: 'khamcaugiay20hData',
+            khamlongbienData: 'khamlongbienData',
             khamsanvipData: 'khamsanvipData',
             sieuamvipData: 'sieuamvipData',
             tructruaData: 'tructruaData',
@@ -51,6 +53,7 @@
             lamviechangngayData: 'lamviechangngayData',
             lamviechangngayDoctorList: 'lamviechangngayDoctorList',
             phumoData: 'phumoData',
+            phumoDoctorList: 'phumoDoctorList',
             livetreamData: 'livetreamData',
             livetreamDoctorList: 'livetreamDoctorList',
             tang4Data: 'tang4Data',
@@ -166,7 +169,9 @@
         let khamsomData = StorageUtil.loadJson(STORAGE_KEYS.khamsomData, {});
         
         // Lịch khám cầu giấy 20h - cùng format như khám sớm
+        let khamcaugiayData = StorageUtil.loadJson(STORAGE_KEYS.khamcaugiayData, {});
         let khamcaugiay20hData = StorageUtil.loadJson(STORAGE_KEYS.khamcaugiay20hData, {});
+        let khamlongbienData = StorageUtil.loadJson(STORAGE_KEYS.khamlongbienData, {});
         
         // Lịch khám sản VIP / siêu âm VIP - lưu theo format: { "YYYY-MM-DD": { morning: "", afternoon: "" } }
         let khamsanvipData = StorageUtil.loadJson(STORAGE_KEYS.khamsanvipData, {});
@@ -345,16 +350,18 @@
         // Lịch làm việc data - lưu theo format: { "YYYY-MM-DD": { "positionId": { "shift": "doctor names" } } }
         let lichlamviecData = StorageUtil.loadJson(STORAGE_KEYS.lichlamviecData, {});
         
-        // Lịch phụ mổ data
-        let phumoData = StorageUtil.loadJson('phumoData', {
-            thu2: '',
-            thu3: '',
-            thu4: '',
-            thu5: '',
-            thu6: '',
-            thu7: '',
-            notes: ''
-        });
+        // Lịch phụ mổ data - format: { rows: [{ thu2, thu3, thu4, thu5, thu6, thu7 }, ...], notes: '' }
+        function normalizePhumoData(raw) {
+            const defaultRow = { thu2: '', thu3: '', thu4: '', thu5: '', thu6: '', thu7: '' };
+            if (!raw) return { rows: [{ ...defaultRow }], notes: '' };
+            if (Array.isArray(raw.rows) && raw.rows.length > 0) {
+                const rows = raw.rows.map(r => ({ ...defaultRow, ...r }));
+                return { rows: rows, notes: raw.notes || '' };
+            }
+            return { rows: [{ thu2: raw.thu2 || '', thu3: raw.thu3 || '', thu4: raw.thu4 || '', thu5: raw.thu5 || '', thu6: raw.thu6 || '', thu7: raw.thu7 || '' }], notes: raw.notes || '' };
+        }
+        let phumoData = normalizePhumoData(StorageUtil.loadJson('phumoData', null));
+        let phumoDoctorList = StorageUtil.loadJson(STORAGE_KEYS.phumoDoctorList, []);
         
         // Lịch livetream data
         let livetreamData = StorageUtil.loadJson('livetreamData', []);
@@ -481,7 +488,9 @@
             if (data.cvcot23Data != null) { cvcot23Data = data.cvcot23Data; StorageUtil.saveJson(STORAGE_KEYS.cvcot23Data, cvcot23Data); }
             if (data.khamhotropkData != null) { khamhotropkData = data.khamhotropkData; StorageUtil.saveJson(STORAGE_KEYS.khamhotropkData, khamhotropkData); }
             if (data.khamsomData != null) { khamsomData = data.khamsomData; StorageUtil.saveJson(STORAGE_KEYS.khamsomData, khamsomData); }
+            if (data.khamcaugiayData != null) { khamcaugiayData = data.khamcaugiayData; StorageUtil.saveJson(STORAGE_KEYS.khamcaugiayData, khamcaugiayData); }
             if (data.khamcaugiay20hData != null) { khamcaugiay20hData = data.khamcaugiay20hData; StorageUtil.saveJson(STORAGE_KEYS.khamcaugiay20hData, khamcaugiay20hData); }
+            if (data.khamlongbienData != null) { khamlongbienData = data.khamlongbienData; StorageUtil.saveJson(STORAGE_KEYS.khamlongbienData, khamlongbienData); }
             if (data.khamsanvipData != null) { khamsanvipData = data.khamsanvipData; StorageUtil.saveJson(STORAGE_KEYS.khamsanvipData, khamsanvipData); }
             if (data.sieuamvipData != null) { sieuamvipData = data.sieuamvipData; StorageUtil.saveJson(STORAGE_KEYS.sieuamvipData, sieuamvipData); }
             if (data.tructruaData != null) { tructruaData = data.tructruaData; StorageUtil.saveJson(STORAGE_KEYS.tructruaData, tructruaData); }
@@ -491,7 +500,8 @@
             if (data.tang4Data != null) { tang4Data = data.tang4Data; StorageUtil.saveJson(STORAGE_KEYS.tang4Data, tang4Data); }
             if (data.tang4Notes !== undefined) { tang4Notes = data.tang4Notes || ''; StorageUtil.saveJson(STORAGE_KEYS.tang4Notes, tang4Notes); }
             if (data.hoichancot1ScheduleData != null) { hoichancot1ScheduleData = data.hoichancot1ScheduleData; StorageUtil.saveJson(STORAGE_KEYS.hoichancot1ScheduleData, hoichancot1ScheduleData); }
-            if (data.phumoData != null) { phumoData = data.phumoData; StorageUtil.saveJson(STORAGE_KEYS.phumoData, phumoData); }
+            if (data.phumoData != null) { phumoData = normalizePhumoData(data.phumoData); StorageUtil.saveJson(STORAGE_KEYS.phumoData, phumoData); }
+            if (data.phumoDoctorList != null) { phumoDoctorList = data.phumoDoctorList; StorageUtil.saveJson(STORAGE_KEYS.phumoDoctorList, phumoDoctorList); }
             if (data.tructhuongtruData != null) { tructhuongtruData = data.tructhuongtruData; StorageUtil.saveJson(STORAGE_KEYS.tructhuongtruData, tructhuongtruData); }
             if (data.tructhuongtruDoctorList != null) { tructhuongtruDoctorList = data.tructhuongtruDoctorList; StorageUtil.saveJson(STORAGE_KEYS.tructhuongtruDoctorList, tructhuongtruDoctorList); }
             if (data.lamviechangngayData != null) { lamviechangngayData = data.lamviechangngayData; StorageUtil.saveJson(STORAGE_KEYS.lamviechangngayData, lamviechangngayData); }
@@ -528,7 +538,9 @@
                 cvcot23Data: cvcot23Data,
                 khamhotropkData: khamhotropkData,
                 khamsomData: khamsomData,
+                khamcaugiayData: khamcaugiayData,
                 khamcaugiay20hData: khamcaugiay20hData,
+                khamlongbienData: khamlongbienData,
                 khamsanvipData: khamsanvipData,
                 sieuamvipData: sieuamvipData,
                 tructruaData: tructruaData,
@@ -539,6 +551,7 @@
                 tang4Notes: tang4Notes,
                 hoichancot1ScheduleData: hoichancot1ScheduleData,
                 phumoData: phumoData,
+                phumoDoctorList: phumoDoctorList,
                 tructhuongtruData: tructhuongtruData,
                 tructhuongtruDoctorList: tructhuongtruDoctorList,
                 lamviechangngayData: lamviechangngayData,
@@ -975,8 +988,14 @@
                 case 'khamsom':
                     if (typeof initKhamSomCalendar === 'function') initKhamSomCalendar();
                     break;
+                case 'khamcaugiay':
+                    if (typeof initKhamCauGiayCalendar === 'function') initKhamCauGiayCalendar();
+                    break;
                 case 'khamcaugiay20h':
                     if (typeof initKhamCauGiay20hCalendar === 'function') initKhamCauGiay20hCalendar();
+                    break;
+                case 'khamlongbien':
+                    if (typeof initKhamLongBienCalendar === 'function') initKhamLongBienCalendar();
                     break;
                 case 'khamsanvip':
                     if (typeof initKhamSanVipCalendar === 'function') initKhamSanVipCalendar();
@@ -3317,8 +3336,12 @@
                 initKhamHoTroPKTable();
             } else if (tabName === 'khamsom') {
                 initKhamSomCalendar();
+            } else if (tabName === 'khamcaugiay') {
+                initKhamCauGiayCalendar();
             } else if (tabName === 'khamcaugiay20h') {
                 initKhamCauGiay20hCalendar();
+            } else if (tabName === 'khamlongbien') {
+                initKhamLongBienCalendar();
             } else if (tabName === 'khamsanvip') {
                 initKhamSanVipCalendar();
             } else if (tabName === 'sieuamvip') {
@@ -3361,6 +3384,7 @@
                 { tab: 'cvcot1', func: 'addcvcot1Row' },
                 { tab: 'cvcot23', func: 'addcvcot23Row' },
                 { tab: 'khamhotropk', func: 'addKhamHoTroPKRow' },
+                { tab: 'phumo', func: 'addPhumoRow' },
                 { tab: 'livetream', func: 'addLivetreamRow' },
                 { tab: 'tang4', func: 'addTang4Row' }
             ];
@@ -9005,123 +9029,103 @@
             renderKhamSomCalendar();
         }
 
-        // Render Lịch khám sớm calendar
+        // Render Lịch khám sớm calendar - 5 tháng (chu kỳ 25-24)
         function renderKhamSomCalendar() {
             const container = document.getElementById('khamsomCalendarContainer');
             if (!container) return;
-
-            // Tính toán phạm vi ngày: từ trước ngày hiện tại đến sau ngày hiện tại 2 tuần
             const today = new Date();
             today.setHours(0, 0, 0, 0);
-            
-            // Ngày bắt đầu: trước ngày hiện tại (có thể là 1 tuần trước hoặc đầu tháng)
-            const startDate = new Date(today);
-            startDate.setDate(startDate.getDate() - 7); // 1 tuần trước
-            
-            // Ngày kết thúc: sau ngày hiện tại 2 tuần (14 ngày)
-            const endDate = new Date(today);
-            endDate.setDate(endDate.getDate() + 14);
-            
-            // Tạo mảng các ngày trong phạm vi
-            const dates = [];
-            const currentDate = new Date(startDate);
-            while (currentDate <= endDate) {
-                dates.push(new Date(currentDate));
+            let cycleStartDate = new Date(today.getFullYear(), today.getMonth(), 25);
+            if (today.getDate() < 25) {
+                cycleStartDate = new Date(today.getFullYear(), today.getMonth() - 1, 25);
+            }
+            const numCycles = 5;
+            container.innerHTML = '';
+            container.style.display = 'flex';
+            container.style.gap = '20px';
+            container.style.flexWrap = 'wrap';
+            container.style.maxWidth = '100%';
+            for (let i = 0; i < numCycles; i++) {
+                const cycleStart = new Date(cycleStartDate.getFullYear(), cycleStartDate.getMonth() + i, 25);
+                const cycleEnd = new Date(cycleStart.getFullYear(), cycleStart.getMonth() + 1, 24);
+                const monthEl = renderKhamSomMonthCycle(cycleStart, cycleEnd);
+                container.appendChild(monthEl);
+            }
+            updateAddButtonsVisibility();
+        }
+        function renderKhamSomMonthCycle(cycleStart, cycleEnd) {
+            const month = document.createElement('div');
+            month.style.cssText = 'flex: 0 1 100%; width: 100%; min-width: 100%; max-width: 100%; background: #fff; border-radius: 10px; padding: 14px; box-shadow: 0 6px 18px rgba(0,0,0,0.06);';
+            const title = document.createElement('div');
+            title.style.cssText = 'text-align: center; font-weight: 700; margin-bottom: 8px;';
+            const monthNum = cycleEnd.getMonth() + 1;
+            const year = cycleEnd.getFullYear();
+            const startMonth = cycleStart.toLocaleString('vi-VN', {month:'long', year:'numeric'});
+            const endMonth = cycleEnd.toLocaleString('vi-VN', {month:'long', year:'numeric'});
+            title.textContent = `Lịch khám sớm tháng ${monthNum}/${year} (25/${cycleStart.getMonth() + 1} - 24/${cycleEnd.getMonth() + 1})`;
+            month.appendChild(title);
+            const grid = document.createElement('div');
+            grid.className = 'calendar-grid';
+            grid.style.cssText = 'display: grid; grid-template-columns: repeat(7,1fr); gap: 8px;';
+            ['T2','T3','T4','T5','T6','T7','CN'].forEach(w => {
+                const wEl = document.createElement('div');
+                wEl.style.cssText = 'text-align: center; font-size: 14px; color: #666;';
+                wEl.textContent = w;
+                grid.appendChild(wEl);
+            });
+            const firstWeekday = cycleStart.getDay();
+            const startOffset = firstWeekday === 0 ? 6 : firstWeekday - 1;
+            for (let i = 0; i < startOffset; i++) {
+                const empty = document.createElement('div');
+                grid.appendChild(empty);
+            }
+            const allDates = [];
+            let currentDate = new Date(cycleStart);
+            while (currentDate <= cycleEnd) {
+                allDates.push(new Date(currentDate));
                 currentDate.setDate(currentDate.getDate() + 1);
             }
-            
-            // Nhóm các ngày theo tuần, bắt đầu từ Thứ 2, bỏ Chủ nhật
-            const weeks = [];
-            let currentWeek = new Array(6).fill(null);
-            
-            dates.forEach((date) => {
-                const dayOfWeek = date.getDay(); // 0 = Chủ nhật, 1 = Thứ 2, ...
-                
-                // Bỏ qua Chủ nhật
-                if (dayOfWeek === 0) return;
-                
-                // Chuyển đổi: Thứ 2 (1) -> 0, Thứ 3 (2) -> 1, ..., Thứ 7 (6) -> 5
-                const weekIndex = dayOfWeek - 1;
-                
-                // Nếu là Thứ 2 (weekIndex = 0) và tuần hiện tại đã có dữ liệu, bắt đầu tuần mới
-                if (weekIndex === 0 && currentWeek.some(d => d !== null)) {
-                    weeks.push([...currentWeek]);
-                    currentWeek = new Array(6).fill(null);
-                }
-                
-                // Đặt ngày vào đúng vị trí trong tuần (Thứ 2 = 0, Thứ 3 = 1, ..., Thứ 7 = 5)
-                currentWeek[weekIndex] = date;
-            });
-            
-            // Thêm tuần cuối cùng nếu còn
-            if (currentWeek.some(d => d !== null)) {
-                weeks.push(currentWeek);
-            }
-            
-            // Tạo HTML cho lịch
-            let html = '<table id="khamsomCalendarTable" style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; margin: 0 auto;">';
-            
-            // Header với các thứ trong tuần, bắt đầu từ Thứ 2, bỏ Chủ nhật
-            html += '<thead><tr style="background: #667eea; color: white;">';
-            const dayNames = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
-            dayNames.forEach(day => {
-                html += `<th style="padding: 12px; text-align: center; border: 1px solid #ddd; width: 16.66%;">${day}</th>`;
-            });
-            html += '</tr></thead>';
-            
-            // Body với các tuần
-            html += '<tbody>';
-            weeks.forEach(week => {
-                html += '<tr>';
-                week.forEach((date, dayIndex) => {
-                    if (date) {
-                        const dateStr = formatDateForStorage(date);
-                        const dateDisplay = formatDateForDisplay(date);
-                        const isToday = isSameDay(date, today);
-                        const isPast = date < today;
-                        const doctorName = khamsomData[dateStr] || '';
-                        
-                        const hasEditPermission = hasPermission('khamsom');
-                        // Disable nếu là ngày đã qua hoặc không có quyền
-                        const shouldDisable = isPast || !hasEditPermission;
-                        const disabledAttr = shouldDisable ? 'disabled' : '';
-                        const disabledStyle = shouldDisable ? 'background-color: #ffffff; color: #333333; cursor: not-allowed; opacity: 1;' : '';
-                        
-                        // Style cho ô ngày
-                        const isHolidaySom = typeof isHolidayCell === 'function' && isHolidayCell(dateStr);
-                        const hlSom = isHolidaySom && typeof getHolidayDisplayLabel === 'function' ? getHolidayDisplayLabel(dateStr) : { label: '', lunar: '' };
-                        let cellStyle = 'padding: 8px; border: 1px solid #ddd; vertical-align: top;';
-                        if (isHolidaySom) {
-                            cellStyle += ' background-color: #d32f2f; color: #fff;';
-                        } else if (isToday) {
-                            cellStyle += ' background-color: #fff3cd; border: 2px solid #ffc107;';
-                        } else if (isPast) {
-                            cellStyle += ' background-color: #f8f9fa;';
-                        }
-                        
-                        html += `<td style="${cellStyle}">`;
-                        html += `<div style="font-weight: 600; margin-bottom: 5px; font-size: 12px; color: ${isHolidaySom ? '#fff' : (isToday ? '#ff6b00' : '#333')};">${dateDisplay}</div>`;
-                        if (hlSom.label) html += `<div style="font-size: 11px; margin-bottom: 4px; color: ${isHolidaySom ? '#fff' : '#333'};">🏮 ${(hlSom.label + (hlSom.lunar ? ' (' + hlSom.lunar + ' AL)' : '')).replace(/"/g, '&quot;')}</div>`;
-                        html += `<input type="text" 
-                                     ${disabledAttr}
-                                     value="${(doctorName || '').replace(/"/g, '&quot;')}" 
-                                     placeholder="Nhập tên bác sĩ"
-                                     onchange="updateKhamSomDate('${dateStr}', this.value)"
-                                     data-date="${dateStr}"
-                                     style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; font-family: inherit; ${disabledStyle}">`;
-                        html += '</td>';
-                    } else {
-                        html += '<td style="padding: 8px; border: 1px solid #ddd; background-color: #f5f5f5;"></td>';
+            const todayForCompare = new Date();
+            todayForCompare.setHours(0, 0, 0, 0);
+            allDates.forEach(date => {
+                const dateStr = formatDateForStorage(date);
+                const isPast = date < todayForCompare;
+                const isToday = date.getFullYear() === todayForCompare.getFullYear() && date.getMonth() === todayForCompare.getMonth() && date.getDate() === todayForCompare.getDate();
+                const isHolidaySom = typeof isHolidayCell === 'function' && isHolidayCell(dateStr);
+                const doctorName = (khamsomData[dateStr] || '').replace(/"/g, '&quot;');
+                const hasEditPermission = hasPermission('khamsom');
+                const shouldDisable = isPast || !hasEditPermission;
+                const disabledAttr = shouldDisable ? 'disabled' : '';
+                const disabledStyle = shouldDisable ? 'background-color: #ffffff; color: #333333; cursor: not-allowed; opacity: 1;' : '';
+                const dayCell = document.createElement('div');
+                dayCell.style.cssText = `border: ${isToday ? '3px solid #ffc107' : '1px solid #e6e9ef'}; border-radius: 6px; padding: 8px; background: ${isHolidaySom ? '#d32f2f' : (isToday ? '#fff3cd' : (isPast ? '#f8f9fa' : '#f8fafc'))}; min-height: 80px; display: flex; flex-direction: column; gap: 4px;`;
+                if (isHolidaySom) dayCell.style.color = '#fff';
+                const dayLabel = document.createElement('div');
+                dayLabel.textContent = formatDateWithWeekday(date);
+                dayLabel.style.cssText = 'font-size: 12px; font-weight: 600;';
+                dayCell.appendChild(dayLabel);
+                if (isHolidaySom) {
+                    const hl = typeof getHolidayDisplayLabel === 'function' ? getHolidayDisplayLabel(dateStr) : { label: '', lunar: '' };
+                    if (hl.label) {
+                        const holidayBadge = document.createElement('div');
+                        holidayBadge.textContent = '🏮 ' + hl.label + (hl.lunar ? ' (' + hl.lunar + ' AL)' : '');
+                        holidayBadge.style.cssText = 'font-size: 11px; margin-bottom: 4px; font-weight: 500;';
+                        dayCell.appendChild(holidayBadge);
                     }
-                });
-                html += '</tr>';
+                }
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.value = khamsomData[dateStr] || '';
+                input.placeholder = 'Bác sĩ';
+                input.setAttribute('data-date', dateStr);
+                if (shouldDisable) input.disabled = true;
+                input.style.cssText = 'padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; ' + disabledStyle;
+                input.onchange = function() { updateKhamSomDate(dateStr, this.value); };
+                dayCell.appendChild(input);
+                grid.appendChild(dayCell);
             });
-            html += '</tbody></table>';
-            
-            container.innerHTML = html;
-            
-            // Cập nhật trạng thái nút thêm dòng (nếu có)
-            updateAddButtonsVisibility();
+            month.appendChild(grid);
+            return month;
         }
 
         // Format date for storage (YYYY-MM-DD)
@@ -9206,6 +9210,169 @@
                     }
                 }, 100);
             }
+        }
+
+        // ========== Lịch khám Cầu Giấy (5 tháng) ==========
+        function initKhamCauGiayCalendar() {
+            renderKhamCauGiayCalendar();
+        }
+        function renderKhamCauGiayCalendar() {
+            const container = document.getElementById('khamcaugiayCalendarContainer');
+            if (!container) return;
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            let cycleStartDate = new Date(today.getFullYear(), today.getMonth(), 25);
+            if (today.getDate() < 25) {
+                cycleStartDate = new Date(today.getFullYear(), today.getMonth() - 1, 25);
+            }
+            const numCycles = 5;
+            container.innerHTML = '';
+            for (let i = 0; i < numCycles; i++) {
+                const cycleStart = new Date(cycleStartDate.getFullYear(), cycleStartDate.getMonth() + i, 25);
+                const cycleEnd = new Date(cycleStart.getFullYear(), cycleStart.getMonth() + 1, 24);
+                const monthEl = renderSingleDoctorMonthCycle(cycleStart, cycleEnd, khamcaugiayData, 'khamcaugiay', 'updateKhamCauGiayDate', 'saveKhamCauGiayData');
+                container.appendChild(monthEl);
+            }
+        }
+        function updateKhamCauGiayDate(dateStr, doctorName) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const dateObj = new Date(dateStr + 'T00:00:00');
+            if (dateObj < today) {
+                alert('Không thể chỉnh sửa ngày đã qua.');
+                return;
+            }
+            if (!hasPermission('khamcaugiay')) {
+                alert('Bạn không có quyền chỉnh sửa.');
+                return;
+            }
+            if (doctorName && doctorName.trim()) {
+                khamcaugiayData[dateStr] = doctorName.trim();
+            } else {
+                delete khamcaugiayData[dateStr];
+            }
+            saveKhamCauGiayData();
+        }
+        function saveKhamCauGiayData() {
+            StorageUtil.saveJson(STORAGE_KEYS.khamcaugiayData, khamcaugiayData);
+            if (typeof syncToBackend === 'function' && USE_DATABASE_BACKEND) syncToBackend();
+        }
+
+        // ========== Lịch khám Long Biên (5 tháng) ==========
+        function initKhamLongBienCalendar() {
+            renderKhamLongBienCalendar();
+        }
+        function renderKhamLongBienCalendar() {
+            const container = document.getElementById('khamlongbienCalendarContainer');
+            if (!container) return;
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            let cycleStartDate = new Date(today.getFullYear(), today.getMonth(), 25);
+            if (today.getDate() < 25) {
+                cycleStartDate = new Date(today.getFullYear(), today.getMonth() - 1, 25);
+            }
+            const numCycles = 5;
+            container.innerHTML = '';
+            for (let i = 0; i < numCycles; i++) {
+                const cycleStart = new Date(cycleStartDate.getFullYear(), cycleStartDate.getMonth() + i, 25);
+                const cycleEnd = new Date(cycleStart.getFullYear(), cycleStart.getMonth() + 1, 24);
+                const monthEl = renderSingleDoctorMonthCycle(cycleStart, cycleEnd, khamlongbienData, 'khamlongbien', 'updateKhamLongBienDate', 'saveKhamLongBienData');
+                container.appendChild(monthEl);
+            }
+        }
+        function updateKhamLongBienDate(dateStr, doctorName) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const dateObj = new Date(dateStr + 'T00:00:00');
+            if (dateObj < today) {
+                alert('Không thể chỉnh sửa ngày đã qua.');
+                return;
+            }
+            if (!hasPermission('khamlongbien')) {
+                alert('Bạn không có quyền chỉnh sửa.');
+                return;
+            }
+            if (doctorName && doctorName.trim()) {
+                khamlongbienData[dateStr] = doctorName.trim();
+            } else {
+                delete khamlongbienData[dateStr];
+            }
+            saveKhamLongBienData();
+        }
+        function saveKhamLongBienData() {
+            StorageUtil.saveJson(STORAGE_KEYS.khamlongbienData, khamlongbienData);
+            if (typeof syncToBackend === 'function' && USE_DATABASE_BACKEND) syncToBackend();
+        }
+
+        // Helper: render 1 chu kỳ tháng cho lịch 1 bác sĩ/ngày (dùng cho khamcaugiay, khamlongbien)
+        function renderSingleDoctorMonthCycle(cycleStart, cycleEnd, dataObj, permissionKey, updateFn, saveFn) {
+            const month = document.createElement('div');
+            month.style.cssText = 'flex: 0 1 100%; width: 100%; min-width: 100%; max-width: 100%; background: #fff; border-radius: 10px; padding: 14px; box-shadow: 0 6px 18px rgba(0,0,0,0.06);';
+            const title = document.createElement('div');
+            title.style.cssText = 'text-align: center; font-weight: 700; margin-bottom: 8px;';
+            const monthNum = cycleEnd.getMonth() + 1;
+            const year = cycleEnd.getFullYear();
+            title.textContent = `Tháng ${monthNum}/${year} (25/${cycleStart.getMonth() + 1} - 24/${cycleEnd.getMonth() + 1})`;
+            month.appendChild(title);
+            const grid = document.createElement('div');
+            grid.className = 'calendar-grid';
+            grid.style.cssText = 'display: grid; grid-template-columns: repeat(7,1fr); gap: 8px;';
+            ['T2','T3','T4','T5','T6','T7','CN'].forEach(w => {
+                const wEl = document.createElement('div');
+                wEl.style.cssText = 'text-align: center; font-size: 14px; color: #666;';
+                wEl.textContent = w;
+                grid.appendChild(wEl);
+            });
+            const firstWeekday = cycleStart.getDay();
+            const startOffset = firstWeekday === 0 ? 6 : firstWeekday - 1;
+            for (let i = 0; i < startOffset; i++) grid.appendChild(document.createElement('div'));
+            const allDates = [];
+            let currentDate = new Date(cycleStart);
+            while (currentDate <= cycleEnd) {
+                allDates.push(new Date(currentDate));
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+            const todayForCompare = new Date();
+            todayForCompare.setHours(0, 0, 0, 0);
+            allDates.forEach(date => {
+                const dateStr = formatDateForStorage(date);
+                const isPast = date < todayForCompare;
+                const isToday = date.getFullYear() === todayForCompare.getFullYear() && date.getMonth() === todayForCompare.getMonth() && date.getDate() === todayForCompare.getDate();
+                const isHoliday = typeof isHolidayCell === 'function' && isHolidayCell(dateStr);
+                const doctorName = (dataObj[dateStr] || '').replace(/"/g, '&quot;');
+                const hasEditPermission = hasPermission(permissionKey);
+                const shouldDisable = isPast || !hasEditPermission;
+                const disabledAttr = shouldDisable ? 'disabled' : '';
+                const disabledStyle = shouldDisable ? 'background-color: #ffffff; color: #333333; cursor: not-allowed; opacity: 1;' : '';
+                const dayCell = document.createElement('div');
+                dayCell.style.cssText = `border: ${isToday ? '3px solid #ffc107' : '1px solid #e6e9ef'}; border-radius: 6px; padding: 8px; background: ${isHoliday ? '#d32f2f' : (isToday ? '#fff3cd' : (isPast ? '#f8f9fa' : '#f8fafc'))}; min-height: 80px; display: flex; flex-direction: column; gap: 4px;`;
+                if (isHoliday) dayCell.style.color = '#fff';
+                const dayLabel = document.createElement('div');
+                dayLabel.textContent = formatDateWithWeekday(date);
+                dayLabel.style.cssText = 'font-size: 12px; font-weight: 600;';
+                dayCell.appendChild(dayLabel);
+                if (isHoliday) {
+                    const hl = typeof getHolidayDisplayLabel === 'function' ? getHolidayDisplayLabel(dateStr) : { label: '', lunar: '' };
+                    if (hl.label) {
+                        const holidayBadge = document.createElement('div');
+                        holidayBadge.textContent = '🏮 ' + hl.label + (hl.lunar ? ' (' + hl.lunar + ' AL)' : '');
+                        holidayBadge.style.cssText = 'font-size: 11px; margin-bottom: 4px; font-weight: 500;';
+                        dayCell.appendChild(holidayBadge);
+                    }
+                }
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.value = dataObj[dateStr] || '';
+                input.placeholder = 'Bác sĩ';
+                input.setAttribute('data-date', dateStr);
+                if (shouldDisable) input.disabled = true;
+                input.style.cssText = 'padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; ' + disabledStyle;
+                input.onchange = function() { window[updateFn](dateStr, this.value); };
+                dayCell.appendChild(input);
+                grid.appendChild(dayCell);
+            });
+            month.appendChild(grid);
+            return month;
         }
 
         // ========== Lịch khám cầu giấy 20h (giống lịch khám sớm) ==========
@@ -9387,77 +9554,116 @@
             if (typeof syncToBackend === 'function' && USE_DATABASE_BACKEND) syncToBackend();
         }
 
-        // Render calendar với 2 cộtsáng/chiều mỗi ngày (dùng chung cho khamsanvip & sieuamvip)
+        // Render calendar với 2 cộtsáng/chiều mỗi ngày - 5 tháng (chu kỳ 25-24) - dùng chung cho khamsanvip & sieuamvip
         function renderVipMorningAfternoonCalendar(tableId, dataObj, containerId, updateFn, saveFn, permissionKey) {
             const container = document.getElementById(containerId);
             if (!container) return;
             const today = new Date();
             today.setHours(0, 0, 0, 0);
-            const startDate = new Date(today);
-            startDate.setDate(startDate.getDate() - 7);
-            const endDate = new Date(today);
-            endDate.setDate(endDate.getDate() + 14);
-            const dates = [];
-            const currentDate = new Date(startDate);
-            while (currentDate <= endDate) {
-                dates.push(new Date(currentDate));
+            let cycleStartDate = new Date(today.getFullYear(), today.getMonth(), 25);
+            if (today.getDate() < 25) {
+                cycleStartDate = new Date(today.getFullYear(), today.getMonth() - 1, 25);
+            }
+            const numCycles = 5;
+            container.innerHTML = '';
+            container.style.display = 'flex';
+            container.style.gap = '20px';
+            container.style.flexWrap = 'wrap';
+            container.style.maxWidth = '100%';
+            for (let i = 0; i < numCycles; i++) {
+                const cycleStart = new Date(cycleStartDate.getFullYear(), cycleStartDate.getMonth() + i, 25);
+                const cycleEnd = new Date(cycleStart.getFullYear(), cycleStart.getMonth() + 1, 24);
+                const monthEl = renderVipMonthCycle(tableId, dataObj, cycleStart, cycleEnd, updateFn, permissionKey);
+                container.appendChild(monthEl);
+            }
+        }
+        function renderVipMonthCycle(tableId, dataObj, cycleStart, cycleEnd, updateFn, permissionKey) {
+            const month = document.createElement('div');
+            month.style.cssText = 'flex: 0 1 100%; width: 100%; min-width: 100%; max-width: 100%; background: #fff; border-radius: 10px; padding: 14px; box-shadow: 0 6px 18px rgba(0,0,0,0.06);';
+            const title = document.createElement('div');
+            title.style.cssText = 'text-align: center; font-weight: 700; margin-bottom: 8px;';
+            const monthNum = cycleEnd.getMonth() + 1;
+            const year = cycleEnd.getFullYear();
+            title.textContent = `Tháng ${monthNum}/${year} (25/${cycleStart.getMonth() + 1} - 24/${cycleEnd.getMonth() + 1})`;
+            month.appendChild(title);
+            const grid = document.createElement('div');
+            grid.className = 'calendar-grid';
+            grid.style.cssText = 'display: grid; grid-template-columns: repeat(7,1fr); gap: 8px;';
+            ['T2','T3','T4','T5','T6','T7','CN'].forEach(w => {
+                const wEl = document.createElement('div');
+                wEl.style.cssText = 'text-align: center; font-size: 14px; color: #666;';
+                wEl.textContent = w;
+                grid.appendChild(wEl);
+            });
+            const firstWeekday = cycleStart.getDay();
+            const startOffset = firstWeekday === 0 ? 6 : firstWeekday - 1;
+            for (let i = 0; i < startOffset; i++) grid.appendChild(document.createElement('div'));
+            const allDates = [];
+            let currentDate = new Date(cycleStart);
+            while (currentDate <= cycleEnd) {
+                allDates.push(new Date(currentDate));
                 currentDate.setDate(currentDate.getDate() + 1);
             }
-            const weeks = [];
-            let currentWeek = new Array(6).fill(null);
-            dates.forEach((date) => {
-                const dayOfWeek = date.getDay();
-                if (dayOfWeek === 0) return;
-                const weekIndex = dayOfWeek - 1;
-                if (weekIndex === 0 && currentWeek.some(d => d !== null)) {
-                    weeks.push([...currentWeek]);
-                    currentWeek = new Array(6).fill(null);
-                }
-                currentWeek[weekIndex] = date;
-            });
-            if (currentWeek.some(d => d !== null)) weeks.push(currentWeek);
-            const dayNames = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
-            let html = '<table id="' + tableId + 'CalendarTable" style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; margin: 0 auto;">';
-            html += '<thead><tr style="background: #667eea; color: white;">';
-            dayNames.forEach(day => {
-                html += '<th style="padding: 12px; text-align: center; border: 1px solid #ddd; width: 16.66%;">' + day + '</th>';
-            });
-            html += '</tr></thead><tbody>';
-            weeks.forEach(week => {
-                html += '<tr>';
-                week.forEach((date, dayIndex) => {
-                    if (date) {
-                        const dateStr = formatDateForStorage(date);
-                        const dateDisplay = formatDateForDisplay(date);
-                        const isToday = isSameDay(date, today);
-                        const isPast = date < today;
-                        const row = dataObj[dateStr] || {};
-                        const morningVal = (row.morning || '').replace(/"/g, '&quot;');
-                        const afternoonVal = (row.afternoon || '').replace(/"/g, '&quot;');
-                        const hasEditPermission = hasPermission(permissionKey);
-                        const shouldDisable = isPast || !hasEditPermission;
-                        const disabledAttr = shouldDisable ? 'disabled' : '';
-                        const disabledStyle = shouldDisable ? 'background-color: #ffffff; color: #333333; cursor: not-allowed; opacity: 1;' : '';
-                        const isHolidayVip = typeof isHolidayCell === 'function' && isHolidayCell(dateStr);
-                        const hlVip = isHolidayVip && typeof getHolidayDisplayLabel === 'function' ? getHolidayDisplayLabel(dateStr) : { label: '', lunar: '' };
-                        let cellStyle = 'padding: 6px; border: 1px solid #ddd; vertical-align: top;';
-                        if (isHolidayVip) cellStyle += ' background-color: #d32f2f; color: #fff;';
-                        else if (isToday) cellStyle += ' background-color: #fff3cd; border: 2px solid #ffc107;';
-                        else if (isPast) cellStyle += ' background-color: #f8f9fa;';
-                        html += '<td style="' + cellStyle + '">';
-                        html += '<div style="font-weight: 600; margin-bottom: 4px; font-size: 12px; color: ' + (isHolidayVip ? '#fff' : (isToday ? '#ff6b00' : '#333')) + ';">' + dateDisplay + '</div>';
-                        if (hlVip.label) html += '<div style="font-size: 11px; margin-bottom: 4px; color: ' + (isHolidayVip ? '#fff' : '#333') + ';">🏮 ' + (hlVip.label + (hlVip.lunar ? ' (' + hlVip.lunar + ' AL)' : '')).replace(/"/g, '&quot;') + '</div>';
-                        html += '<div style="margin-bottom: 4px;"><span style="font-size: 11px; color: #666;">Sáng</span><input type="text" ' + disabledAttr + ' value="' + morningVal + '" placeholder="Bác sĩ sáng" onchange="' + updateFn + '(\'' + dateStr + '\', \'morning\', this.value)" data-date="' + dateStr + '" data-shift="morning" style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; font-family: inherit; ' + disabledStyle + '"></div>';
-                        html += '<div><span style="font-size: 11px; color: #666;">Chiều</span><input type="text" ' + disabledAttr + ' value="' + afternoonVal + '" placeholder="Bác sĩ chiều" onchange="' + updateFn + '(\'' + dateStr + '\', \'afternoon\', this.value)" data-date="' + dateStr + '" data-shift="afternoon" style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; font-family: inherit; ' + disabledStyle + '"></div>';
-                        html += '</td>';
-                    } else {
-                        html += '<td style="padding: 8px; border: 1px solid #ddd; background-color: #f5f5f5;"></td>';
+            const todayForCompare = new Date();
+            todayForCompare.setHours(0, 0, 0, 0);
+            allDates.forEach(date => {
+                const dateStr = formatDateForStorage(date);
+                const isPast = date < todayForCompare;
+                const isToday = date.getFullYear() === todayForCompare.getFullYear() && date.getMonth() === todayForCompare.getMonth() && date.getDate() === todayForCompare.getDate();
+                const isHoliday = typeof isHolidayCell === 'function' && isHolidayCell(dateStr);
+                const row = dataObj[dateStr] || {};
+                const morningVal = (row.morning || '').replace(/"/g, '&quot;');
+                const afternoonVal = (row.afternoon || '').replace(/"/g, '&quot;');
+                const hasEditPermission = hasPermission(permissionKey);
+                const shouldDisable = isPast || !hasEditPermission;
+                const disabledAttr = shouldDisable ? 'disabled' : '';
+                const disabledStyle = shouldDisable ? 'background-color: #ffffff; color: #333333; cursor: not-allowed; opacity: 1;' : '';
+                const dayCell = document.createElement('div');
+                dayCell.style.cssText = `border: ${isToday ? '3px solid #ffc107' : '1px solid #e6e9ef'}; border-radius: 6px; padding: 8px; background: ${isHoliday ? '#d32f2f' : (isToday ? '#fff3cd' : (isPast ? '#f8f9fa' : '#f8fafc'))}; min-height: 100px; display: flex; flex-direction: column; gap: 4px;`;
+                if (isHoliday) dayCell.style.color = '#fff';
+                const dayLabel = document.createElement('div');
+                dayLabel.textContent = formatDateWithWeekday(date);
+                dayLabel.style.cssText = 'font-size: 12px; font-weight: 600;';
+                dayCell.appendChild(dayLabel);
+                if (isHoliday) {
+                    const hl = typeof getHolidayDisplayLabel === 'function' ? getHolidayDisplayLabel(dateStr) : { label: '', lunar: '' };
+                    if (hl.label) {
+                        const holidayBadge = document.createElement('div');
+                        holidayBadge.textContent = '🏮 ' + hl.label + (hl.lunar ? ' (' + hl.lunar + ' AL)' : '');
+                        holidayBadge.style.cssText = 'font-size: 11px; margin-bottom: 4px; font-weight: 500;';
+                        dayCell.appendChild(holidayBadge);
                     }
-                });
-                html += '</tr>';
+                }
+                const morningDiv = document.createElement('div');
+                morningDiv.innerHTML = '<span style="font-size: 11px; color: #666;">Sáng</span>';
+                const morningInput = document.createElement('input');
+                morningInput.type = 'text';
+                morningInput.value = row.morning || '';
+                morningInput.placeholder = 'Bác sĩ sáng';
+                morningInput.setAttribute('data-date', dateStr);
+                morningInput.setAttribute('data-shift', 'morning');
+                if (shouldDisable) morningInput.disabled = true;
+                morningInput.style.cssText = 'width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; ' + disabledStyle;
+                morningInput.onchange = function() { window[updateFn](dateStr, 'morning', this.value); };
+                morningDiv.appendChild(morningInput);
+                dayCell.appendChild(morningDiv);
+                const afternoonDiv = document.createElement('div');
+                afternoonDiv.innerHTML = '<span style="font-size: 11px; color: #666;">Chiều</span>';
+                const afternoonInput = document.createElement('input');
+                afternoonInput.type = 'text';
+                afternoonInput.value = row.afternoon || '';
+                afternoonInput.placeholder = 'Bác sĩ chiều';
+                afternoonInput.setAttribute('data-date', dateStr);
+                afternoonInput.setAttribute('data-shift', 'afternoon');
+                if (shouldDisable) afternoonInput.disabled = true;
+                afternoonInput.style.cssText = 'width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; ' + disabledStyle;
+                afternoonInput.onchange = function() { window[updateFn](dateStr, 'afternoon', this.value); };
+                afternoonDiv.appendChild(afternoonInput);
+                dayCell.appendChild(afternoonDiv);
+                grid.appendChild(dayCell);
             });
-            html += '</tbody></table>';
-            container.innerHTML = html;
+            month.appendChild(grid);
+            return month;
         }
 
         function updateVipMorningAfternoonDate(dateStr, shift, value, dataObj, saveFn, permissionKey) {
@@ -9485,125 +9691,98 @@
             renderTructruaCalendar();
         }
 
-        // Render Lịch trực trưa calendar
+        // Render Lịch trực trưa calendar - 5 tháng (chu kỳ 25-24)
         function renderTructruaCalendar() {
             const container = document.getElementById('tructruaCalendarContainer');
             if (!container) return;
-
-            // Tính toán phạm vi ngày: từ trước ngày hiện tại đến sau ngày hiện tại 2 tuần
             const today = new Date();
             today.setHours(0, 0, 0, 0);
-            
-            // Ngày bắt đầu: trước ngày hiện tại (có thể là 1 tuần trước hoặc đầu tháng)
-            const startDate = new Date(today);
-            startDate.setDate(startDate.getDate() - 7); // 1 tuần trước
-            
-            // Ngày kết thúc: sau ngày hiện tại 2 tuần (14 ngày)
-            const endDate = new Date(today);
-            endDate.setDate(endDate.getDate() + 14);
-            
-            // Tạo mảng các ngày trong phạm vi
-            const dates = [];
-            const currentDate = new Date(startDate);
-            while (currentDate <= endDate) {
-                dates.push(new Date(currentDate));
+            let cycleStartDate = new Date(today.getFullYear(), today.getMonth(), 25);
+            if (today.getDate() < 25) {
+                cycleStartDate = new Date(today.getFullYear(), today.getMonth() - 1, 25);
+            }
+            const numCycles = 5;
+            container.innerHTML = '';
+            container.style.display = 'flex';
+            container.style.gap = '20px';
+            container.style.flexWrap = 'wrap';
+            container.style.maxWidth = '100%';
+            for (let i = 0; i < numCycles; i++) {
+                const cycleStart = new Date(cycleStartDate.getFullYear(), cycleStartDate.getMonth() + i, 25);
+                const cycleEnd = new Date(cycleStart.getFullYear(), cycleStart.getMonth() + 1, 24);
+                const monthEl = renderTructruaMonthCycle(cycleStart, cycleEnd);
+                container.appendChild(monthEl);
+            }
+        }
+        function renderTructruaMonthCycle(cycleStart, cycleEnd) {
+            const month = document.createElement('div');
+            month.style.cssText = 'flex: 0 1 100%; width: 100%; min-width: 100%; max-width: 100%; background: #fff; border-radius: 10px; padding: 14px; box-shadow: 0 6px 18px rgba(0,0,0,0.06);';
+            const title = document.createElement('div');
+            title.style.cssText = 'text-align: center; font-weight: 700; margin-bottom: 8px;';
+            const monthNum = cycleEnd.getMonth() + 1;
+            const year = cycleEnd.getFullYear();
+            title.textContent = `Lịch trực trưa tháng ${monthNum}/${year} (25/${cycleStart.getMonth() + 1} - 24/${cycleEnd.getMonth() + 1})`;
+            month.appendChild(title);
+            const grid = document.createElement('div');
+            grid.className = 'calendar-grid';
+            grid.style.cssText = 'display: grid; grid-template-columns: repeat(7,1fr); gap: 8px;';
+            ['T2','T3','T4','T5','T6','T7','CN'].forEach(w => {
+                const wEl = document.createElement('div');
+                wEl.style.cssText = 'text-align: center; font-size: 14px; color: #666;';
+                wEl.textContent = w;
+                grid.appendChild(wEl);
+            });
+            const firstWeekday = cycleStart.getDay();
+            const startOffset = firstWeekday === 0 ? 6 : firstWeekday - 1;
+            for (let i = 0; i < startOffset; i++) grid.appendChild(document.createElement('div'));
+            const allDates = [];
+            let currentDate = new Date(cycleStart);
+            while (currentDate <= cycleEnd) {
+                allDates.push(new Date(currentDate));
                 currentDate.setDate(currentDate.getDate() + 1);
             }
-            
-            // Nhóm các ngày theo tuần, bắt đầu từ Thứ 2, bỏ Chủ nhật
-            const weeks = [];
-            let currentWeek = new Array(6).fill(null);
-            
-            dates.forEach((date) => {
-                const dayOfWeek = date.getDay(); // 0 = Chủ nhật, 1 = Thứ 2, ...
-                
-                // Bỏ qua Chủ nhật
-                if (dayOfWeek === 0) return;
-                
-                // Chuyển đổi: Thứ 2 (1) -> 0, Thứ 3 (2) -> 1, ..., Thứ 7 (6) -> 5
-                const weekIndex = dayOfWeek - 1;
-                
-                // Nếu là Thứ 2 (weekIndex = 0) và tuần hiện tại đã có dữ liệu, bắt đầu tuần mới
-                if (weekIndex === 0 && currentWeek.some(d => d !== null)) {
-                    weeks.push([...currentWeek]);
-                    currentWeek = new Array(6).fill(null);
-                }
-                
-                // Đặt ngày vào đúng vị trí trong tuần (Thứ 2 = 0, Thứ 3 = 1, ..., Thứ 7 = 5)
-                currentWeek[weekIndex] = date;
-            });
-            
-            // Thêm tuần cuối cùng nếu còn
-            if (currentWeek.some(d => d !== null)) {
-                weeks.push(currentWeek);
-            }
-            
-            // Tạo HTML cho lịch
-            let html = '<table id="tructruaCalendarTable" style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; margin: 0 auto;">';
-            
-            // Header với các thứ trong tuần, bắt đầu từ Thứ 2, bỏ Chủ nhật
-            html += '<thead><tr style="background: #667eea; color: white;">';
-            const dayNames = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
-            dayNames.forEach(day => {
-                html += `<th style="padding: 12px; text-align: center; border: 1px solid #ddd; width: 16.66%;">${day}</th>`;
-            });
-            html += '</tr></thead>';
-            
-            // Body với các tuần
-            html += '<tbody>';
-            weeks.forEach(week => {
-                html += '<tr>';
-                week.forEach((date, dayIndex) => {
-                    if (date) {
-                        const dateStr = formatDateForStorage(date);
-                        const dateDisplay = formatDateForDisplay(date);
-                        const isToday = isSameDay(date, today);
-                        const isPast = date < today;
-                        const doctorName = tructruaData[dateStr] || '';
-                        
-                        const hasEditPermission = hasPermission('tructrua');
-                        // Disable nếu là ngày đã qua hoặc không có quyền
-                        const shouldDisable = isPast || !hasEditPermission;
-                        const disabledAttr = shouldDisable ? 'disabled' : '';
-                        const disabledStyle = shouldDisable ? 'background-color: #ffffff; color: #333333; cursor: not-allowed; opacity: 1;' : '';
-                        
-                        // Style cho ô ngày
-                        const isHolidayTructrua = typeof isHolidayCell === 'function' && isHolidayCell(dateStr);
-                        const hlTructrua = isHolidayTructrua && typeof getHolidayDisplayLabel === 'function' ? getHolidayDisplayLabel(dateStr) : { label: '', lunar: '' };
-                        let cellStyle = 'padding: 8px; border: 1px solid #ddd; vertical-align: top;';
-                        if (isHolidayTructrua) {
-                            cellStyle += ' background-color: #d32f2f; color: #fff;';
-                        } else if (isToday) {
-                            cellStyle += ' background-color: #fff3cd; border: 2px solid #ffc107;';
-                        } else if (isPast) {
-                            cellStyle += ' background-color: #f8f9fa;';
-                        }
-                        
-                        html += `<td style="${cellStyle}">`;
-                        html += `<div style="font-weight: 600; margin-bottom: 5px; font-size: 12px; color: ${isHolidayTructrua ? '#fff' : (isToday ? '#ff6b00' : '#333')};">${dateDisplay}</div>`;
-                        if (hlTructrua.label) html += `<div style="font-size: 11px; margin-bottom: 4px; color: ${isHolidayTructrua ? '#fff' : '#333'};">🏮 ${(hlTructrua.label + (hlTructrua.lunar ? ' (' + hlTructrua.lunar + ' AL)' : '')).replace(/"/g, '&quot;')}</div>`;
-                        html += `<input type="text" 
-                                     ${disabledAttr}
-                                     value="${(doctorName || '').replace(/"/g, '&quot;')}" 
-                                     placeholder="Nhập tên bác sĩ"
-                                     onchange="updateTructruaDate('${dateStr}', this.value)"
-                                     data-date="${dateStr}"
-                                     style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; font-family: inherit; ${disabledStyle}">`;
-                        html += '</td>';
-                    } else {
-                        html += '<td style="padding: 8px; border: 1px solid #ddd; background-color: #f5f5f5;"></td>';
+            const todayForCompare = new Date();
+            todayForCompare.setHours(0, 0, 0, 0);
+            allDates.forEach(date => {
+                const dateStr = formatDateForStorage(date);
+                const isPast = date < todayForCompare;
+                const isToday = date.getFullYear() === todayForCompare.getFullYear() && date.getMonth() === todayForCompare.getMonth() && date.getDate() === todayForCompare.getDate();
+                const isHoliday = typeof isHolidayCell === 'function' && isHolidayCell(dateStr);
+                const doctorName = (tructruaData[dateStr] || '').replace(/"/g, '&quot;');
+                const hasEditPermission = hasPermission('tructrua');
+                const shouldDisable = isPast || !hasEditPermission;
+                const disabledAttr = shouldDisable ? 'disabled' : '';
+                const disabledStyle = shouldDisable ? 'background-color: #ffffff; color: #333333; cursor: not-allowed; opacity: 1;' : '';
+                const dayCell = document.createElement('div');
+                dayCell.style.cssText = `border: ${isToday ? '3px solid #ffc107' : '1px solid #e6e9ef'}; border-radius: 6px; padding: 8px; background: ${isHoliday ? '#d32f2f' : (isToday ? '#fff3cd' : (isPast ? '#f8f9fa' : '#f8fafc'))}; min-height: 80px; display: flex; flex-direction: column; gap: 4px;`;
+                if (isHoliday) dayCell.style.color = '#fff';
+                const dayLabel = document.createElement('div');
+                dayLabel.textContent = formatDateWithWeekday(date);
+                dayLabel.style.cssText = 'font-size: 12px; font-weight: 600;';
+                dayCell.appendChild(dayLabel);
+                if (isHoliday) {
+                    const hl = typeof getHolidayDisplayLabel === 'function' ? getHolidayDisplayLabel(dateStr) : { label: '', lunar: '' };
+                    if (hl.label) {
+                        const holidayBadge = document.createElement('div');
+                        holidayBadge.textContent = '🏮 ' + hl.label + (hl.lunar ? ' (' + hl.lunar + ' AL)' : '');
+                        holidayBadge.style.cssText = 'font-size: 11px; margin-bottom: 4px; font-weight: 500;';
+                        dayCell.appendChild(holidayBadge);
                     }
-                });
-                html += '</tr>';
+                }
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.value = tructruaData[dateStr] || '';
+                input.placeholder = 'Bác sĩ';
+                input.setAttribute('data-date', dateStr);
+                if (shouldDisable) input.disabled = true;
+                input.style.cssText = 'padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; ' + disabledStyle;
+                input.onchange = function() { updateTructruaDate(dateStr, this.value); };
+                dayCell.appendChild(input);
+                grid.appendChild(dayCell);
             });
-            html += '</tbody></table>';
-            
-            container.innerHTML = html;
-            
-            // Cập nhật trạng thái nút thêm dòng (nếu có)
-            updateAddButtonsVisibility();
+            month.appendChild(grid);
+            return month;
         }
-
         // Update doctor name for a specific date
         function updateTructruaDate(dateStr, doctorName) {
             // Kiểm tra ngày đã qua
@@ -9651,123 +9830,98 @@
             rendertieuphauCalendar();
         }
         
-        // Render Lịch tiểu phẫu calendar
+        // Render Lịch tiểu phẫu calendar - 5 tháng (chu kỳ 25-24)
         function rendertieuphauCalendar() {
             const container = document.getElementById('tieuphauCalendarContainer');
             if (!container) return;
-
-            // Tính toán phạm vi ngày: từ trước ngày hiện tại đến sau ngày hiện tại 2 tuần
             const today = new Date();
             today.setHours(0, 0, 0, 0);
-            
-            const startDate = new Date(today);
-            startDate.setDate(startDate.getDate() - 7); // 1 tuần trước
-            
-            const endDate = new Date(today);
-            endDate.setDate(endDate.getDate() + 14); // 2 tuần sau
-            
-            // Tạo mảng các ngày trong phạm vi
-            const dates = [];
-            const currentDate = new Date(startDate);
-            while (currentDate <= endDate) {
-                dates.push(new Date(currentDate));
+            let cycleStartDate = new Date(today.getFullYear(), today.getMonth(), 25);
+            if (today.getDate() < 25) {
+                cycleStartDate = new Date(today.getFullYear(), today.getMonth() - 1, 25);
+            }
+            const numCycles = 5;
+            container.innerHTML = '';
+            container.style.display = 'flex';
+            container.style.gap = '20px';
+            container.style.flexWrap = 'wrap';
+            container.style.maxWidth = '100%';
+            for (let i = 0; i < numCycles; i++) {
+                const cycleStart = new Date(cycleStartDate.getFullYear(), cycleStartDate.getMonth() + i, 25);
+                const cycleEnd = new Date(cycleStart.getFullYear(), cycleStart.getMonth() + 1, 24);
+                const monthEl = renderTieuphauMonthCycle(cycleStart, cycleEnd);
+                container.appendChild(monthEl);
+            }
+        }
+        function renderTieuphauMonthCycle(cycleStart, cycleEnd) {
+            const month = document.createElement('div');
+            month.style.cssText = 'flex: 0 1 100%; width: 100%; min-width: 100%; max-width: 100%; background: #fff; border-radius: 10px; padding: 14px; box-shadow: 0 6px 18px rgba(0,0,0,0.06);';
+            const title = document.createElement('div');
+            title.style.cssText = 'text-align: center; font-weight: 700; margin-bottom: 8px;';
+            const monthNum = cycleEnd.getMonth() + 1;
+            const year = cycleEnd.getFullYear();
+            title.textContent = `Lịch tiểu phẫu tháng ${monthNum}/${year} (25/${cycleStart.getMonth() + 1} - 24/${cycleEnd.getMonth() + 1})`;
+            month.appendChild(title);
+            const grid = document.createElement('div');
+            grid.className = 'calendar-grid';
+            grid.style.cssText = 'display: grid; grid-template-columns: repeat(7,1fr); gap: 8px;';
+            ['T2','T3','T4','T5','T6','T7','CN'].forEach(w => {
+                const wEl = document.createElement('div');
+                wEl.style.cssText = 'text-align: center; font-size: 14px; color: #666;';
+                wEl.textContent = w;
+                grid.appendChild(wEl);
+            });
+            const firstWeekday = cycleStart.getDay();
+            const startOffset = firstWeekday === 0 ? 6 : firstWeekday - 1;
+            for (let i = 0; i < startOffset; i++) grid.appendChild(document.createElement('div'));
+            const allDates = [];
+            let currentDate = new Date(cycleStart);
+            while (currentDate <= cycleEnd) {
+                allDates.push(new Date(currentDate));
                 currentDate.setDate(currentDate.getDate() + 1);
             }
-            
-            // Nhóm các ngày theo tuần, bắt đầu từ Thứ 2, bỏ Chủ nhật
-            const weeks = [];
-            let currentWeek = new Array(6).fill(null);
-            
-            dates.forEach((date) => {
-                const dayOfWeek = date.getDay(); // 0 = Chủ nhật, 1 = Thứ 2, ...
-                
-                // Bỏ qua Chủ nhật
-                if (dayOfWeek === 0) return;
-                
-                // Chuyển đổi: Thứ 2 (1) -> 0, Thứ 3 (2) -> 1, ..., Thứ 7 (6) -> 5
-                const weekIndex = dayOfWeek - 1;
-                
-                // Nếu là Thứ 2 (weekIndex = 0) và tuần hiện tại đã có dữ liệu, bắt đầu tuần mới
-                if (weekIndex === 0 && currentWeek.some(d => d !== null)) {
-                    weeks.push([...currentWeek]);
-                    currentWeek = new Array(6).fill(null);
-                }
-                
-                // Đặt ngày vào đúng vị trí trong tuần (Thứ 2 = 0, Thứ 3 = 1, ..., Thứ 7 = 5)
-                currentWeek[weekIndex] = date;
-            });
-            
-            // Thêm tuần cuối cùng nếu còn
-            if (currentWeek.some(d => d !== null)) {
-                weeks.push(currentWeek);
-            }
-            
-            // Tạo HTML cho lịch
-            let html = '<table id="tieuphauCalendarTable" style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; margin: 0 auto;">';
-            
-            // Header với các thứ trong tuần, bắt đầu từ Thứ 2, bỏ Chủ nhật
-            html += '<thead><tr style="background: #667eea; color: white;">';
-            const dayNames = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
-            dayNames.forEach(day => {
-                html += `<th style="padding: 12px; text-align: center; border: 1px solid #ddd; width: 16.66%;">${day}</th>`;
-            });
-            html += '</tr></thead>';
-            
-            // Body với các tuần
-            html += '<tbody>';
-            weeks.forEach(week => {
-                html += '<tr>';
-                week.forEach((date, dayIndex) => {
-                    if (date) {
-                        const dateStr = formatDateForStorage(date);
-                        const dateDisplay = formatDateForDisplay(date);
-                        const isToday = isSameDay(date, today);
-                        const isPast = date < today;
-                        const doctorName = tieuphauData[dateStr] || '';
-                        
-                        const hasEditPermission = hasPermission('tieuphau');
-                        // Disable nếu là ngày đã qua hoặc không có quyền
-                        const shouldDisable = isPast || !hasEditPermission;
-                        const disabledAttr = shouldDisable ? 'disabled' : '';
-                        const disabledStyle = shouldDisable ? 'background-color: #ffffff; color: #333333; cursor: not-allowed; opacity: 1;' : '';
-                        
-                        // Style cho ô ngày
-                        const isHolidayTieuphau = typeof isHolidayCell === 'function' && isHolidayCell(dateStr);
-                        const hlTieuphau = isHolidayTieuphau && typeof getHolidayDisplayLabel === 'function' ? getHolidayDisplayLabel(dateStr) : { label: '', lunar: '' };
-                        let cellStyle = 'padding: 8px; border: 1px solid #ddd; vertical-align: top;';
-                        if (isHolidayTieuphau) {
-                            cellStyle += ' background-color: #d32f2f; color: #fff;';
-                        } else if (isToday) {
-                            cellStyle += ' background-color: #fff3cd; border: 2px solid #ffc107;';
-                        } else if (isPast) {
-                            cellStyle += ' background-color: #f8f9fa;';
-                        }
-                        
-                        html += `<td style="${cellStyle}">`;
-                        html += `<div style="font-weight: 600; margin-bottom: 5px; font-size: 12px; color: ${isHolidayTieuphau ? '#fff' : (isToday ? '#ff6b00' : '#333')};">${dateDisplay}</div>`;
-                        if (hlTieuphau.label) html += `<div style="font-size: 11px; margin-bottom: 4px; color: ${isHolidayTieuphau ? '#fff' : '#333'};">🏮 ${(hlTieuphau.label + (hlTieuphau.lunar ? ' (' + hlTieuphau.lunar + ' AL)' : '')).replace(/"/g, '&quot;')}</div>`;
-                        html += `<input type="text" 
-                                     ${disabledAttr}
-                                     value="${(doctorName || '').replace(/"/g, '&quot;')}" 
-                                     placeholder="Nhập tên bác sĩ"
-                                     onchange="updatetieuphauDate('${dateStr}', this.value)"
-                                     data-date="${dateStr}"
-                                     style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; font-family: inherit; ${disabledStyle}">`;
-                        html += '</td>';
-                    } else {
-                        html += '<td style="padding: 8px; border: 1px solid #ddd; background-color: #f5f5f5;"></td>';
+            const todayForCompare = new Date();
+            todayForCompare.setHours(0, 0, 0, 0);
+            allDates.forEach(date => {
+                const dateStr = formatDateForStorage(date);
+                const isPast = date < todayForCompare;
+                const isToday = date.getFullYear() === todayForCompare.getFullYear() && date.getMonth() === todayForCompare.getMonth() && date.getDate() === todayForCompare.getDate();
+                const isHoliday = typeof isHolidayCell === 'function' && isHolidayCell(dateStr);
+                const doctorName = (tieuphauData[dateStr] || '').replace(/"/g, '&quot;');
+                const hasEditPermission = hasPermission('tieuphau');
+                const shouldDisable = isPast || !hasEditPermission;
+                const disabledAttr = shouldDisable ? 'disabled' : '';
+                const disabledStyle = shouldDisable ? 'background-color: #ffffff; color: #333333; cursor: not-allowed; opacity: 1;' : '';
+                const dayCell = document.createElement('div');
+                dayCell.style.cssText = `border: ${isToday ? '3px solid #ffc107' : '1px solid #e6e9ef'}; border-radius: 6px; padding: 8px; background: ${isHoliday ? '#d32f2f' : (isToday ? '#fff3cd' : (isPast ? '#f8f9fa' : '#f8fafc'))}; min-height: 80px; display: flex; flex-direction: column; gap: 4px;`;
+                if (isHoliday) dayCell.style.color = '#fff';
+                const dayLabel = document.createElement('div');
+                dayLabel.textContent = formatDateWithWeekday(date);
+                dayLabel.style.cssText = 'font-size: 12px; font-weight: 600;';
+                dayCell.appendChild(dayLabel);
+                if (isHoliday) {
+                    const hl = typeof getHolidayDisplayLabel === 'function' ? getHolidayDisplayLabel(dateStr) : { label: '', lunar: '' };
+                    if (hl.label) {
+                        const holidayBadge = document.createElement('div');
+                        holidayBadge.textContent = '🏮 ' + hl.label + (hl.lunar ? ' (' + hl.lunar + ' AL)' : '');
+                        holidayBadge.style.cssText = 'font-size: 11px; margin-bottom: 4px; font-weight: 500;';
+                        dayCell.appendChild(holidayBadge);
                     }
-                });
-                html += '</tr>';
+                }
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.value = tieuphauData[dateStr] || '';
+                input.placeholder = 'Bác sĩ';
+                input.setAttribute('data-date', dateStr);
+                if (shouldDisable) input.disabled = true;
+                input.style.cssText = 'padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; ' + disabledStyle;
+                input.onchange = function() { updatetieuphauDate(dateStr, this.value); };
+                dayCell.appendChild(input);
+                grid.appendChild(dayCell);
             });
-            
-            html += '</tbody></table>';
-            container.innerHTML = html;
-            
-            // Cập nhật trạng thái nút thêm dòng (nếu có)
-            updateAddButtonsVisibility();
+            month.appendChild(grid);
+            return month;
         }
-        
         // Update doctor name for a specific date
         function updatetieuphauDate(dateStr, doctorName) {
             // Kiểm tra ngày đã qua
@@ -10581,25 +10735,24 @@
             }
         })();
         
-        // Tính toán 7 chủ nhật bắt đầu từ chủ nhật của tuần hiện tại
+        // Tính toán Chủ nhật trong 5 tháng (chu kỳ 25-24) - bắt đầu từ chủ nhật đầu tiên trong chu kỳ hiện tại
         function get7Sundays() {
             const today = new Date();
             today.setHours(0, 0, 0, 0);
-            
-            // Tìm chủ nhật của tuần hiện tại (0 = Chủ nhật)
-            const currentDay = today.getDay();
-            const daysToSunday = currentDay === 0 ? 0 : -currentDay; // Nếu là chủ nhật thì không cần điều chỉnh
-            
-            const firstSunday = new Date(today);
-            firstSunday.setDate(today.getDate() + daysToSunday);
-            
-            const sundays = [];
-            for (let i = 0; i < 7; i++) {
-                const sunday = new Date(firstSunday);
-                sunday.setDate(firstSunday.getDate() + (i * 7));
-                sundays.push(sunday);
+            let cycleStartDate = new Date(today.getFullYear(), today.getMonth(), 25);
+            if (today.getDate() < 25) {
+                cycleStartDate = new Date(today.getFullYear(), today.getMonth() - 1, 25);
             }
-            
+            const sundays = [];
+            for (let i = 0; i < 5; i++) {
+                const cycleStart = new Date(cycleStartDate.getFullYear(), cycleStartDate.getMonth() + i, 25);
+                const cycleEnd = new Date(cycleStart.getFullYear(), cycleStart.getMonth() + 1, 24);
+                let d = new Date(cycleStart);
+                while (d <= cycleEnd) {
+                    if (d.getDay() === 0) sundays.push(new Date(d));
+                    d.setDate(d.getDate() + 1);
+                }
+            }
             return sundays;
         }
         
@@ -11136,18 +11289,22 @@
             const container = document.getElementById('lichlamviecContainer');
             if (!container) return;
             
-            // Tính toán 10 ngày từ ngày hiện tại (bỏ Chủ nhật)
+            // Tính toán 5 tháng (chu kỳ 25-24) - tất cả ngày làm việc (bỏ Chủ nhật)
             const today = new Date();
             today.setHours(0, 0, 0, 0);
+            let cycleStartDate = new Date(today.getFullYear(), today.getMonth(), 25);
+            if (today.getDate() < 25) {
+                cycleStartDate = new Date(today.getFullYear(), today.getMonth() - 1, 25);
+            }
             const dates = [];
-            let currentDate = new Date(today);
-            while (dates.length < 10) {
-                const dayOfWeek = currentDate.getDay();
-                // Bỏ qua Chủ nhật (0)
-                if (dayOfWeek !== 0) {
-                    dates.push(new Date(currentDate));
+            for (let i = 0; i < 5; i++) {
+                const cycleStart = new Date(cycleStartDate.getFullYear(), cycleStartDate.getMonth() + i, 25);
+                const cycleEnd = new Date(cycleStart.getFullYear(), cycleStart.getMonth() + 1, 24);
+                let d = new Date(cycleStart);
+                while (d <= cycleEnd) {
+                    if (d.getDay() !== 0) dates.push(new Date(d));
+                    d.setDate(d.getDate() + 1);
                 }
-                currentDate.setDate(currentDate.getDate() + 1);
             }
             
             // Xóa nội dung cũ
@@ -11781,24 +11938,107 @@
 
         // ========== Lịch Phụ Mổ Functions ==========
         
+        function getPhumoDoctorListForInput() {
+            return Array.isArray(phumoDoctorList) ? phumoDoctorList : [];
+        }
+
+        function openPhumoDoctorListModal() {
+            if (!hasPermission('phumo')) {
+                alert('Bạn không có quyền chỉnh sửa. Vui lòng liên hệ admin.');
+                return;
+            }
+            let modal = document.getElementById('phumoDoctorListModal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'phumoDoctorListModal';
+                modal.className = 'login-modal';
+                modal.innerHTML = `
+                    <div class="login-box" style="max-width: 500px; max-height: 80vh; overflow: hidden; display: flex; flex-direction: column;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                            <h2 style="margin: 0;">📋 Danh sách bác sĩ phụ mổ</h2>
+                            <button type="button" class="login-modal-close" onclick="closePhumoDoctorListModal()" aria-label="Đóng">×</button>
+                        </div>
+                        <p style="font-size: 13px; color: #666; margin-bottom: 15px;">Tick chọn các bác sĩ có thể phụ mổ. Ô nhập trong bảng lịch chỉ hiển thị danh sách này để chọn.</p>
+                        <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                            <button type="button" onclick="phumoSelectAllDoctors(true)" style="padding: 6px 12px; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">Chọn tất cả</button>
+                            <button type="button" onclick="phumoSelectAllDoctors(false)" style="padding: 6px 12px; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">Bỏ chọn tất cả</button>
+                        </div>
+                        <div id="phumoDoctorListContainer" style="flex: 1; overflow-y: auto; max-height: 400px; border: 1px solid #ddd; border-radius: 4px; padding: 12px; background: #f8f9fa;"></div>
+                        <div style="margin-top: 15px; display: flex; gap: 8px; justify-content: flex-end;">
+                            <button type="button" onclick="closePhumoDoctorListModal()" style="padding: 8px 16px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">Hủy</button>
+                            <button type="button" onclick="savePhumoDoctorListFromModal()" style="padding: 8px 16px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer;">Lưu</button>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+            }
+            const container = document.getElementById('phumoDoctorListContainer');
+            if (!container) return;
+            const allDoctors = typeof getAllDoctorsForLamviechangngay === 'function' ? getAllDoctorsForLamviechangngay() : [];
+            const selectedSet = new Set((phumoDoctorList || []).map(n => normalizeKey(n)));
+            container.innerHTML = '';
+            allDoctors.forEach(doc => {
+                const displayName = doc.displayName || doc.name || '';
+                const key = normalizeKey(displayName);
+                const checked = selectedSet.has(key) || (phumoDoctorList.length === 0 && selectedSet.size === 0);
+                const label = document.createElement('label');
+                label.style.cssText = 'display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 6px 8px; margin-bottom: 4px; border-radius: 4px;';
+                label.innerHTML = `
+                    <input type="checkbox" data-doctor-name="${displayName.replace(/"/g, '&quot;')}" ${checked ? 'checked' : ''} style="width: 18px; height: 18px; cursor: pointer;">
+                    <span style="font-size: 14px;">${displayName}</span>
+                `;
+                container.appendChild(label);
+            });
+            modal.classList.add('active');
+        }
+
+        function phumoSelectAllDoctors(checked) {
+            document.querySelectorAll('#phumoDoctorListContainer input[type="checkbox"]').forEach(cb => cb.checked = checked);
+        }
+
+        function savePhumoDoctorListFromModal() {
+            const checkboxes = document.querySelectorAll('#phumoDoctorListContainer input[type="checkbox"]:checked');
+            phumoDoctorList = Array.from(checkboxes).map(cb => cb.getAttribute('data-doctor-name'));
+            StorageUtil.saveJson(STORAGE_KEYS.phumoDoctorList, phumoDoctorList);
+            if (typeof syncToBackend === 'function' && USE_DATABASE_BACKEND) syncToBackend();
+            closePhumoDoctorListModal();
+            renderPhumoTable();
+            alert('✅ Đã lưu danh sách bác sĩ phụ mổ.');
+        }
+
+        function closePhumoDoctorListModal() {
+            const modal = document.getElementById('phumoDoctorListModal');
+            if (modal) modal.classList.remove('active');
+        }
+        
         // Initialize Lịch phụ mổ table
         function initPhumoTable() {
             renderPhumoTable();
-            // Load notes
             const notesTextarea = document.getElementById('phumoNotes');
             if (notesTextarea) {
                 notesTextarea.value = phumoData.notes || '';
             }
         }
         
-        // Render Lịch phụ mổ table
+        // Render Lịch phụ mổ table - mỗi ngày có thể có nhiều bác sĩ phụ mổ
         function renderPhumoTable() {
             const tbody = document.getElementById('phumoTableBody');
             if (!tbody) return;
 
+            if (!phumoData.rows || phumoData.rows.length === 0) {
+                phumoData.rows = [{ thu2: '', thu3: '', thu4: '', thu5: '', thu6: '', thu7: '' }];
+            }
+
+            const doctorOptions = getPhumoDoctorListForInput();
+            let datalistEl = document.getElementById('phumoDoctorsDatalist');
+            if (!datalistEl) {
+                datalistEl = document.createElement('datalist');
+                datalistEl.id = 'phumoDoctorsDatalist';
+                document.body.appendChild(datalistEl);
+            }
+            datalistEl.innerHTML = doctorOptions.map(n => `<option value="${(n || '').replace(/"/g, '&quot;')}">`).join('');
+
             tbody.innerHTML = '';
-            const tr = document.createElement('tr');
-            
             const hasEditPermission = hasPermission('phumo');
             const disabledAttr = hasEditPermission ? '' : 'disabled';
             const disabledStyle = hasEditPermission ? '' : 'background-color: #ffffff; color: #333333; cursor: not-allowed; opacity: 1;';
@@ -11812,38 +12052,72 @@
                 { key: 'thu7', label: 'Thứ 7' }
             ];
             
-            days.forEach(day => {
-                const td = document.createElement('td');
-                td.style.padding = '12px';
-                td.style.border = '1px solid #ddd';
-                td.style.textAlign = 'center';
-                
-                td.innerHTML = `
-                    <input type="text" 
-                           ${disabledAttr}
-                           value="${(phumoData[day.key] || '').replace(/"/g, '&quot;')}" 
-                           placeholder="Nhập tên bác sĩ"
-                           onchange="updatePhumoData('${day.key}', this.value)"
-                           style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; text-align: center; font-family: inherit; ${disabledStyle}">
-                `;
-                tr.appendChild(td);
+            phumoData.rows.forEach((row, rowIndex) => {
+                const tr = document.createElement('tr');
+                days.forEach(day => {
+                    const td = document.createElement('td');
+                    td.style.padding = '12px';
+                    td.style.border = '1px solid #ddd';
+                    td.style.textAlign = 'center';
+                    td.innerHTML = `
+                        <input type="text" 
+                               list="phumoDoctorsDatalist"
+                               ${disabledAttr}
+                               value="${(row[day.key] || '').replace(/"/g, '&quot;')}" 
+                               placeholder="Chọn từ danh sách"
+                               onchange="updatePhumoData(${rowIndex}, '${day.key}', this.value)"
+                               data-row="${rowIndex}"
+                               data-day="${day.key}"
+                               style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; text-align: center; font-family: inherit; ${disabledStyle}">
+                    `;
+                    tr.appendChild(td);
+                });
+                const tdAction = document.createElement('td');
+                tdAction.style.padding = '8px';
+                tdAction.style.border = '1px solid #ddd';
+                tdAction.style.textAlign = 'center';
+                tdAction.style.width = '100px';
+                const deleteBtn = hasEditPermission ? `<button class="delete-btn" onclick="deletePhumoRow(${rowIndex})" style="padding: 6px 12px; font-size: 12px;">🗑️ Xóa</button>` : '';
+                tdAction.innerHTML = deleteBtn;
+                tr.appendChild(tdAction);
+                tbody.appendChild(tr);
             });
-            
-            tbody.appendChild(tr);
+        }
+
+        function addPhumoRow() {
+            if (!hasPermission('phumo')) {
+                alert('Bạn không có quyền chỉnh sửa. Vui lòng liên hệ admin.');
+                return;
+            }
+            phumoData.rows.push({ thu2: '', thu3: '', thu4: '', thu5: '', thu6: '', thu7: '' });
+            savePhumoData();
+            renderPhumoTable();
+        }
+
+        function deletePhumoRow(rowIndex) {
+            if (!hasPermission('phumo')) {
+                alert('Bạn không có quyền chỉnh sửa. Vui lòng liên hệ admin.');
+                return;
+            }
+            if (phumoData.rows.length <= 1) {
+                alert('Cần ít nhất 1 dòng. Có thể xóa nội dung thay vì xóa dòng.');
+                return;
+            }
+            phumoData.rows.splice(rowIndex, 1);
+            savePhumoData();
+            renderPhumoTable();
         }
         
         // Update data
-        function updatePhumoData(dayKey, value) {
+        function updatePhumoData(rowIndex, dayKey, value) {
             if (!hasPermission('phumo')) {
                 alert('Bạn không có quyền chỉnh sửa. Vui lòng liên hệ admin để được cấp quyền.');
-                // Restore previous value
-                const input = document.querySelector(`#phumoTable input[onchange*="updatePhumoData('${dayKey}'"]`);
-                if (input) {
-                    input.value = phumoData[dayKey] || '';
-                }
+                const input = document.querySelector(`#phumoTable input[data-row="${rowIndex}"][data-day="${dayKey}"]`);
+                if (input) input.value = (phumoData.rows[rowIndex] || {})[dayKey] || '';
                 return;
             }
-            phumoData[dayKey] = value;
+            if (!phumoData.rows[rowIndex]) phumoData.rows[rowIndex] = { thu2: '', thu3: '', thu4: '', thu5: '', thu6: '', thu7: '' };
+            phumoData.rows[rowIndex][dayKey] = value;
             savePhumoData();
         }
         
@@ -11864,7 +12138,8 @@
         
         // Save data to localStorage
         function savePhumoData() {
-            localStorage.setItem('phumoData', JSON.stringify(phumoData));
+            StorageUtil.saveJson(STORAGE_KEYS.phumoData, phumoData);
+            if (typeof syncToBackend === 'function' && USE_DATABASE_BACKEND) syncToBackend();
         }
 
         // ========== Backup & Restore Functions ==========
@@ -11889,7 +12164,9 @@
                 cvcot23Data: cvcot23Data,
                 khamhotropkData: khamhotropkData,
                 khamsomData: khamsomData,
+                khamcaugiayData: khamcaugiayData,
                 khamcaugiay20hData: khamcaugiay20hData,
+                khamlongbienData: khamlongbienData,
                 khamsanvipData: khamsanvipData,
                 sieuamvipData: sieuamvipData,
                 tructruaData: tructruaData,
@@ -11900,6 +12177,7 @@
                 tang4Notes: tang4Notes,
                 hoichancot1ScheduleData: hoichancot1ScheduleData,
                 phumoData: phumoData,
+                phumoDoctorList: phumoDoctorList,
                 tructhuongtruData: tructhuongtruData,
                 tructhuongtruDoctorList: tructhuongtruDoctorList,
                 lamviechangngayData: lamviechangngayData,
@@ -12001,9 +12279,17 @@
                         khamsomData = importedData.khamsomData;
                         localStorage.setItem('khamsomData', JSON.stringify(khamsomData));
                     }
+                    if (importedData.khamcaugiayData) {
+                        khamcaugiayData = importedData.khamcaugiayData;
+                        StorageUtil.saveJson(STORAGE_KEYS.khamcaugiayData, khamcaugiayData);
+                    }
                     if (importedData.khamcaugiay20hData) {
                         khamcaugiay20hData = importedData.khamcaugiay20hData;
                         localStorage.setItem('khamcaugiay20hData', JSON.stringify(khamcaugiay20hData));
+                    }
+                    if (importedData.khamlongbienData) {
+                        khamlongbienData = importedData.khamlongbienData;
+                        StorageUtil.saveJson(STORAGE_KEYS.khamlongbienData, khamlongbienData);
                     }
                     if (importedData.khamsanvipData) {
                         khamsanvipData = importedData.khamsanvipData;
@@ -12054,8 +12340,12 @@
                     }
                     
                     if (importedData.phumoData) {
-                        phumoData = importedData.phumoData;
-                        localStorage.setItem('phumoData', JSON.stringify(phumoData));
+                        phumoData = normalizePhumoData(importedData.phumoData);
+                        StorageUtil.saveJson(STORAGE_KEYS.phumoData, phumoData);
+                    }
+                    if (importedData.phumoDoctorList) {
+                        phumoDoctorList = importedData.phumoDoctorList;
+                        StorageUtil.saveJson(STORAGE_KEYS.phumoDoctorList, phumoDoctorList);
                     }
                     
                     if (importedData.tructhuongtruData) {
@@ -12159,6 +12449,7 @@
             localStorage.removeItem('tang4Data');
             localStorage.removeItem('hoichancot1ScheduleData');
             localStorage.removeItem('phumoData');
+            localStorage.removeItem('phumoDoctorList');
             localStorage.removeItem('tructhuongtruData');
             localStorage.removeItem('tructhuongtruDoctorList');
             localStorage.removeItem('lamviechangngayData');
