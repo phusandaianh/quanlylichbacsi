@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>Lịch Trực - Quản Lý Lịch Bác Sĩ</title>
+    <link rel="stylesheet" href="../assets/css/common.css">
+</head>
+<body data-current-tab="lichtruc">
+    <div class="container">
+        <div id="header-placeholder"></div>
+        <div id="lichtruc" class="tab-content active">
+            <div class="form-container">
+                <h2>📋 Lịch Trực</h2>
+                <p>Lịch trực theo ngày. LĐ lấy từ lịch trực thường trú. C1, C2, C3 có trực ngày và trực đêm. Thứ 7 có thêm Bs Trực 16h30.</p>
+                <div id="lichtrucCalendarContainer" style="display:flex; gap:20px; flex-wrap:wrap; max-width: 100%;"></div>
+                <!-- Modal chọn bác sĩ trực -->
+                <div id="selectLichTrucDoctorModal" class="login-modal">
+                    <div class="login-box" style="max-width: 500px; max-height: 80vh; overflow-y: auto;">
+                        <div class="login-header">
+                            <h2 id="selectLichTrucDoctorModalTitle">Chọn bác sĩ trực</h2>
+                            <button class="login-close" onclick="closeSelectLichTrucDoctorModal()">✕</button>
+                        </div>
+                        <div id="selectLichTrucDoctorList" style="padding: 20px;"></div>
+                        <div style="padding: 20px; border-top: 1px solid #eee; display: flex; gap: 10px; justify-content: flex-end;">
+                            <button class="delete-btn" onclick="closeSelectLichTrucDoctorModal()">Hủy</button>
+                            <button class="submit-btn" onclick="saveSelectedLichTrucDoctor()">Lưu</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="../assets/js/header.js"></script>
+    <script src="../assets/js/app.js"></script>
+</body>
+</html>

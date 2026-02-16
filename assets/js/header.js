@@ -38,7 +38,8 @@
         { id: 'tructhuongtru', label: 'Lịch trực thường trú', href: 'tructhuongtru.html', adminOnly: true },
         { id: 'lamviechangngay', label: 'Lịch khám chủ nhật', href: 'lamviechangngay.html', adminOnly: true },
         { id: 'lichlamviec', label: 'Lịch làm việc', href: 'lichlamviec.html', adminOnly: true },
-        { id: 'nghiphep', label: 'Đăng Ký Nghỉ Phép', href: 'nghiphep.html', adminOnly: false }
+        { id: 'nghiphep', label: 'Đăng Ký Nghỉ Phép', href: 'nghiphep.html', adminOnly: false },
+        { id: 'lichtruc', label: 'Lịch Trực', href: 'lichtruc.html', adminOnly: true }
     ];
 
     var tabHtml = tabs.map(function (t) {

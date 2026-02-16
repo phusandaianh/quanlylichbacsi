@@ -1400,7 +1400,81 @@ table {
     }
 }
 
+/* ========== Tab Quản lý nghỉ phép - Tối ưu giao diện ========== */
+#quanlynghiphep .form-container {
+    padding: 24px 20px;
+}
+#quanlynghiphep .buttons-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 20px;
+    padding: 12px 0;
+    border-bottom: 1px solid #e8e8e8;
+}
+#quanlynghiphep #adminCalendarContainer {
+    gap: 24px !important;
+}
+#quanlynghiphep .calendar-month-card {
+    background: #fff !important;
+    border-radius: 12px !important;
+    padding: 18px !important;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08) !important;
+    border: 1px solid #e8ecf0 !important;
+}
+#quanlynghiphep .calendar-month-card > div:first-child {
+    font-size: 16px !important;
+    color: #2c3e50 !important;
+    margin-bottom: 12px !important;
+    padding-bottom: 8px !important;
+    border-bottom: 2px solid #667eea !important;
+}
+#quanlynghiphep .calendar-grid {
+    gap: 10px !important;
+}
+#quanlynghiphep .nghiphep-day-cell {
+    min-height: 150px !important;
+    padding: 10px !important;
+    font-size: 12px !important;
+    line-height: 1.35 !important;
+}
+#quanlynghiphep .nghiphep-day-cell > div:first-child {
+    font-size: 13px !important;
+}
+
+/* ========== Tab Lịch Trực - Giao diện giống tab nghỉ phép ========== */
+#lichtruc .form-container {
+    padding: 24px 20px;
+}
+#lichtruc #lichtrucCalendarContainer {
+    gap: 24px !important;
+}
+#lichtruc .calendar-month-card {
+    background: #fff !important;
+    border-radius: 12px !important;
+    padding: 18px !important;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08) !important;
+    border: 1px solid #e8ecf0 !important;
+}
+#lichtruc .calendar-month-card > div:first-child {
+    font-size: 16px !important;
+    color: #2c3e50 !important;
+    margin-bottom: 12px !important;
+    padding-bottom: 8px !important;
+    border-bottom: 2px solid #667eea !important;
+}
+#lichtruc .calendar-grid {
+    gap: 10px !important;
+}
+#lichtruc .nghiphep-day-cell {
+    min-height: 160px !important;
+    padding: 10px !important;
+    font-size: 12px !important;
+    line-height: 1.35 !important;
+}
+
 /* ========== CALENDAR CONTAINERS - Responsive ========== */
+#lichtrucCalendarContainer,
 #nghiphepCalendarContainer,
 #adminCalendarContainer,
 #lichnghiphepCalendarContainer,
