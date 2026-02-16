@@ -3100,6 +3100,137 @@
             exportNghiPhepToPDFByMonth(month, year);
         }
         
+        // ========== Xuất PDF lịch trực theo tháng ==========
+        function openExportLichTrucModal() {
+            const modal = document.getElementById('exportLichTrucModal');
+            if (!modal) return;
+            const today = new Date();
+            const monthSelect = document.getElementById('exportLichTrucMonth');
+            const yearSelect = document.getElementById('exportLichTrucYear');
+            if (monthSelect) monthSelect.value = String(today.getMonth() + 1);
+            if (yearSelect) {
+                yearSelect.innerHTML = '';
+                for (let y = today.getFullYear() - 2; y <= today.getFullYear() + 2; y++) {
+                    const opt = document.createElement('option');
+                    opt.value = y;
+                    opt.textContent = 'Năm ' + y;
+                    if (y === today.getFullYear()) opt.selected = true;
+                    yearSelect.appendChild(opt);
+                }
+            }
+            modal.classList.add('active');
+        }
+        
+        function closeExportLichTrucModal() {
+            const modal = document.getElementById('exportLichTrucModal');
+            if (modal) modal.classList.remove('active');
+        }
+        
+        function doExportLichTrucPDF() {
+            const monthSelect = document.getElementById('exportLichTrucMonth');
+            const yearSelect = document.getElementById('exportLichTrucYear');
+            const month = parseInt(monthSelect?.value || 1, 10);
+            const year = parseInt(yearSelect?.value || new Date().getFullYear(), 10);
+            closeExportLichTrucModal();
+            exportLichTrucToPDFByMonth(month, year);
+        }
+        
+        function exportLichTrucToPDFByMonth(month, year) {
+            try {
+                const cycleStart = new Date(year, month - 2, 25);
+                const cycleEnd = new Date(year, month - 1, 24);
+                const toLocalDateKey = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+                const allDates = [];
+                let d = new Date(cycleStart);
+                while (d <= cycleEnd) { allDates.push(new Date(d)); d.setDate(d.getDate() + 1); }
+                const weekdayNames = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+                let tableRows = '';
+                allDates.forEach(date => {
+                    const key = toLocalDateKey(date);
+                    const dayData = lichTrucData[key] || {};
+                    const ldName = getLĐFromTructhuongtru(key);
+                    const wd = date.getDay();
+                    const isSaturday = wd === 6;
+                    const c1 = dayData.c1 || {};
+                    const c2 = dayData.c2 || {};
+                    const c3 = dayData.c3 || {};
+                    const c1Day = c1.day ? getDoctorNameByKey(c1.day, 'c1') : '-';
+                    const c1Night = c1.night ? getDoctorNameByKey(c1.night, 'c1') : '-';
+                    const c2Day = c2.day ? getDoctorNameByKey(c2.day, 'c2') : '-';
+                    const c2Night = c2.night ? getDoctorNameByKey(c2.night, 'c2') : '-';
+                    const c3Day = c3.day ? getDoctorNameByKey(c3.day, 'c3') : '-';
+                    const c3Night = c3.night ? getDoctorNameByKey(c3.night, 'c3') : '-';
+                    const t1630Key = dayData.truc1630 || dayData.c1?.truc1630 || dayData.c2?.truc1630 || dayData.c3?.truc1630 || '';
+                    const t1630 = t1630Key ? getDoctorDisplayNameAnyColumn(t1630Key) : '-';
+                    const isHoliday = typeof isHolidayCell === 'function' && isHolidayCell(key);
+                    const holidayLabel = isHoliday && typeof getHolidayDisplayLabel === 'function' ? (getHolidayDisplayLabel(key).label || 'Nghỉ lễ') : '';
+                    const dateStr = date.getDate() + '/' + (date.getMonth() + 1);
+                    const weekday = weekdayNames[date.getDay()];
+                    const rowStyle = isHoliday ? 'background:#d32f2f;color:#fff;' : '';
+                    const cellStyle = isHoliday ? 'padding:8px;border:1px solid #b71c1c;font-weight:600;color:#fff;' : 'padding:8px;border:1px solid #ddd;font-weight:600;';
+                    const cellStyleNorm = isHoliday ? 'padding:8px;border:1px solid #b71c1c;color:#fff;' : 'padding:8px;border:1px solid #ddd;';
+                    tableRows += `<tr style="${rowStyle}"><td style="${cellStyle}">${dateStr}</td><td style="${cellStyleNorm}">${weekday}</td><td style="${cellStyleNorm}">${ldName}</td><td style="${cellStyleNorm}">${c1Day}</td><td style="${cellStyleNorm}">${c1Night}</td><td style="${cellStyleNorm}">${c2Day}</td><td style="${cellStyleNorm}">${c2Night}</td><td style="${cellStyleNorm}">${c3Day}</td><td style="${cellStyleNorm}">${c3Night}</td><td style="${cellStyleNorm}">${isSaturday ? t1630 : '-'}</td><td style="${cellStyleNorm}font-size:11px;">${holidayLabel}</td></tr>`;
+                });
+                const title = `Lịch trực tháng ${month}/${year}`;
+                const html = `
+                    <div style="font-family:Arial,sans-serif;padding:20px;background:#fff;">
+                        <div style="margin-bottom:20px;border-bottom:2px solid #667eea;padding-bottom:10px;">
+                            <h1 style="color:#667eea;margin:0;font-size:22px;">${title}</h1>
+                            <p style="color:#666;margin:5px 0 0 0;font-size:12px;">Chu kỳ 25/${month === 1 ? 12 : month - 1}/${month === 1 ? year - 1 : year} - 24/${month}/${year} | Ngày xuất: ${new Date().toLocaleDateString('vi-VN', {year:'numeric',month:'long',day:'numeric',hour:'2-digit',minute:'2-digit'})}</p>
+                        </div>
+                        <table style="width:100%;border-collapse:collapse;font-size:11px;">
+                            <thead>
+                                <tr style="background:#667eea;color:#fff;">
+                                    <th style="padding:8px;border:1px solid #555;">Ngày</th>
+                                    <th style="padding:8px;border:1px solid #555;">Thứ</th>
+                                    <th style="padding:8px;border:1px solid #555;">LĐ</th>
+                                    <th style="padding:8px;border:1px solid #555;">C1 Ngày</th>
+                                    <th style="padding:8px;border:1px solid #555;">C1 Đêm</th>
+                                    <th style="padding:8px;border:1px solid #555;">C2 Ngày</th>
+                                    <th style="padding:8px;border:1px solid #555;">C2 Đêm</th>
+                                    <th style="padding:8px;border:1px solid #555;">C3 Ngày</th>
+                                    <th style="padding:8px;border:1px solid #555;">C3 Đêm</th>
+                                    <th style="padding:8px;border:1px solid #555;">Bs 16h30</th>
+                                    <th style="padding:8px;border:1px solid #555;">Ghi chú</th>
+                                </tr>
+                            </thead>
+                            <tbody>${tableRows}</tbody>
+                        </table>
+                    </div>`;
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = html;
+                tempDiv.style.position = 'absolute';
+                tempDiv.style.left = '-9999px';
+                tempDiv.style.width = '210mm';
+                tempDiv.style.background = 'white';
+                document.body.appendChild(tempDiv);
+                const loadingMsg = document.createElement('div');
+                loadingMsg.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.8);color:white;padding:20px;border-radius:8px;z-index:10001;';
+                loadingMsg.textContent = '📄 Đang tạo file PDF...';
+                document.body.appendChild(loadingMsg);
+                const opt = {
+                    margin: [10, 10, 10, 10],
+                    filename: `Lich_truc_${month}_${year}_${new Date().toISOString().split('T')[0]}.pdf`,
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' },
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape', compress: true },
+                    pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+                };
+                html2pdf().set(opt).from(tempDiv.firstElementChild).save().then(() => {
+                    document.body.removeChild(tempDiv);
+                    if (loadingMsg.parentNode) document.body.removeChild(loadingMsg);
+                    alert('✅ Đã xuất PDF lịch trực tháng ' + month + '/' + year + ' thành công!');
+                }).catch(err => {
+                    document.body.removeChild(tempDiv);
+                    if (loadingMsg.parentNode) document.body.removeChild(loadingMsg);
+                    alert('❌ Lỗi xuất PDF: ' + (err?.message || err));
+                });
+            } catch (err) {
+                console.error('Lỗi exportLichTrucToPDFByMonth:', err);
+                alert('❌ Lỗi xuất PDF: ' + (err?.message || err));
+            }
+        }
+        
         function exportNghiPhepToPDFByMonth(month, year) {
             try {
                 // Chu kỳ: 25 tháng trước - 24 tháng hiện tại
@@ -3364,8 +3495,20 @@
                         tabTitle = tabButton.textContent.trim() || tabId;
                     }
                 
-                // Thêm nút "Lịch nghỉ cố định", "Số lượng bác sĩ được nghỉ phép" và "Xuất PDF" cho tab quanlynghiphep
-                if (tabId === 'quanlynghiphep') {
+                // Thêm nút Xuất PDF cho tab Lịch Trực (xuất theo tháng)
+                if (tabId === 'lichtruc') {
+                    let buttonsContainer = formContainer.querySelector('.buttons-container');
+                    if (!buttonsContainer) {
+                        buttonsContainer = document.createElement('div');
+                        buttonsContainer.className = 'buttons-container';
+                        const exportBtn = document.createElement('button');
+                        exportBtn.className = 'export-pdf-btn';
+                        exportBtn.innerHTML = '📄 Xuất PDF';
+                        exportBtn.onclick = () => openExportLichTrucModal();
+                        buttonsContainer.appendChild(exportBtn);
+                        formContainer.insertBefore(buttonsContainer, formContainer.firstChild);
+                    }
+                } else if (tabId === 'quanlynghiphep') {
                     // Kiểm tra xem đã có container chưa
                     let buttonsContainer = formContainer.querySelector('.buttons-container');
                     if (!buttonsContainer) {
@@ -6176,6 +6319,9 @@
         }
         function openSelectLichTrucDoctorModal(dateKey, column, shift) {
             if (!hasPermission('lichtruc') && currentUser?.role !== 'admin') return;
+            const today = new Date();
+            const todayKey = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+            if (dateKey < todayKey) return;
             lichTrucModalState = { dateKey, column, shift };
             const colLabel = column === 'c1' ? 'Cột 1' : (column === 'c2' ? 'Cột 2' : (column === 'c3' ? 'Cột 3' : ''));
             const shiftLabel = shift === 'day' ? 'Trực ngày' : (shift === 'night' ? 'Trực đêm' : 'Bs Trực 16h30');
@@ -6288,8 +6434,11 @@
                 const allDates = [];
                 let d = new Date(cycleStart);
                 while (d <= cycleEnd) { allDates.push(new Date(d)); d.setDate(d.getDate() + 1); }
+                const todayForCompare = new Date();
+                const todayKey = todayForCompare.getFullYear() + '-' + String(todayForCompare.getMonth() + 1).padStart(2, '0') + '-' + String(todayForCompare.getDate()).padStart(2, '0');
                 allDates.forEach(date => {
                     const key = toLocalDateKey(date);
+                    const isPastDate = key < todayKey;
                     const dayData = lichTrucData[key] || {};
                     const ldName = getLĐFromTructhuongtru(key);
                     const wd = date.getDay();
@@ -6299,6 +6448,12 @@
                     dayCell.style.cssText = 'border:1px solid #e6e9ef;border-radius:6px;padding:8px;background:#f8fafc;min-height:160px;display:flex;flex-direction:column;gap:4px;';
                     const isHoliday = typeof isHolidayCell === 'function' && isHolidayCell(key);
                     if (isHoliday) { dayCell.style.background = '#d32f2f'; dayCell.style.color = '#fff'; }
+                    if (isPastDate) {
+                        dayCell.style.opacity = isHoliday ? '0.85' : '0.35';
+                        if (!isHoliday) dayCell.style.background = '#e9ecef';
+                        dayCell.style.pointerEvents = 'none';
+                        dayCell.style.cursor = 'default';
+                    }
                     const dayLabel = document.createElement('div');
                     dayLabel.style.cssText = 'font-size:13px;font-weight:600;margin-bottom:4px;';
                     dayLabel.textContent = formatDateWithWeekday(date);
@@ -6306,9 +6461,10 @@
                     const createRow = (label, val, col, sh) => {
                         const row = document.createElement('div');
                         row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:6px 8px;border-bottom:1px solid #eee;font-size:12px;cursor:pointer;';
-                        if (hasEditPermission) row.style.cursor = 'pointer';
+                        if (hasEditPermission && !isPastDate) row.style.cursor = 'pointer';
+                        else row.style.cursor = 'default';
                         row.innerHTML = `<span style="font-weight:600;">${label}</span><span>${val || '-'}</span>`;
-                        if (hasEditPermission && (sh || col)) row.onclick = () => openSelectLichTrucDoctorModal(key, col, sh);
+                        if (hasEditPermission && !isPastDate && (sh || col)) row.onclick = () => openSelectLichTrucDoctorModal(key, col, sh);
                         return row;
                     };
                     dayCell.appendChild(createRow('LĐ', ldName, null, null));

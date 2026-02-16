@@ -1446,6 +1446,14 @@ table {
 #lichtruc .form-container {
     padding: 24px 20px;
 }
+#lichtruc .buttons-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 20px;
+    padding: 12px 0;
+    border-bottom: 1px solid #e8e8e8;
+}
 #lichtruc #lichtrucCalendarContainer {
     gap: 24px !important;
 }
