@@ -1481,7 +1481,36 @@ table {
     line-height: 1.35 !important;
 }
 
+/* ========== Lịch khám Cầu Giấy ========== */
+#khamcaugiay #khamcaugiayCalendarContainer {
+    gap: 24px !important;
+}
+#khamcaugiay .calendar-month-card {
+    background: #fff !important;
+    border-radius: 12px !important;
+    padding: 18px !important;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08) !important;
+    border: 1px solid #e8ecf0 !important;
+}
+#khamcaugiay .calendar-month-card > div:first-child {
+    font-size: 16px !important;
+    color: #2c3e50 !important;
+    margin-bottom: 12px !important;
+    padding-bottom: 8px !important;
+    border-bottom: 2px solid #667eea !important;
+}
+#khamcaugiay .calendar-grid {
+    gap: 10px !important;
+}
+#khamcaugiay .nghiphep-day-cell {
+    min-height: 200px !important;
+    padding: 10px !important;
+    font-size: 12px !important;
+    line-height: 1.35 !important;
+}
+
 /* ========== CALENDAR CONTAINERS - Responsive ========== */
+#khamcaugiayCalendarContainer,
 #lichtrucCalendarContainer,
 #nghiphepCalendarContainer,
 #adminCalendarContainer,
@@ -1495,6 +1524,7 @@ table {
 }
 
 @media (max-width: 768px) {
+    #khamcaugiayCalendarContainer,
     #nghiphepCalendarContainer,
     #adminCalendarContainer,
     #lichnghiphepCalendarContainer,
@@ -1505,6 +1535,7 @@ table {
 }
 
 @media (max-width: 480px) {
+    #khamcaugiayCalendarContainer,
     #nghiphepCalendarContainer,
     #adminCalendarContainer,
     #lichnghiphepCalendarContainer,

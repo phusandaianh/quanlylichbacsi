@@ -42,6 +42,8 @@
             khamhotropkData: 'khamhotropkData',
             khamsomData: 'khamsomData',
             khamcaugiayData: 'khamcaugiayData',
+            khamcaugiayDoctorList: 'khamcaugiayDoctorList',
+            khamcaugiayRooms: 'khamcaugiayRooms',
             khamcaugiay20hData: 'khamcaugiay20hData',
             khamlongbienData: 'khamlongbienData',
             khamsanvipData: 'khamsanvipData',
@@ -169,8 +171,58 @@
         // Lịch khám sớm data - lưu theo format: { "YYYY-MM-DD": "Tên bác sĩ" }
         let khamsomData = StorageUtil.loadJson(STORAGE_KEYS.khamsomData, {});
         
-        // Lịch khám cầu giấy 20h - cùng format như khám sớm
+        // Lịch khám Cầu Giấy - format: { "YYYY-MM-DD": { "roomId": "doctorKey", ... } }, 6 phòng/ngày
         let khamcaugiayData = StorageUtil.loadJson(STORAGE_KEYS.khamcaugiayData, {});
+        let khamcaugiayDoctorList = StorageUtil.loadJson(STORAGE_KEYS.khamcaugiayDoctorList, []);
+        let khamcaugiayRooms = StorageUtil.loadJson(STORAGE_KEYS.khamcaugiayRooms, [
+            { id: 'r1', name: 'Phòng 1' }, { id: 'r2', name: 'Phòng 2' }, { id: 'r3', name: 'Phòng 3' },
+            { id: 'r4', name: 'Phòng 4' }, { id: 'r5', name: 'Phòng 5' }, { id: 'r6', name: 'Phòng 6' }
+        ]);
+        if (!Array.isArray(khamcaugiayRooms) || khamcaugiayRooms.length === 0) {
+            khamcaugiayRooms = [
+                { id: 'r1', name: 'Phòng 1' }, { id: 'r2', name: 'Phòng 2' }, { id: 'r3', name: 'Phòng 3' },
+                { id: 'r4', name: 'Phòng 4' }, { id: 'r5', name: 'Phòng 5' }, { id: 'r6', name: 'Phòng 6' }
+            ];
+            StorageUtil.saveJson(STORAGE_KEYS.khamcaugiayRooms, khamcaugiayRooms);
+        }
+        (function migrateKhamCauGiayRoomsOptions() {
+            let changed = false;
+            (khamcaugiayRooms || []).forEach(r => {
+                if (r.khamTrua === undefined) { r.khamTrua = false; changed = true; }
+                if (r.kham20h === undefined) { r.kham20h = false; changed = true; }
+            });
+            if (changed) StorageUtil.saveJson(STORAGE_KEYS.khamcaugiayRooms, khamcaugiayRooms);
+        })();
+        // Migration: format cũ { date: "doctorName" } -> { date: { r1: "doctorKey" } }
+        (function migrateKhamCauGiayData() {
+            let changed = false;
+            for (const key in khamcaugiayData) {
+                const v = khamcaugiayData[key];
+                if (typeof v === 'string' && v.trim()) {
+                    const firstRoom = (khamcaugiayRooms[0] && khamcaugiayRooms[0].id) || 'r1';
+                    const doctorKey = normalizeKey(v.trim());
+                    khamcaugiayData[key] = { [firstRoom]: doctorKey };
+                    changed = true;
+                }
+            }
+            if (changed) StorageUtil.saveJson(STORAGE_KEYS.khamcaugiayData, khamcaugiayData);
+        })();
+        // Migration: format { roomId: "doctorKey" } -> { roomId: { doctor, khamTrua, kham20h } }
+        (function migrateKhamCauGiaySlotFormat() {
+            let changed = false;
+            for (const key in khamcaugiayData) {
+                const dayData = khamcaugiayData[key];
+                if (!dayData || typeof dayData !== 'object') continue;
+                for (const rid in dayData) {
+                    const v = dayData[rid];
+                    if (typeof v === 'string') {
+                        dayData[rid] = { doctor: v.trim(), khamTrua: false, kham20h: false };
+                        changed = true;
+                    }
+                }
+            }
+            if (changed) StorageUtil.saveJson(STORAGE_KEYS.khamcaugiayData, khamcaugiayData);
+        })();
         let khamcaugiay20hData = StorageUtil.loadJson(STORAGE_KEYS.khamcaugiay20hData, {});
         let khamlongbienData = StorageUtil.loadJson(STORAGE_KEYS.khamlongbienData, {});
         
@@ -493,6 +545,8 @@
             if (data.khamhotropkData != null) { khamhotropkData = data.khamhotropkData; StorageUtil.saveJson(STORAGE_KEYS.khamhotropkData, khamhotropkData); }
             if (data.khamsomData != null) { khamsomData = data.khamsomData; StorageUtil.saveJson(STORAGE_KEYS.khamsomData, khamsomData); }
             if (data.khamcaugiayData != null) { khamcaugiayData = data.khamcaugiayData; StorageUtil.saveJson(STORAGE_KEYS.khamcaugiayData, khamcaugiayData); }
+            if (data.khamcaugiayDoctorList != null) { khamcaugiayDoctorList = data.khamcaugiayDoctorList; StorageUtil.saveJson(STORAGE_KEYS.khamcaugiayDoctorList, khamcaugiayDoctorList); }
+            if (data.khamcaugiayRooms != null) { khamcaugiayRooms = data.khamcaugiayRooms; StorageUtil.saveJson(STORAGE_KEYS.khamcaugiayRooms, khamcaugiayRooms); }
             if (data.khamcaugiay20hData != null) { khamcaugiay20hData = data.khamcaugiay20hData; StorageUtil.saveJson(STORAGE_KEYS.khamcaugiay20hData, khamcaugiay20hData); }
             if (data.khamlongbienData != null) { khamlongbienData = data.khamlongbienData; StorageUtil.saveJson(STORAGE_KEYS.khamlongbienData, khamlongbienData); }
             if (data.khamsanvipData != null) { khamsanvipData = data.khamsanvipData; StorageUtil.saveJson(STORAGE_KEYS.khamsanvipData, khamsanvipData); }
@@ -544,6 +598,8 @@
                 khamhotropkData: khamhotropkData,
                 khamsomData: khamsomData,
                 khamcaugiayData: khamcaugiayData,
+                khamcaugiayDoctorList: khamcaugiayDoctorList,
+                khamcaugiayRooms: khamcaugiayRooms,
                 khamcaugiay20hData: khamcaugiay20hData,
                 khamlongbienData: khamlongbienData,
                 khamsanvipData: khamsanvipData,
@@ -6317,6 +6373,11 @@
             }
             return '';
         }
+        function getDoctorDisplayNameFromList(doctorKey, nameList) {
+            if (!Array.isArray(nameList)) return '';
+            const found = nameList.find(n => normalizeKey(n || '') === doctorKey);
+            return found ? (found.displayName || found.name || found) : '';
+        }
         function openSelectLichTrucDoctorModal(dateKey, column, shift) {
             if (!hasPermission('lichtruc') && currentUser?.role !== 'admin') return;
             const today = new Date();
@@ -9755,7 +9816,167 @@
             }
         }
 
-        // ========== Lịch khám Cầu Giấy (5 tháng) ==========
+        // ========== Lịch khám Cầu Giấy (6 phòng, 5 tháng) ==========
+        function getKhamCauGiayDoctorOptions() {
+            if (Array.isArray(khamcaugiayDoctorList) && khamcaugiayDoctorList.length > 0) {
+                return khamcaugiayDoctorList.map(n => (typeof n === 'object' ? (n.name || n.displayName || '') : n)).filter(Boolean);
+            }
+            const all = [...(doctors.cot1 || []), ...(doctors.cot2 || []), ...(doctors.cot3 || []), ...(doctors.lanhdao || []), ...(doctors.partime || []), ...(doctors.khac || [])];
+            return [...new Set(all.map(d => d.displayName || d.name || '').filter(Boolean))];
+        }
+        function openKhamCauGiayDoctorListModal() {
+            if (!hasPermission('khamcaugiay') && currentUser?.role !== 'admin') return;
+            const container = document.getElementById('khamCauGiayDoctorListContainer');
+            if (!container) return;
+            container.innerHTML = '';
+            const allDoctors = [...(doctors.cot1 || []), ...(doctors.cot2 || []), ...(doctors.cot3 || []), ...(doctors.lanhdao || []), ...(doctors.partime || []), ...(doctors.khac || [])];
+            const selectedSet = new Set((khamcaugiayDoctorList || []).map(n => normalizeKey(typeof n === 'object' ? (n.name || n.displayName || '') : n)));
+            allDoctors.forEach(doc => {
+                const name = doc.displayName || doc.name || '';
+                if (!name) return;
+                const key = normalizeKey(name);
+                const cb = document.createElement('label');
+                cb.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:8px;cursor:pointer;';
+                const input = document.createElement('input');
+                input.type = 'checkbox';
+                input.checked = selectedSet.has(key) || (khamcaugiayDoctorList.length === 0 && selectedSet.size === 0);
+                input.setAttribute('data-doctor-name', name);
+                cb.appendChild(input);
+                cb.appendChild(document.createTextNode(name));
+                container.appendChild(cb);
+            });
+            document.getElementById('khamCauGiayDoctorListModal').classList.add('active');
+        }
+        function closeKhamCauGiayDoctorListModal() {
+            document.getElementById('khamCauGiayDoctorListModal')?.classList.remove('active');
+        }
+        function saveKhamCauGiayDoctorList() {
+            const checkboxes = document.querySelectorAll('#khamCauGiayDoctorListContainer input[type="checkbox"]:checked');
+            khamcaugiayDoctorList = Array.from(checkboxes).map(cb => cb.getAttribute('data-doctor-name'));
+            StorageUtil.saveJson(STORAGE_KEYS.khamcaugiayDoctorList, khamcaugiayDoctorList);
+            if (typeof syncToBackend === 'function' && USE_DATABASE_BACKEND) syncToBackend();
+            closeKhamCauGiayDoctorListModal();
+            renderKhamCauGiayCalendar();
+            alert('✅ Đã lưu danh sách bác sĩ khám Cầu Giấy.');
+        }
+        function getKhamCauGiaySlotData(dayData, roomId) {
+            const v = dayData && dayData[roomId];
+            if (v == null) return { doctor: '', khamTrua: false, kham20h: false };
+            if (typeof v === 'string') return { doctor: v || '', khamTrua: false, kham20h: false };
+            return { doctor: (v.doctor || '').trim(), khamTrua: !!v.khamTrua, kham20h: !!v.kham20h };
+        }
+        function openKhamCauGiayRoomsModal() {
+            if (!hasPermission('khamcaugiay') && currentUser?.role !== 'admin') return;
+            const container = document.getElementById('khamCauGiayRoomsList');
+            if (!container) return;
+            container.innerHTML = '';
+            (khamcaugiayRooms || []).forEach((room) => {
+                const div = document.createElement('div');
+                div.style.cssText = 'display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;padding:10px;background:#f8f9fa;border-radius:8px;border:1px solid #e9ecef;';
+                const khamTruaChecked = room.khamTrua ? 'checked' : '';
+                const kham20hChecked = room.kham20h ? 'checked' : '';
+                div.innerHTML = `
+                    <input type="text" value="${(room.name || '').replace(/"/g, '&quot;')}" data-room-id="${room.id}" 
+                           style="flex:1;min-width:120px;padding:8px 12px;border:1px solid #ddd;border-radius:6px;font-size:14px;"
+                           placeholder="Tên phòng">
+                    <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;white-space:nowrap;">
+                        <input type="checkbox" data-room-id="${room.id}" data-opt="khamTrua" ${khamTruaChecked}>
+                        Khám trưa
+                    </label>
+                    <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;white-space:nowrap;">
+                        <input type="checkbox" data-room-id="${room.id}" data-opt="kham20h" ${kham20hChecked}>
+                        Khám 20h
+                    </label>
+                    <button class="delete-btn" onclick="removeKhamCauGiayRoom('${room.id}')" style="padding:6px 12px;">🗑️ Xóa</button>
+                `;
+                container.appendChild(div);
+            });
+            document.getElementById('khamCauGiayRoomsModal').classList.add('active');
+        }
+        function closeKhamCauGiayRoomsModal() {
+            document.getElementById('khamCauGiayRoomsModal')?.classList.remove('active');
+        }
+        function addKhamCauGiayRoom() {
+            const id = 'r' + (Date.now().toString(36));
+            khamcaugiayRooms.push({ id, name: 'Phòng mới', khamTrua: false, kham20h: false });
+            const container = document.getElementById('khamCauGiayRoomsList');
+            if (container) {
+                const div = document.createElement('div');
+                div.style.cssText = 'display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;padding:10px;background:#f8f9fa;border-radius:8px;border:1px solid #e9ecef;';
+                div.innerHTML = `
+                    <input type="text" value="Phòng mới" data-room-id="${id}" 
+                           style="flex:1;min-width:120px;padding:8px 12px;border:1px solid #ddd;border-radius:6px;font-size:14px;"
+                           placeholder="Tên phòng">
+                    <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;white-space:nowrap;">
+                        <input type="checkbox" data-room-id="${id}" data-opt="khamTrua">
+                        Khám trưa
+                    </label>
+                    <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;white-space:nowrap;">
+                        <input type="checkbox" data-room-id="${id}" data-opt="kham20h">
+                        Khám 20h
+                    </label>
+                    <button class="delete-btn" onclick="removeKhamCauGiayRoom('${id}')" style="padding:6px 12px;">🗑️ Xóa</button>
+                `;
+                container.appendChild(div);
+            }
+        }
+        function removeKhamCauGiayRoom(roomId) {
+            collectKhamCauGiayRoomsFromDOM();
+            khamcaugiayRooms = khamcaugiayRooms.filter(r => r.id !== roomId);
+            for (const key in khamcaugiayData) {
+                if (khamcaugiayData[key] && khamcaugiayData[key][roomId]) {
+                    delete khamcaugiayData[key][roomId];
+                }
+            }
+            const container = document.getElementById('khamCauGiayRoomsList');
+            if (!container) return;
+            container.innerHTML = '';
+            (khamcaugiayRooms || []).forEach((room) => {
+                const div = document.createElement('div');
+                div.style.cssText = 'display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;padding:10px;background:#f8f9fa;border-radius:8px;border:1px solid #e9ecef;';
+                const khamTruaChecked = room.khamTrua ? 'checked' : '';
+                const kham20hChecked = room.kham20h ? 'checked' : '';
+                div.innerHTML = `
+                    <input type="text" value="${(room.name || '').replace(/"/g, '&quot;')}" data-room-id="${room.id}" 
+                           style="flex:1;min-width:120px;padding:8px 12px;border:1px solid #ddd;border-radius:6px;font-size:14px;"
+                           placeholder="Tên phòng">
+                    <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;white-space:nowrap;">
+                        <input type="checkbox" data-room-id="${room.id}" data-opt="khamTrua" ${khamTruaChecked}>
+                        Khám trưa
+                    </label>
+                    <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;white-space:nowrap;">
+                        <input type="checkbox" data-room-id="${room.id}" data-opt="kham20h" ${kham20hChecked}>
+                        Khám 20h
+                    </label>
+                    <button class="delete-btn" onclick="removeKhamCauGiayRoom('${room.id}')" style="padding:6px 12px;">🗑️ Xóa</button>
+                `;
+                container.appendChild(div);
+            });
+        }
+        function collectKhamCauGiayRoomsFromDOM() {
+            const container = document.getElementById('khamCauGiayRoomsList');
+            if (!container) return;
+            container.querySelectorAll('input[type="text"]').forEach(inp => {
+                const rid = inp.getAttribute('data-room-id');
+                const r = khamcaugiayRooms.find(x => x.id === rid);
+                if (r) r.name = (inp.value || '').trim() || r.name;
+            });
+            container.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                const rid = cb.getAttribute('data-room-id');
+                const opt = cb.getAttribute('data-opt');
+                const r = khamcaugiayRooms.find(x => x.id === rid);
+                if (r && opt === 'khamTrua') r.khamTrua = !!cb.checked;
+                if (r && opt === 'kham20h') r.kham20h = !!cb.checked;
+            });
+        }
+        function saveKhamCauGiayRooms() {
+            collectKhamCauGiayRoomsFromDOM();
+            StorageUtil.saveJson(STORAGE_KEYS.khamcaugiayRooms, khamcaugiayRooms);
+            if (typeof syncToBackend === 'function' && USE_DATABASE_BACKEND) syncToBackend();
+            closeKhamCauGiayRoomsModal();
+            renderKhamCauGiayCalendar();
+            alert('✅ Đã lưu danh sách phòng khám.');
+        }
         function initKhamCauGiayCalendar() {
             renderKhamCauGiayCalendar();
         }
@@ -9765,40 +9986,365 @@
             const today = new Date();
             today.setHours(0, 0, 0, 0);
             let cycleStartDate = new Date(today.getFullYear(), today.getMonth(), 25);
-            if (today.getDate() < 25) {
-                cycleStartDate = new Date(today.getFullYear(), today.getMonth() - 1, 25);
-            }
-            const numCycles = 5;
+            if (today.getDate() < 25) cycleStartDate = new Date(today.getFullYear(), today.getMonth() - 1, 25);
+            const toLocalDateKey = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+            const hasEditPermission = hasPermission('khamcaugiay') || currentUser?.role === 'admin';
+            const doctorOptions = getKhamCauGiayDoctorOptions();
             container.innerHTML = '';
-            for (let i = 0; i < numCycles; i++) {
+            for (let i = 0; i < 5; i++) {
                 const cycleStart = new Date(cycleStartDate.getFullYear(), cycleStartDate.getMonth() + i, 25);
                 const cycleEnd = new Date(cycleStart.getFullYear(), cycleStart.getMonth() + 1, 24);
-                const monthEl = renderSingleDoctorMonthCycle(cycleStart, cycleEnd, khamcaugiayData, 'khamcaugiay', 'updateKhamCauGiayDate', 'saveKhamCauGiayData');
+                const monthEl = document.createElement('div');
+                monthEl.className = 'calendar-month-card';
+                monthEl.style.cssText = 'flex:0 1 100%;width:100%;background:#fff;border-radius:12px;padding:18px;box-shadow:0 4px 16px rgba(0,0,0,0.08);border:1px solid #e8ecf0;';
+                const monthNum = cycleEnd.getMonth() + 1;
+                const year = cycleEnd.getFullYear();
+                const title = document.createElement('div');
+                title.style.cssText = 'text-align:center;font-weight:700;font-size:16px;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #667eea;';
+                title.textContent = `Lịch khám Cầu Giấy tháng ${monthNum}/${year}`;
+                monthEl.appendChild(title);
+                const grid = document.createElement('div');
+                grid.className = 'calendar-grid';
+                grid.style.cssText = 'display:grid;grid-template-columns:repeat(7,1fr);gap:10px;';
+                ['T2','T3','T4','T5','T6','T7','CN'].forEach(w => {
+                    const wEl = document.createElement('div');
+                    wEl.style.cssText = 'text-align:center;font-size:14px;color:#666;';
+                    wEl.textContent = w;
+                    grid.appendChild(wEl);
+                });
+                const firstWeekday = cycleStart.getDay();
+                const startOffset = firstWeekday === 0 ? 6 : firstWeekday - 1;
+                for (let j = 0; j < startOffset; j++) grid.appendChild(document.createElement('div'));
+                const allDates = [];
+                let d = new Date(cycleStart);
+                while (d <= cycleEnd) { allDates.push(new Date(d)); d.setDate(d.getDate() + 1); }
+                const todayKey = toLocalDateKey(today);
+                allDates.forEach(date => {
+                    const key = toLocalDateKey(date);
+                    const isPastDate = key < todayKey;
+                    const dayData = khamcaugiayData[key] || {};
+                    const excludeKeys = getDoctorsOnLeaveForDate(key);
+                    const ldName = getLĐFromTructhuongtru(key);
+                    const lichTrucDay = lichTrucData[key] || {};
+                    const lichNghiText = (() => {
+                        const parts = [];
+                        ['ld','c1','c2','c3'].forEach(col => {
+                            const cd = (quanlynghiphepData[key] || {})[col];
+                            const fixedObj = new Date(key + 'T00:00:00');
+                            const wd = fixedObj.getDay();
+                            const wdKey = wd === 0 ? 7 : wd;
+                            let doctors = [];
+                            if (cd && Array.isArray(cd.doctors)) {
+                                doctors = (cd.doctors || []).map(x => (x && x.key) ? getDoctorDisplayNameAnyColumn(x.key) : '').filter(Boolean);
+                            } else if (wdKey >= 1 && wdKey <= 6) {
+                                const fixed = getFixedScheduleForWeekday(col, wdKey);
+                                doctors = fixed.map(f => getDoctorDisplayNameAnyColumn((f && f.key) || f)).filter(Boolean);
+                            }
+                            if (doctors.length) parts.push((col === 'ld' ? 'LĐ' : col.toUpperCase()) + ': ' + doctors.join(', '));
+                        });
+                        return parts.length ? parts.join(' | ') : '-';
+                    })();
+                    const lichTrucParts = [];
+                    lichTrucParts.push('LĐ: ' + (ldName || '-'));
+                    ['c1','c2','c3'].forEach(col => {
+                        const cd = lichTrucDay[col] || {};
+                        const dayName = cd.day ? (getDoctorDisplayNameAnyColumn(cd.day) || cd.day) : '';
+                        const nightName = cd.night ? (getDoctorDisplayNameAnyColumn(cd.night) || cd.night) : '';
+                        lichTrucParts.push('C' + col.slice(-1) + ': ' + (dayName || '-') + '/' + (nightName || '-'));
+                    });
+                    const wd = date.getDay();
+                    if (wd === 6) {
+                        const t1630 = lichTrucDay.truc1630 ? getDoctorDisplayNameAnyColumn(lichTrucDay.truc1630) : '';
+                        lichTrucParts.push('16h30: ' + (t1630 || '-'));
+                    }
+                    const lichTrucText = lichTrucParts.join(' | ');
+                    const dayCell = document.createElement('div');
+                    dayCell.className = 'nghiphep-day-cell';
+                    dayCell.style.cssText = 'border:1px solid #e6e9ef;border-radius:6px;padding:8px;background:#f8fafc;min-height:200px;display:flex;flex-direction:column;gap:4px;';
+                    const isHoliday = typeof isHolidayCell === 'function' && isHolidayCell(key);
+                    if (isHoliday) { dayCell.style.background = '#d32f2f'; dayCell.style.color = '#fff'; }
+                    if (isPastDate) { dayCell.style.opacity = '0.35'; dayCell.style.background = '#e9ecef'; dayCell.style.pointerEvents = 'none'; }
+                    const dayLabel = document.createElement('div');
+                    dayLabel.style.cssText = 'font-size:13px;font-weight:600;margin-bottom:4px;';
+                    dayLabel.textContent = formatDateWithWeekday(date);
+                    dayCell.appendChild(dayLabel);
+                    if (isHoliday) {
+                        const hl = typeof getHolidayDisplayLabel === 'function' ? getHolidayDisplayLabel(key) : { label: '' };
+                        if (hl.label) {
+                            const hb = document.createElement('div');
+                            hb.textContent = '🏮 ' + hl.label;
+                            hb.style.fontSize = '11px';
+                            dayCell.appendChild(hb);
+                        }
+                    }
+                    (khamcaugiayRooms || []).forEach(room => {
+                        const slot = getKhamCauGiaySlotData(dayData, room.id);
+                        const row = document.createElement('div');
+                        row.style.cssText = 'display:flex;align-items:center;gap:6px;font-size:11px;flex-wrap:wrap;';
+                        const lbl = document.createElement('span');
+                        lbl.textContent = (room.name || room.id) + ':';
+                        lbl.style.minWidth = '70px';
+                        lbl.style.fontWeight = '600';
+                        row.appendChild(lbl);
+                        const sel = document.createElement('select');
+                        sel.style.cssText = 'flex:1;min-width:80px;padding:4px 6px;border:1px solid #ddd;border-radius:4px;font-size:11px;';
+                        sel.disabled = isPastDate || !hasEditPermission;
+                        sel.innerHTML = '<option value="">--</option>' + doctorOptions.map(n => {
+                            const k = normalizeKey(n);
+                            if (excludeKeys.has(k)) return '';
+                            return `<option value="${k}" ${k === slot.doctor ? 'selected' : ''}>${(n || '').replace(/"/g, '&quot;')}</option>`;
+                        }).filter(Boolean).join('');
+                        sel.onchange = () => updateKhamCauGiayRoom(key, room.id, sel.value);
+                        row.appendChild(sel);
+                        if (room.khamTrua) {
+                            const cbTrua = document.createElement('label');
+                            cbTrua.style.cssText = 'display:flex;align-items:center;gap:4px;font-size:10px;cursor:pointer;white-space:nowrap;';
+                            const inpTrua = document.createElement('input');
+                            inpTrua.type = 'checkbox';
+                            inpTrua.checked = slot.khamTrua;
+                            inpTrua.disabled = isPastDate || !hasEditPermission;
+                            inpTrua.onchange = () => updateKhamCauGiayRoomOption(key, room.id, 'khamTrua', inpTrua.checked);
+                            cbTrua.appendChild(inpTrua);
+                            cbTrua.appendChild(document.createTextNode('Trưa'));
+                            row.appendChild(cbTrua);
+                        }
+                        if (room.kham20h) {
+                            const cb20h = document.createElement('label');
+                            cb20h.style.cssText = 'display:flex;align-items:center;gap:4px;font-size:10px;cursor:pointer;white-space:nowrap;';
+                            const inp20h = document.createElement('input');
+                            inp20h.type = 'checkbox';
+                            inp20h.checked = slot.kham20h;
+                            inp20h.disabled = isPastDate || !hasEditPermission;
+                            inp20h.onchange = () => updateKhamCauGiayRoomOption(key, room.id, 'kham20h', inp20h.checked);
+                            cb20h.appendChild(inp20h);
+                            cb20h.appendChild(document.createTextNode('20h'));
+                            row.appendChild(cb20h);
+                        }
+                        dayCell.appendChild(row);
+                    });
+                    const nghiRow = document.createElement('div');
+                    nghiRow.style.cssText = 'font-size:10px;color:#666;margin-top:4px;padding-top:4px;border-top:1px dashed #ddd;';
+                    nghiRow.innerHTML = '<strong>Lịch nghỉ:</strong> ' + lichNghiText;
+                    dayCell.appendChild(nghiRow);
+                    const trucRow = document.createElement('div');
+                    trucRow.style.cssText = 'font-size:10px;color:#666;';
+                    trucRow.innerHTML = '<strong>Lịch trực:</strong> ' + lichTrucText;
+                    dayCell.appendChild(trucRow);
+                    grid.appendChild(dayCell);
+                });
+                monthEl.appendChild(grid);
                 container.appendChild(monthEl);
             }
         }
-        function updateKhamCauGiayDate(dateStr, doctorName) {
+        function updateKhamCauGiayRoom(dateStr, roomId, doctorKey) {
             const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            const dateObj = new Date(dateStr + 'T00:00:00');
-            if (dateObj < today) {
-                alert('Không thể chỉnh sửa ngày đã qua.');
-                return;
-            }
-            if (!hasPermission('khamcaugiay')) {
-                alert('Bạn không có quyền chỉnh sửa.');
-                return;
-            }
-            if (doctorName && doctorName.trim()) {
-                khamcaugiayData[dateStr] = doctorName.trim();
+            const todayKey = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+            if (dateStr < todayKey) return;
+            if (!hasPermission('khamcaugiay') && currentUser?.role !== 'admin') return;
+            if (!khamcaugiayData[dateStr]) khamcaugiayData[dateStr] = {};
+            const slot = getKhamCauGiaySlotData(khamcaugiayData[dateStr], roomId);
+            if (doctorKey) {
+                khamcaugiayData[dateStr][roomId] = { doctor: doctorKey, khamTrua: slot.khamTrua, kham20h: slot.kham20h };
+            } else if (slot.khamTrua || slot.kham20h) {
+                khamcaugiayData[dateStr][roomId] = { doctor: '', khamTrua: slot.khamTrua, kham20h: slot.kham20h };
             } else {
-                delete khamcaugiayData[dateStr];
+                delete khamcaugiayData[dateStr][roomId];
+            }
+            saveKhamCauGiayData();
+        }
+        function updateKhamCauGiayRoomOption(dateStr, roomId, opt, value) {
+            const today = new Date();
+            const todayKey = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+            if (dateStr < todayKey) return;
+            if (!hasPermission('khamcaugiay') && currentUser?.role !== 'admin') return;
+            if (!khamcaugiayData[dateStr]) khamcaugiayData[dateStr] = {};
+            const slot = getKhamCauGiaySlotData(khamcaugiayData[dateStr], roomId);
+            if (opt === 'khamTrua') slot.khamTrua = !!value;
+            if (opt === 'kham20h') slot.kham20h = !!value;
+            if (slot.doctor || slot.khamTrua || slot.kham20h) {
+                khamcaugiayData[dateStr][roomId] = slot;
+            } else {
+                delete khamcaugiayData[dateStr][roomId];
             }
             saveKhamCauGiayData();
         }
         function saveKhamCauGiayData() {
             StorageUtil.saveJson(STORAGE_KEYS.khamcaugiayData, khamcaugiayData);
             if (typeof syncToBackend === 'function' && USE_DATABASE_BACKEND) syncToBackend();
+            renderKhamCauGiayCalendar();
+        }
+
+        // ========== Xuất PDF lịch khám Cầu Giấy theo tuần ==========
+        function openExportKhamCauGiayPDFModal() {
+            const modal = document.getElementById('exportKhamCauGiayPDFModal');
+            const dateInput = document.getElementById('exportKhamCauGiayDate');
+            const preview = document.getElementById('exportKhamCauGiayWeekPreview');
+            if (!modal || !dateInput) return;
+            const today = new Date();
+            dateInput.value = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+            if (preview) updateExportKhamCauGiayWeekPreview();
+            dateInput.onchange = updateExportKhamCauGiayWeekPreview;
+            modal.classList.add('active');
+        }
+        function closeExportKhamCauGiayPDFModal() {
+            const modal = document.getElementById('exportKhamCauGiayPDFModal');
+            if (modal) modal.classList.remove('active');
+        }
+        function updateExportKhamCauGiayWeekPreview() {
+            const dateInput = document.getElementById('exportKhamCauGiayDate');
+            const preview = document.getElementById('exportKhamCauGiayWeekPreview');
+            if (!dateInput || !preview || !dateInput.value) return;
+            const d = new Date(dateInput.value + 'T12:00:00');
+            const weekStart = getMondayOfWeek(d);
+            const weekEnd = new Date(weekStart);
+            weekEnd.setDate(weekEnd.getDate() + 6);
+            const fmt = (x) => x.getDate() + '/' + (x.getMonth() + 1) + '/' + x.getFullYear();
+            preview.textContent = 'Tuần: ' + fmt(weekStart) + ' (T2) - ' + fmt(weekEnd) + ' (CN)';
+        }
+        function getMondayOfWeek(d) {
+            const day = d.getDay();
+            const diff = day === 0 ? -6 : 1 - day;
+            const monday = new Date(d);
+            monday.setDate(d.getDate() + diff);
+            return monday;
+        }
+        function doExportKhamCauGiayPDF() {
+            const dateInput = document.getElementById('exportKhamCauGiayDate');
+            if (!dateInput || !dateInput.value) {
+                alert('Vui lòng chọn ngày trong tuần.');
+                return;
+            }
+            const d = new Date(dateInput.value + 'T12:00:00');
+            const weekStart = getMondayOfWeek(d);
+            closeExportKhamCauGiayPDFModal();
+            exportKhamCauGiayToPDFByWeek(weekStart);
+        }
+        function exportKhamCauGiayToPDFByWeek(weekStart) {
+            try {
+                const toLocalDateKey = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+                const weekdayNames = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+                const rooms = khamcaugiayRooms || [];
+                const roomHeaders = rooms.map(r => '<th style="padding:8px 6px;border:1px solid #555;text-align:center;font-size:10px;">' + ((r.name || r.id) + '').replace(/</g, '&lt;') + '</th>').join('');
+                const weekEnd = new Date(weekStart);
+                weekEnd.setDate(weekEnd.getDate() + 6);
+                const allDates = [];
+                for (let i = 0; i < 7; i++) {
+                    const d = new Date(weekStart);
+                    d.setDate(weekStart.getDate() + i);
+                    allDates.push(d);
+                }
+                let tableRows = '';
+                allDates.forEach(date => {
+                    const key = toLocalDateKey(date);
+                    const dayData = khamcaugiayData[key] || {};
+                    const ldName = getLĐFromTructhuongtru(key);
+                    const lichTrucDay = lichTrucData[key] || {};
+                    const lichNghiText = (() => {
+                        const parts = [];
+                        ['ld','c1','c2','c3'].forEach(col => {
+                            const cd = (quanlynghiphepData[key] || {})[col];
+                            const fixedObj = new Date(key + 'T00:00:00');
+                            const wd = fixedObj.getDay();
+                            const wdKey = wd === 0 ? 7 : wd;
+                            let doctors = [];
+                            if (cd && Array.isArray(cd.doctors)) {
+                                doctors = (cd.doctors || []).map(x => (x && x.key) ? getDoctorDisplayNameAnyColumn(x.key) : '').filter(Boolean);
+                            } else if (wdKey >= 1 && wdKey <= 6) {
+                                const fixed = getFixedScheduleForWeekday(col, wdKey);
+                                doctors = fixed.map(f => getDoctorDisplayNameAnyColumn((f && f.key) || f)).filter(Boolean);
+                            }
+                            if (doctors.length) parts.push((col === 'ld' ? 'LĐ' : col.toUpperCase()) + ': ' + doctors.join(', '));
+                        });
+                        return parts.length ? parts.join(' | ') : '-';
+                    })();
+                    const lichTrucParts = [];
+                    lichTrucParts.push('LĐ: ' + (ldName || '-'));
+                    ['c1','c2','c3'].forEach(col => {
+                        const cd = lichTrucDay[col] || {};
+                        const dayName = cd.day ? (getDoctorDisplayNameAnyColumn(cd.day) || cd.day) : '';
+                        const nightName = cd.night ? (getDoctorDisplayNameAnyColumn(cd.night) || cd.night) : '';
+                        lichTrucParts.push('C' + col.slice(-1) + ': ' + (dayName || '-') + '/' + (nightName || '-'));
+                    });
+                    const wd = date.getDay();
+                    if (wd === 6) {
+                        const t1630 = lichTrucDay.truc1630 ? getDoctorDisplayNameAnyColumn(lichTrucDay.truc1630) : '';
+                        lichTrucParts.push('16h30: ' + (t1630 || '-'));
+                    }
+                    const lichTrucText = lichTrucParts.join(' | ');
+                    const roomCells = rooms.map(r => {
+                        const slot = getKhamCauGiaySlotData(dayData, r.id);
+                        const docName = slot.doctor ? (getDoctorDisplayNameAnyColumn(slot.doctor) || slot.doctor) : '-';
+                        let badge = '';
+                        if (r.khamTrua && slot.khamTrua) badge += ' Trưa';
+                        if (r.kham20h && slot.kham20h) badge += ' 20h';
+                        const cellText = (docName || '-') + (badge ? ' [' + badge.trim() + ']' : '');
+                        return '<td style="padding:6px 4px;border:1px solid #ddd;font-size:10px;text-align:center;">' + cellText.replace(/</g, '&lt;') + '</td>';
+                    }).join('');
+                    const isHoliday = typeof isHolidayCell === 'function' && isHolidayCell(key);
+                    const holidayLabel = isHoliday && typeof getHolidayDisplayLabel === 'function' ? (getHolidayDisplayLabel(key).label || 'Nghỉ lễ') : '';
+                    const dateStr = date.getDate() + '/' + (date.getMonth() + 1);
+                    const weekday = weekdayNames[date.getDay()];
+                    const rowStyle = isHoliday ? 'background:#d32f2f;color:#fff;' : '';
+                    const cellStyle = isHoliday ? 'padding:6px 4px;border:1px solid #b71c1c;font-weight:600;font-size:10px;color:#fff;' : 'padding:6px 4px;border:1px solid #ddd;font-weight:600;font-size:10px;';
+                    const cellStyleNorm = isHoliday ? 'padding:6px 4px;border:1px solid #b71c1c;font-size:9px;color:#fff;' : 'padding:6px 4px;border:1px solid #ddd;font-size:9px;';
+                    const nghiEsc = (lichNghiText || '-').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+                    const trucEsc = (lichTrucText || '-').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+                    tableRows += `<tr style="${rowStyle}"><td style="${cellStyle}">${dateStr}</td><td style="${cellStyleNorm}">${weekday}</td>${roomCells}<td style="${cellStyleNorm}">${nghiEsc}</td><td style="${cellStyleNorm}">${trucEsc}</td><td style="${cellStyleNorm}">${holidayLabel}</td></tr>`;
+                });
+                const fmt = (x) => x.getDate() + '/' + (x.getMonth() + 1) + '/' + x.getFullYear();
+                const title = 'Lịch khám Cầu Giấy - Tuần ' + fmt(weekStart) + ' - ' + fmt(weekEnd);
+                const html = `
+                    <div style="font-family:Arial,sans-serif;padding:16px;background:#fff;">
+                        <div style="margin-bottom:16px;border-bottom:2px solid #667eea;padding-bottom:8px;">
+                            <h1 style="color:#2c5282;margin:0;font-size:18px;font-weight:700;">${title}</h1>
+                            <p style="color:#718096;margin:6px 0 0 0;font-size:11px;">Cơ sở Cầu Giấy | Ngày xuất: ${new Date().toLocaleDateString('vi-VN', {year:'numeric',month:'long',day:'numeric',hour:'2-digit',minute:'2-digit'})}</p>
+                        </div>
+                        <table style="width:100%;border-collapse:collapse;font-size:10px;table-layout:fixed;">
+                            <thead>
+                                <tr style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;">
+                                    <th style="padding:8px 4px;border:1px solid #555;width:40px;">Ngày</th>
+                                    <th style="padding:8px 4px;border:1px solid #555;width:32px;">Thứ</th>
+                                    <th style="padding:8px 6px;border:1px solid #555;text-align:center;font-size:10px;">${roomHeaders}</th>
+                                    <th style="padding:8px 6px;border:1px solid #555;font-size:9px;">Lịch nghỉ</th>
+                                    <th style="padding:8px 6px;border:1px solid #555;font-size:9px;">Lịch trực</th>
+                                    <th style="padding:8px 4px;border:1px solid #555;width:50px;font-size:9px;">Ghi chú</th>
+                                </tr>
+                            </thead>
+                            <tbody>${tableRows}</tbody>
+                        </table>
+                    </div>`;
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = html;
+                tempDiv.style.position = 'absolute';
+                tempDiv.style.left = '-9999px';
+                tempDiv.style.width = '297mm';
+                tempDiv.style.background = 'white';
+                document.body.appendChild(tempDiv);
+                const loadingMsg = document.createElement('div');
+                loadingMsg.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.8);color:white;padding:20px;border-radius:8px;z-index:10001;';
+                loadingMsg.textContent = '📄 Đang tạo file PDF...';
+                document.body.appendChild(loadingMsg);
+                const opt = {
+                    margin: [8, 8, 8, 8],
+                    filename: `Lich_kham_Cau_Giay_${toLocalDateKey(weekStart)}_${toLocalDateKey(weekEnd)}.pdf`,
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' },
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape', compress: true },
+                    pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+                };
+                html2pdf().set(opt).from(tempDiv.firstElementChild).save().then(() => {
+                    document.body.removeChild(tempDiv);
+                    if (loadingMsg.parentNode) document.body.removeChild(loadingMsg);
+                    alert('✅ Đã xuất PDF lịch khám Cầu Giấy theo tuần thành công!');
+                }).catch(err => {
+                    document.body.removeChild(tempDiv);
+                    if (loadingMsg.parentNode) document.body.removeChild(loadingMsg);
+                    alert('❌ Lỗi xuất PDF: ' + (err?.message || err));
+                });
+            } catch (err) {
+                console.error('Lỗi exportKhamCauGiayToPDFByWeek:', err);
+                alert('❌ Lỗi xuất PDF: ' + (err?.message || err));
+            }
         }
 
         // ========== Lịch khám Long Biên (5 tháng) ==========
@@ -11609,11 +12155,17 @@
             } else if (scheduleType === 'tructrua') {
                 return tructruaData[dateStr] || '';
             } else if (scheduleType === 'khamcaugiay') {
-                // Lấy từ lịch khám Cầu Giấy nếu có (có thể là object hoặc string)
-                if (typeof khamcaugiayData === 'object' && khamcaugiayData[dateStr]) {
-                    return typeof khamcaugiayData[dateStr] === 'string' ? khamcaugiayData[dateStr] : '';
-                }
-                return '';
+                const dayData = khamcaugiayData[dateStr];
+                if (!dayData || typeof dayData !== 'object') return '';
+                const names = [];
+                (khamcaugiayRooms || []).forEach(r => {
+                    const slot = getKhamCauGiaySlotData(dayData, r.id);
+                    if (slot.doctor) {
+                        const n = getDoctorDisplayNameFromList(slot.doctor, khamcaugiayDoctorList) || getDoctorDisplayNameAnyColumn(slot.doctor) || slot.doctor;
+                        if (n) names.push(n);
+                    }
+                });
+                return names.join(', ');
             }
             return '';
         }
@@ -12708,6 +13260,8 @@
                 khamhotropkData: khamhotropkData,
                 khamsomData: khamsomData,
                 khamcaugiayData: khamcaugiayData,
+                khamcaugiayDoctorList: khamcaugiayDoctorList,
+                khamcaugiayRooms: khamcaugiayRooms,
                 khamcaugiay20hData: khamcaugiay20hData,
                 khamlongbienData: khamlongbienData,
                 khamsanvipData: khamsanvipData,
@@ -12826,6 +13380,14 @@
                     if (importedData.khamcaugiayData) {
                         khamcaugiayData = importedData.khamcaugiayData;
                         StorageUtil.saveJson(STORAGE_KEYS.khamcaugiayData, khamcaugiayData);
+                    }
+                    if (importedData.khamcaugiayDoctorList) {
+                        khamcaugiayDoctorList = importedData.khamcaugiayDoctorList;
+                        StorageUtil.saveJson(STORAGE_KEYS.khamcaugiayDoctorList, khamcaugiayDoctorList);
+                    }
+                    if (importedData.khamcaugiayRooms) {
+                        khamcaugiayRooms = importedData.khamcaugiayRooms;
+                        StorageUtil.saveJson(STORAGE_KEYS.khamcaugiayRooms, khamcaugiayRooms);
                     }
                     if (importedData.khamcaugiay20hData) {
                         khamcaugiay20hData = importedData.khamcaugiay20hData;

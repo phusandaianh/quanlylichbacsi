@@ -12,10 +12,73 @@
         <div id="khamcaugiay" class="tab-content active admin-only">
             <div class="form-container">
                 <h2>Lịch khám Cầu Giấy</h2>
-                <p>Quản lý lịch khám tại cơ sở Cầu Giấy</p>
+                <p>Quản lý lịch khám tại cơ sở Cầu Giấy 6 phòng khám</p>
+                <div class="buttons-container" style="display:flex; flex-wrap:wrap; gap:10px; margin-bottom:20px; padding:12px 0; border-bottom:1px solid #e8e8e8;">
+                    <button class="export-pdf-btn" onclick="openKhamCauGiayDoctorListModal()">👨‍⚕️ Danh sách bác sĩ khám Cầu Giấy</button>
+                    <button class="export-pdf-btn" onclick="openKhamCauGiayRoomsModal()">🏥 Quản lý phòng khám</button>
+                    <button class="export-pdf-btn" onclick="openExportKhamCauGiayPDFModal()">📄 Xuất PDF theo tuần</button>
+                </div>
+                <div style="margin-top: 20px;">
+                    <div id="khamcaugiayCalendarContainer" style="display:flex; gap:20px; flex-wrap:wrap; max-width: 100%; overflow-x: auto;"></div>
+                </div>
+                <div id="khamCauGiayDoctorListModal" class="login-modal">
+                    <div class="login-box" style="max-width: 500px; max-height: 80vh; overflow-y: auto;">
+                        <div class="login-header">
+                            <h2>👨‍⚕️ Danh sách bác sĩ khám Cầu Giấy</h2>
+                            <button class="login-close" onclick="closeKhamCauGiayDoctorListModal()">✕</button>
+                        </div>
+                        <div style="padding: 20px;">
+                            <p style="font-size: 13px; color: #666; margin-bottom: 15px;">Tick chọn các bác sĩ có thể khám tại Cầu Giấy.</p>
+                            <div id="khamCauGiayDoctorListContainer" style="max-height: 400px; overflow-y: auto; border: 1px solid #ddd; border-radius: 8px; padding: 12px; background: #f8f9fa;"></div>
+                        </div>
+                        <div style="padding: 20px; border-top: 1px solid #eee; display: flex; gap: 10px; justify-content: flex-end;">
+                            <button class="delete-btn" onclick="closeKhamCauGiayDoctorListModal()">Hủy</button>
+                            <button class="submit-btn" onclick="saveKhamCauGiayDoctorList()">💾 Lưu</button>
+                        </div>
+                    </div>
+                </div>
+                <!-- Modal xuất PDF lịch khám theo tuần -->
+                <div id="exportKhamCauGiayPDFModal" class="login-modal">
+                    <div class="login-box" style="max-width: 420px;">
+                        <div class="login-header">
+                            <h2>📄 Xuất PDF lịch khám Cầu Giấy</h2>
+                            <button class="login-close" onclick="closeExportKhamCauGiayPDFModal()">✕</button>
+                        </div>
+                        <div style="padding: 20px;">
+                            <p style="margin-bottom: 16px; color: #666; font-size: 14px;">Chọn ngày trong tuần cần xuất (T2 - CN):</p>
+                            <div style="margin-bottom: 12px;">
+                                <label style="display: block; font-weight: 600; margin-bottom: 6px; font-size: 13px;">Ngày</label>
+                                <input type="date" id="exportKhamCauGiayDate" style="width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px;">
+                            </div>
+                            <p id="exportKhamCauGiayWeekPreview" style="font-size: 12px; color: #667eea; margin-top: 8px;"></p>
+                        </div>
+                        <div style="padding: 20px; border-top: 1px solid #eee; display: flex; gap: 10px; justify-content: flex-end;">
+                            <button class="delete-btn" onclick="closeExportKhamCauGiayPDFModal()">Hủy</button>
+                            <button class="submit-btn" onclick="doExportKhamCauGiayPDF()">📄 Xuất PDF</button>
+                        </div>
+                    </div>
+                </div>
+                <div id="khamCauGiayRoomsModal" class="login-modal">
+                    <div class="login-box" style="max-width: 600px; max-height: 85vh; overflow-y: auto;">
+                        <div class="login-header">
+                            <h2>🏥 Quản lý phòng khám Cầu Giấy</h2>
+                            <button class="login-close" onclick="closeKhamCauGiayRoomsModal()">✕</button>
+                        </div>
+                        <div style="padding: 20px;">
+                            <p style="font-size: 13px; color: #666; margin-bottom: 15px;">Thêm phòng mới, đổi tên phòng. Tích chọn Khám trưa và/hoặc Khám 20h cho từng phòng.</p>
+                            <div id="khamCauGiayRoomsList" style="margin-bottom: 15px;"></div>
+                            <button class="add-btn" onclick="addKhamCauGiayRoom()" style="margin-top: 10px;">➕ Thêm phòng</button>
+                        </div>
+                        <div style="padding: 20px; border-top: 1px solid #eee; display: flex; gap: 10px; justify-content: flex-end;">
+                            <button class="delete-btn" onclick="closeKhamCauGiayRoomsModal()">Hủy</button>
+                            <button class="submit-btn" onclick="saveKhamCauGiayRooms()">💾 Lưu</button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="../assets/js/header.js"></script>
     <script src="../assets/js/app.js"></script>
 </body>
