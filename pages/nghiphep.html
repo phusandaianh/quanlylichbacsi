@@ -13,9 +13,31 @@
             <div class="form-container">
                 <h2>📝 Đăng Ký Nghỉ Phép</h2>
                 <p>Xem lịch nghỉ phép và đăng ký nghỉ phép. Click vào ngày để xem chi tiết hoặc đăng ký.</p>
-
                 <div id="nghiphepCalendarContainer" style="display:flex; gap:20px; flex-wrap:wrap; max-width: 100%;"></div>
 
+                <!-- Modal đăng ký nghỉ cả tháng -->
+                <div id="batchLeaveModal" class="login-modal">
+                    <div class="login-box" style="max-width: 420px;">
+                        <div class="login-header">
+                            <h2 id="batchLeaveModalTitle">📆 Đăng ký nghỉ cả tháng</h2>
+                            <button class="login-close" onclick="closeBatchLeaveModal()">✕</button>
+                        </div>
+                        <div style="padding: 20px;">
+                            <p id="batchLeaveModalDesc" style="font-size: 13px; color: #666; margin-bottom: 12px;">Chọn tháng, đăng ký nghỉ cả ngày cho tất cả các ngày trong tháng.</p>
+                            <div id="batchLeaveMonthFields" style="margin-bottom: 12px;">
+                                <label style="display:block; font-weight:600; margin-bottom:6px;">Chọn tháng</label>
+                                <div style="display:flex; gap:10px;">
+                                    <select id="batchLeaveMonth" style="flex:1; padding:10px 12px; border:1px solid #ddd; border-radius:8px;"></select>
+                                    <select id="batchLeaveYear" style="flex:1; padding:10px 12px; border:1px solid #ddd; border-radius:8px;"></select>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="padding: 20px; border-top: 1px solid #eee; display: flex; gap: 10px; justify-content: flex-end;">
+                            <button type="button" class="delete-btn" onclick="closeBatchLeaveModal()">Hủy</button>
+                            <button type="button" class="submit-btn" onclick="submitBatchLeaveRequest()">Đăng ký (nghỉ cả ngày)</button>
+                        </div>
+                    </div>
+                </div>
                 <!-- Request modal -->
                 <div id="requestModal" class="login-modal">
                     <div class="login-box">

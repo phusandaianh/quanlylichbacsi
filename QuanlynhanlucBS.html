@@ -1695,9 +1695,9 @@
         }
 
         .quydinh-close {
-            background: rgba(255, 255, 255, 0.2);
+            background: #d32f2f;
             border: none;
-            color: white;
+            color: #fff;
             width: 40px;
             height: 40px;
             border-radius: 50%;
@@ -1706,12 +1706,14 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 6px rgba(211, 47, 47, 0.4);
         }
 
         .quydinh-close:hover {
-            background: rgba(255, 255, 255, 0.3);
-            transform: rotate(90deg);
+            background: #b71c1c;
+            color: #fff;
+            transform: scale(1.05);
         }
 
         .quydinh-tabs-container {
@@ -1988,9 +1990,9 @@
         }
 
         .bvta-close {
-            background: rgba(255, 255, 255, 0.2);
+            background: #d32f2f;
             border: none;
-            color: white;
+            color: #fff;
             width: 40px;
             height: 40px;
             border-radius: 50%;
@@ -1999,12 +2001,14 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 6px rgba(211, 47, 47, 0.4);
         }
 
         .bvta-close:hover {
-            background: rgba(255, 255, 255, 0.3);
-            transform: rotate(90deg);
+            background: #b71c1c;
+            color: #fff;
+            transform: scale(1.05);
         }
 
         .bvta-content {
@@ -2314,7 +2318,7 @@
                 <a class="tab" data-tab="lichnghiphep" href="pages/lichnghiphep.html">Lịch Nghỉ Phép</a>
                 <a class="tab" data-tab="ngaycong" href="pages/ngaycong.html">Ngày Công Làm Việc</a>
                 <a class="tab admin-only" data-tab="khamcaugiay" href="pages/khamcaugiay.html">Lịch khám Cầu Giấy</a>
-                <a class="tab admin-only" data-tab="khamcaugiay20h" href="pages/khamcaugiay20h.html">Lịch khám cầu giấy 20h</a>
+                <a class="tab admin-only" data-tab="khamcaugiay20h" href="pages/khamcaugiay20h.html">Lịch khám Cầu Giấy buổi trưa +20h</a>
                 <a class="tab admin-only" data-tab="khamlongbien" href="pages/khamlongbien.html">Lịch khám Long Biên</a>
                 <a class="tab admin-only" data-tab="tructrua" href="pages/tructrua.html">Lịch trực trưa</a>
                 <a class="tab admin-only" data-tab="tieuphau" href="pages/tieuphau.html">Lịch tiểu phẫu</a>
@@ -2918,9 +2922,31 @@
             <div class="form-container">
                 <h2>📝 Đăng Ký Nghỉ Phép</h2>
                 <p>Xem lịch nghỉ phép và đăng ký nghỉ phép. Click vào ngày để xem chi tiết hoặc đăng ký.</p>
-
                 <div id="nghiphepCalendarContainer" style="display:flex; gap:20px; flex-wrap:wrap; max-width: 100%;"></div>
 
+                <!-- Modal đăng ký nghỉ cả tháng -->
+                <div id="batchLeaveModal" class="login-modal">
+                    <div class="login-box" style="max-width: 420px;">
+                        <div class="login-header">
+                            <h2 id="batchLeaveModalTitle">📆 Đăng ký nghỉ cả tháng</h2>
+                            <button class="login-close" onclick="closeBatchLeaveModal()">✕</button>
+                        </div>
+                        <div style="padding: 20px;">
+                            <p id="batchLeaveModalDesc" style="font-size: 13px; color: #666; margin-bottom: 12px;">Chọn tháng, đăng ký nghỉ cả ngày cho tất cả các ngày trong tháng.</p>
+                            <div id="batchLeaveMonthFields" style="margin-bottom: 12px;">
+                                <label style="display:block; font-weight:600; margin-bottom:6px;">Chọn tháng</label>
+                                <div style="display:flex; gap:10px;">
+                                    <select id="batchLeaveMonth" style="flex:1; padding:10px 12px; border:1px solid #ddd; border-radius:8px;"></select>
+                                    <select id="batchLeaveYear" style="flex:1; padding:10px 12px; border:1px solid #ddd; border-radius:8px;"></select>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="padding: 20px; border-top: 1px solid #eee; display: flex; gap: 10px; justify-content: flex-end;">
+                            <button type="button" class="delete-btn" onclick="closeBatchLeaveModal()">Hủy</button>
+                            <button type="button" class="submit-btn" onclick="submitBatchLeaveRequest()">Đăng ký (nghỉ cả ngày)</button>
+                        </div>
+                    </div>
+                </div>
                 <!-- Request modal -->
                 <div id="requestModal" class="login-modal">
                     <div class="login-box">
@@ -3264,14 +3290,14 @@
                 </div>
                 <!-- Modal danh sách bác sĩ khám Cầu Giấy -->
                 <div id="khamCauGiayDoctorListModal" class="login-modal">
-                    <div class="login-box" style="max-width: 500px; max-height: 80vh; overflow-y: auto;">
+                    <div class="login-box" style="max-width: 580px; max-height: 85vh; overflow-y: auto;">
                         <div class="login-header">
                             <h2>👨‍⚕️ Danh sách bác sĩ khám Cầu Giấy</h2>
                             <button class="login-close" onclick="closeKhamCauGiayDoctorListModal()">✕</button>
                         </div>
                         <div style="padding: 20px;">
-                            <p style="font-size: 13px; color: #666; margin-bottom: 15px;">Tick chọn các bác sĩ có thể khám tại Cầu Giấy. Ô chọn trong lịch sẽ hiển thị danh sách này.</p>
-                            <div id="khamCauGiayDoctorListContainer" style="max-height: 400px; overflow-y: auto; border: 1px solid #ddd; border-radius: 8px; padding: 12px; background: #f8f9fa;"></div>
+                            <p style="font-size: 13px; color: #666; margin-bottom: 15px;">Tick chọn bác sĩ khám Cầu Giấy. Dưới mỗi bác sĩ: <strong>Có đăng ký khám bảo hiểm</strong> – tick tháng tương ứng (6 tháng từ tháng hiện tại, chọn 1 hoặc nhiều tháng). Không tick tháng nào = <strong>không đăng ký</strong> khám bảo hiểm tháng đó.</p>
+                            <div id="khamCauGiayDoctorListContainer" style="max-height: 450px; overflow-y: auto; border: 1px solid #ddd; border-radius: 8px; padding: 12px; background: #f8f9fa;"></div>
                         </div>
                         <div style="padding: 20px; border-top: 1px solid #eee; display: flex; gap: 10px; justify-content: flex-end;">
                             <button class="delete-btn" onclick="closeKhamCauGiayDoctorListModal()">Hủy</button>
@@ -3303,8 +3329,8 @@
         <!-- Tab Lịch khám cầu giấy 20h (giống lịch khám sớm) -->
         <div id="khamcaugiay20h" class="tab-content admin-only">
             <div class="form-container">
-                <h2>Lịch khám cầu giấy 20h</h2>
-                <p>Quản lý lịch khám cầu giấy 20h – một bác sĩ mỗi ngày</p>
+                <h2>Lịch khám Cầu Giấy buổi trưa +20h</h2>
+                <p>Lịch 5 tháng (chu kỳ 25–24). Mỗi ngày: Bác sĩ khám trưa và Bác sĩ khám 20h. Dữ liệu đồng bộ với Lịch khám Cầu Giấy.</p>
                 <div style="margin-top: 20px;">
                     <div id="khamcaugiay20hCalendarContainer" style="display:flex; gap:20px; flex-wrap:wrap; max-width: 100%; overflow-x: auto;"></div>
                 </div>

@@ -21,7 +21,7 @@
         { id: 'lichnghiphep', label: 'Lịch Nghỉ Phép', href: 'lichnghiphep.html', adminOnly: false },
         { id: 'ngaycong', label: 'Ngày Công Làm Việc', href: 'ngaycong.html', adminOnly: false },
         { id: 'khamcaugiay', label: 'Lịch khám Cầu Giấy', href: 'khamcaugiay.html', adminOnly: true },
-        { id: 'khamcaugiay20h', label: 'Lịch khám cầu giấy 20h', href: 'khamcaugiay20h.html', adminOnly: true },
+        { id: 'khamcaugiay20h', label: 'Lịch khám Cầu Giấy buổi trưa +20h', href: 'khamcaugiay20h.html', adminOnly: true },
         { id: 'khamlongbien', label: 'Lịch khám Long Biên', href: 'khamlongbien.html', adminOnly: true },
         { id: 'tructrua', label: 'Lịch trực trưa', href: 'tructrua.html', adminOnly: true },
         { id: 'tieuphau', label: 'Lịch tiểu phẫu', href: 'tieuphau.html', adminOnly: true },

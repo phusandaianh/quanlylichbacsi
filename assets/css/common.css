@@ -682,14 +682,16 @@ body {
     text-align: center;
 }
 
+/* Nút đóng modal/tab: icon trắng, nền đỏ */
+.login-close,
 .login-modal-close {
     flex-shrink: 0;
     width: 36px;
     height: 36px;
     border: none;
     border-radius: 50%;
-    background: #f0f0f0;
-    color: #555;
+    background: #d32f2f;
+    color: #fff;
     font-size: 18px;
     line-height: 1;
     cursor: pointer;
@@ -697,11 +699,18 @@ body {
     align-items: center;
     justify-content: center;
     padding: 0;
-    transition: background 0.2s, color 0.2s;
+    transition: background 0.2s, color 0.2s, transform 0.2s;
+    box-shadow: 0 2px 6px rgba(211, 47, 47, 0.4);
 }
+.login-close:hover,
 .login-modal-close:hover {
-    background: #e0e0e0;
-    color: #333;
+    background: #b71c1c;
+    color: #fff;
+    transform: scale(1.05);
+}
+.login-close:active,
+.login-modal-close:active {
+    background: #c62828;
 }
 
 .user-info {
@@ -2066,9 +2075,9 @@ table {
 }
 
 .quydinh-close {
-    background: rgba(255, 255, 255, 0.2);
+    background: #d32f2f;
     border: none;
-    color: white;
+    color: #fff;
     width: 40px;
     height: 40px;
     border-radius: 50%;
@@ -2077,12 +2086,14 @@ table {
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 6px rgba(211, 47, 47, 0.4);
 }
 
 .quydinh-close:hover {
-    background: rgba(255, 255, 255, 0.3);
-    transform: rotate(90deg);
+    background: #b71c1c;
+    color: #fff;
+    transform: scale(1.05);
 }
 
 .quydinh-tabs-container {
@@ -2359,9 +2370,9 @@ table {
 }
 
 .bvta-close {
-    background: rgba(255, 255, 255, 0.2);
+    background: #d32f2f;
     border: none;
-    color: white;
+    color: #fff;
     width: 40px;
     height: 40px;
     border-radius: 50%;
@@ -2370,12 +2381,14 @@ table {
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 6px rgba(211, 47, 47, 0.4);
 }
 
 .bvta-close:hover {
-    background: rgba(255, 255, 255, 0.3);
-    transform: rotate(90deg);
+    background: #b71c1c;
+    color: #fff;
+    transform: scale(1.05);
 }
 
 .bvta-content {
