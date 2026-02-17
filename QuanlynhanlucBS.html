@@ -2933,6 +2933,10 @@
                         </div>
                         <div style="padding: 20px;">
                             <p id="batchLeaveModalDesc" style="font-size: 13px; color: #666; margin-bottom: 12px;">Chọn tháng, đăng ký nghỉ cả ngày cho tất cả các ngày trong tháng.</p>
+                            <div id="batchLeaveAdminDoctorWrap" style="display:none; margin-bottom: 12px;">
+                                <label style="display:block; font-weight:600; margin-bottom:6px;">Đăng ký nghỉ phép cho (bác sĩ)</label>
+                                <select id="batchLeaveAdminDoctorSelect" style="width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:8px;"></select>
+                            </div>
                             <div id="batchLeaveMonthFields" style="margin-bottom: 12px;">
                                 <label style="display:block; font-weight:600; margin-bottom:6px;">Chọn tháng</label>
                                 <div style="display:flex; gap:10px;">
@@ -2956,6 +2960,10 @@
                             <div class="form-group">
                                 <label>Ngày</label>
                                 <div id="requestDateDisplay" style="font-weight:700"></div>
+                            </div>
+                            <div class="form-group" id="requestAdminDoctorWrap" style="display:none;">
+                                <label>Đăng ký nghỉ phép cho (bác sĩ)</label>
+                                <select id="requestAdminDoctorSelect" style="width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:8px;"></select>
                             </div>
                             <div class="form-group">
                                 <label>Người gửi</label>

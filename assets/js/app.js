@@ -4324,10 +4324,11 @@
             }
             
             const showMonthBatchButton = opts.showMonthBatchButton === true;
+            const boundClick = (d) => clickHandler(d, containerId);
             for (let i = 0; i < numCycles; i++) {
                 const cycleStart = new Date(cycleStartDate.getFullYear(), cycleStartDate.getMonth() + i, 25);
                 const cycleEnd = new Date(cycleStart.getFullYear(), cycleStart.getMonth() + 1, 24);
-                const monthEl = renderSingleMonthCycle(cycleStart, cycleEnd, clickHandler, isAdminCalendar, titleFormat, showMonthBatchButton);
+                const monthEl = renderSingleMonthCycle(cycleStart, cycleEnd, boundClick, isAdminCalendar, titleFormat, showMonthBatchButton);
                 container.appendChild(monthEl);
             }
         }
@@ -4801,8 +4802,8 @@
                     dayCell.appendChild(createRow('c2', c2Names, c2Names.length, c2MaxCount));
                     dayCell.appendChild(createRow('c3', c3Names, c3Names.length, c3MaxCount));
                     
-                    // Dòng nút đăng ký nhanh / hủy đăng ký nhanh (dưới C3) – ẩn với tài khoản admin
-                    if (currentUser && currentUser.role !== 'admin' && typeof canRegisterOwnLeave === 'function' && canRegisterOwnLeave() && !hidePastDay) {
+                    // Dòng nút đăng ký nhanh / hủy đăng ký nhanh (dưới C3)
+                    if (typeof canRegisterOwnLeave === 'function' && canRegisterOwnLeave() && !hidePastDay) {
                         const quickRow = document.createElement('div');
                         quickRow.style.cssText = 'display:flex;gap:6px;margin-top:4px;padding-top:4px;border-top:1px dashed #ddd;font-size:10px;flex-wrap:wrap;';
                         const btnDk = document.createElement('button');
@@ -5513,8 +5514,8 @@
                     dayCell.appendChild(createRow('c2', c2Names, c2Names.length, c2MaxCount));
                     dayCell.appendChild(createRow('c3', c3Names, c3Names.length, c3MaxCount));
                     
-                    // Dòng nút đăng ký nhanh / hủy đăng ký nhanh (dưới C3) – ẩn với tài khoản admin
-                    if (currentUser && currentUser.role !== 'admin' && typeof canRegisterOwnLeave === 'function' && canRegisterOwnLeave() && !hidePastDay) {
+                    // Dòng nút đăng ký nhanh / hủy đăng ký nhanh (dưới C3)
+                    if (typeof canRegisterOwnLeave === 'function' && canRegisterOwnLeave() && !hidePastDay) {
                         const quickRow = document.createElement('div');
                         quickRow.style.cssText = 'display:flex;gap:6px;margin-top:4px;padding-top:4px;border-top:1px dashed #ddd;font-size:10px;flex-wrap:wrap;';
                         const btnDk = document.createElement('button');
@@ -5861,6 +5862,21 @@
                     monthSelect.appendChild(opt);
                 }
             }
+            const batchAdminWrap = document.getElementById('batchLeaveAdminDoctorWrap');
+            const batchAdminSel = document.getElementById('batchLeaveAdminDoctorSelect');
+            if (currentUser.role === 'admin' && batchAdminWrap && batchAdminSel) {
+                batchAdminWrap.style.display = 'block';
+                batchAdminSel.innerHTML = '';
+                const doctorsList = typeof getAllDoctorsForLeaveDropdown === 'function' ? getAllDoctorsForLeaveDropdown() : [];
+                doctorsList.forEach(d => {
+                    const opt = document.createElement('option');
+                    opt.value = d.key;
+                    opt.textContent = d.name;
+                    batchAdminSel.appendChild(opt);
+                });
+            } else if (batchAdminWrap) {
+                batchAdminWrap.style.display = 'none';
+            }
             document.getElementById('batchLeaveModal').classList.add('active');
         }
         function closeBatchLeaveModal() {
@@ -5870,8 +5886,15 @@
             if (!currentUser) return;
             const today = new Date();
             const todayKey = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
-            const docKey = currentUser.key || normalizeKey(currentUser.username || currentUser.name);
-            const docName = currentUser.name || currentUser.username;
+            let docKey, docName;
+            const batchAdminSel = document.getElementById('batchLeaveAdminDoctorSelect');
+            if (currentUser.role === 'admin' && batchAdminSel && batchAdminSel.options.length > 0 && batchAdminSel.value) {
+                docKey = batchAdminSel.value;
+                docName = batchAdminSel.options[batchAdminSel.selectedIndex].textContent;
+            } else {
+                docKey = currentUser.key || normalizeKey(currentUser.username || currentUser.name);
+                docName = currentUser.name || currentUser.username;
+            }
             const yearSelect = document.getElementById('batchLeaveYear');
             const monthSelect = document.getElementById('batchLeaveMonth');
             const y = parseInt(yearSelect?.value || today.getFullYear(), 10);
@@ -5922,19 +5945,27 @@
             err.style.display = 'none';
             if (!period) { err.textContent = 'Vui lòng chọn loại (sáng/chiều/cả ngày)'; err.style.display = 'block'; return; }
 
-            const docKey = currentUser.key || normalizeKey(currentUser.username || currentUser.name);
+            let docKey, docName;
+            const adminSel = document.getElementById('requestAdminDoctorSelect');
+            if (currentUser.role === 'admin' && adminSel && adminSel.options.length > 0 && adminSel.value) {
+                docKey = adminSel.value;
+                docName = adminSel.options[adminSel.selectedIndex].textContent;
+            } else {
+                docKey = currentUser.key || normalizeKey(currentUser.username || currentUser.name);
+                docName = currentUser.name || currentUser.username;
+            }
             var existing = submissions.some(function (s) {
                 return (s.doctorKey === docKey || normalizeKey(s.doctorName || '') === docKey) && s.date === date && s.period === period;
             });
             if (existing) {
-                err.textContent = 'Bạn đã có yêu cầu nghỉ phép trùng ngày và trùng buổi. Không thể tạo thêm.';
+                err.textContent = 'Đã có yêu cầu nghỉ phép trùng ngày và trùng buổi cho bác sĩ này. Không thể tạo thêm.';
                 err.style.display = 'block';
                 return;
             }
             const submission = {
                 id: Date.now(),
                 doctorKey: docKey,
-                doctorName: currentUser.name || currentUser.username,
+                doctorName: docName,
                 date: date,
                 period: period,
                 notes: notes,
@@ -6046,11 +6077,70 @@
             return count;
         }
 
+        // Trả về danh sách bác sĩ (key, name) đã gộp, dùng cho dropdown admin đăng ký nghỉ thay bác sĩ
+        function getAllDoctorsForLeaveDropdown() {
+            const seen = new Set();
+            const list = [];
+            const add = (arr) => {
+                if (!arr || !Array.isArray(arr)) return;
+                arr.forEach(doc => {
+                    const name = (doc.name || doc.displayName || '').toString().trim();
+                    if (!name) return;
+                    const k = normalizeKey(name);
+                    if (seen.has(k)) return;
+                    seen.add(k);
+                    list.push({ key: k, name: name });
+                });
+            };
+            add(doctors.lanhdao);
+            add(doctors.cot1);
+            add(doctors.cot2);
+            add(doctors.cot3);
+            add(doctors.partime);
+            add(doctors.khac);
+            return list;
+        }
+
         // Admin/Bác sĩ: clicking date opens review modal (admin) hoặc đăng ký nghỉ phép (bác sĩ)
-        function onAdminDateClick(date) {
+        function onAdminDateClick(date, containerId) {
             const today = new Date();
             const todayKey = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
             const key = date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0');
+            
+            // Admin ở tab Đăng ký nghỉ phép: mở modal đăng ký và cho chọn bác sĩ để đăng ký thay
+            if (currentUser && currentUser.role === 'admin' && containerId === 'nghiphepCalendarContainer') {
+                if (key < todayKey) {
+                    alert('Không thể đăng ký cho ngày trước ngày hiện tại');
+                    return;
+                }
+                const wrap = document.getElementById('requestAdminDoctorWrap');
+                const sel = document.getElementById('requestAdminDoctorSelect');
+                const nameEl = document.getElementById('requestDoctorName');
+                if (wrap && sel) {
+                    wrap.style.display = 'block';
+                    sel.innerHTML = '';
+                    const doctorsList = getAllDoctorsForLeaveDropdown();
+                    doctorsList.forEach(d => {
+                        const opt = document.createElement('option');
+                        opt.value = d.key;
+                        opt.textContent = d.name;
+                        sel.appendChild(opt);
+                    });
+                    sel.onchange = function() {
+                        var o = sel.options[sel.selectedIndex];
+                        nameEl.textContent = o ? o.textContent : '';
+                    };
+                    if (doctorsList.length > 0) {
+                        sel.selectedIndex = 0;
+                        nameEl.textContent = doctorsList[0].name;
+                    } else nameEl.textContent = '';
+                }
+                document.getElementById('requestDateDisplay').textContent = key;
+                document.getElementById('requestNotes').value = '';
+                document.getElementById('requestModal').classList.add('active');
+                document.getElementById('requestForm').dataset.date = key;
+                return;
+            }
             
             // Tài khoản cá nhân (bác sĩ) mặc định có quyền đăng ký nghỉ phép cho bản thân — không cần quyền quanlynghiphep_c1/c2/c3
             if (canRegisterOwnLeave() && currentUser.role !== 'admin') {
@@ -6059,6 +6149,9 @@
                     alert('Không thể đăng ký cho ngày trước ngày hiện tại');
                     return;
                 }
+                // Ẩn dropdown chọn bác sĩ (chỉ dùng cho admin)
+                var adminWrap = document.getElementById('requestAdminDoctorWrap');
+                if (adminWrap) adminWrap.style.display = 'none';
                 // Mở modal đăng ký nghỉ phép
                 document.getElementById('requestDateDisplay').textContent = key;
                 document.getElementById('requestDoctorName').textContent = currentUser.name || currentUser.username;
