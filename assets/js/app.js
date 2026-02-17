@@ -47,6 +47,7 @@
             khamcaugiayRooms: 'khamcaugiayRooms',
             khamcaugiay20hData: 'khamcaugiay20hData',
             khamlongbienData: 'khamlongbienData',
+            khamlongbienRooms: 'khamlongbienRooms',
             khamsanvipData: 'khamsanvipData',
             sieuamvipData: 'sieuamvipData',
             tructruaData: 'tructruaData',
@@ -241,6 +242,33 @@
             if (changed) StorageUtil.saveJson(STORAGE_KEYS.khamcaugiay20hData, khamcaugiay20hData);
         })();
         let khamlongbienData = StorageUtil.loadJson(STORAGE_KEYS.khamlongbienData, {});
+        let khamlongbienRooms = StorageUtil.loadJson(STORAGE_KEYS.khamlongbienRooms, [
+            { id: 'r1', name: 'Phòng 1' },
+            { id: 'r2', name: 'Phòng 2' },
+            { id: 'r3', name: 'Phòng 3' },
+            { id: 'r4', name: 'Phòng 4' },
+            { id: 'r5', name: 'Phòng 5' },
+            { id: 'r6', name: 'Phòng 6' },
+            { id: 'r7', name: 'Phòng 7' },
+            { id: 'r8', name: 'Phòng 8' },
+            { id: 'r9', name: 'Phòng 9' },
+            { id: 'r10', name: 'Phòng 10' }
+        ]);
+        if (!Array.isArray(khamlongbienRooms) || khamlongbienRooms.length === 0) {
+            khamlongbienRooms = [
+                { id: 'r1', name: 'Phòng 1' },
+                { id: 'r2', name: 'Phòng 2' },
+                { id: 'r3', name: 'Phòng 3' },
+                { id: 'r4', name: 'Phòng 4' },
+                { id: 'r5', name: 'Phòng 5' },
+                { id: 'r6', name: 'Phòng 6' },
+                { id: 'r7', name: 'Phòng 7' },
+                { id: 'r8', name: 'Phòng 8' },
+                { id: 'r9', name: 'Phòng 9' },
+                { id: 'r10', name: 'Phòng 10' }
+            ];
+            StorageUtil.saveJson(STORAGE_KEYS.khamlongbienRooms, khamlongbienRooms);
+        }
         
         // Lịch khám sản VIP / siêu âm VIP - lưu theo format: { "YYYY-MM-DD": { morning: "", afternoon: "" } }
         let khamsanvipData = StorageUtil.loadJson(STORAGE_KEYS.khamsanvipData, {});
@@ -6726,6 +6754,40 @@
             });
             return keys;
         }
+        // Lấy danh sách bác sĩ nghỉ phép theo buổi (sáng/chiều/full) cho 1 ngày – dùng cho lịch có chia ca
+        function getDoctorsOnLeaveForDateAndPeriod(dateKey, period) {
+            const keys = new Set();
+            const dayData = quanlynghiphepData[dateKey] || {};
+            const fixedDateObj = new Date(dateKey + 'T00:00:00');
+            const wd = fixedDateObj.getDay();
+            const wdKey = wd === 0 ? 7 : wd;
+            ['ld', 'c1', 'c2', 'c3'].forEach(col => {
+                const saved = dayData[col];
+                const hasSaved = saved && typeof saved === 'object' && Array.isArray(saved.doctors);
+                if (hasSaved) {
+                    (saved.doctors || []).forEach(item => {
+                        if (!item) return;
+                        const k = typeof item === 'object' ? item.key : item;
+                        const p = typeof item === 'object' ? (item.period || 'full') : 'full';
+                        if (!k) return;
+                        if (p === 'full' || p === period) keys.add(k);
+                    });
+                } else if (wdKey >= 1 && wdKey <= 6) {
+                    // Lịch cố định theo thứ: coi như nghỉ cả ngày => cấm cả sáng/chiều
+                    const fixed = getFixedScheduleForWeekday(col, wdKey);
+                    fixed.forEach(f => { const k = f && typeof f === 'object' ? f.key : f; if (k) keys.add(k); });
+                }
+            });
+            submissions
+                .filter(s => s.date === dateKey && (s.status === 'approved' || s.status === 'pending'))
+                .forEach(s => {
+                    const k = normalizeKey(s.doctorName || '');
+                    const p = s.period || 'full';
+                    if (!k) return;
+                    if (p === 'full' || p === period) keys.add(k);
+                });
+            return keys;
+        }
         let lichTrucModalState = { dateKey: '', column: '', shift: '' };
         function getDoctorDisplayNameAnyColumn(doctorKey) {
             for (const col of ['c1', 'c2', 'c3']) {
@@ -10386,6 +10448,87 @@
             renderKhamCauGiayCalendar();
             alert('✅ Đã lưu danh sách phòng khám.');
         }
+
+        // ========== Phòng khám Long Biên ==========
+        function openKhamLongBienRoomsModal() {
+            if (!hasPermission('khamlongbien') && currentUser?.role !== 'admin') return;
+            const container = document.getElementById('khamLongBienRoomsList');
+            if (!container) return;
+            container.innerHTML = '';
+            (khamlongbienRooms || []).forEach((room) => {
+                const div = document.createElement('div');
+                div.style.cssText = 'display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;padding:10px;background:#f8f9fa;border-radius:8px;border:1px solid #e9ecef;';
+                div.innerHTML = `
+                    <input type="text" value="${(room.name || '').replace(/"/g, '&quot;')}" data-room-id="${room.id}" 
+                           style="flex:1;min-width:120px;padding:8px 12px;border:1px solid #ddd;border-radius:6px;font-size:14px;"
+                           placeholder="Tên phòng">
+                    <button class="delete-btn" onclick="removeKhamLongBienRoom('${room.id}')" style="padding:6px 12px;">🗑️ Xóa</button>
+                `;
+                container.appendChild(div);
+            });
+            document.getElementById('khamLongBienRoomsModal')?.classList.add('active');
+        }
+        function closeKhamLongBienRoomsModal() {
+            document.getElementById('khamLongBienRoomsModal')?.classList.remove('active');
+        }
+        function addKhamLongBienRoom() {
+            const id = 'r' + (Date.now().toString(36));
+            khamlongbienRooms.push({ id, name: 'Phòng mới' });
+            const container = document.getElementById('khamLongBienRoomsList');
+            if (container) {
+                const div = document.createElement('div');
+                div.style.cssText = 'display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;padding:10px;background:#f8f9fa;border-radius:8px;border:1px solid #e9ecef;';
+                div.innerHTML = `
+                    <input type="text" value="Phòng mới" data-room-id="${id}" 
+                           style="flex:1;min-width:120px;padding:8px 12px;border:1px solid #ddd;border-radius:6px;font-size:14px;"
+                           placeholder="Tên phòng">
+                    <button class="delete-btn" onclick="removeKhamLongBienRoom('${id}')" style="padding:6px 12px;">🗑️ Xóa</button>
+                `;
+                container.appendChild(div);
+            }
+        }
+        function collectKhamLongBienRoomsFromDOM() {
+            const container = document.getElementById('khamLongBienRoomsList');
+            if (!container) return;
+            container.querySelectorAll('input[type="text"]').forEach(inp => {
+                const rid = inp.getAttribute('data-room-id');
+                const r = khamlongbienRooms.find(x => x.id === rid);
+                if (r) r.name = (inp.value || '').trim() || r.name;
+            });
+        }
+        function removeKhamLongBienRoom(roomId) {
+            collectKhamLongBienRoomsFromDOM();
+            khamlongbienRooms = khamlongbienRooms.filter(r => r.id !== roomId);
+            // Xóa dữ liệu lịch khám tương ứng phòng này
+            for (const dateKey in khamlongbienData) {
+                const day = khamlongbienData[dateKey];
+                if (day && day.rooms && day.rooms[roomId]) {
+                    delete day.rooms[roomId];
+                }
+            }
+            const container = document.getElementById('khamLongBienRoomsList');
+            if (!container) return;
+            container.innerHTML = '';
+            (khamlongbienRooms || []).forEach((room) => {
+                const div = document.createElement('div');
+                div.style.cssText = 'display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;padding:10px;background:#f8f9fa;border-radius:8px;border:1px solid #e9ecef;';
+                div.innerHTML = `
+                    <input type="text" value="${(room.name || '').replace(/"/g, '&quot;')}" data-room-id="${room.id}" 
+                           style="flex:1;min-width:120px;padding:8px 12px;border:1px solid #ddd;border-radius:6px;font-size:14px;"
+                           placeholder="Tên phòng">
+                    <button class="delete-btn" onclick="removeKhamLongBienRoom('${room.id}')" style="padding:6px 12px;">🗑️ Xóa</button>
+                `;
+                container.appendChild(div);
+            });
+        }
+        function saveKhamLongBienRooms() {
+            collectKhamLongBienRoomsFromDOM();
+            StorageUtil.saveJson(STORAGE_KEYS.khamlongbienRooms, khamlongbienRooms);
+            if (typeof syncToBackend === 'function' && USE_DATABASE_BACKEND) syncToBackend();
+            closeKhamLongBienRoomsModal();
+            renderKhamLongBienCalendar();
+            alert('✅ Đã lưu danh sách phòng khám Long Biên.');
+        }
         function initKhamCauGiayCalendar() {
             renderKhamCauGiayCalendar();
         }
@@ -10760,6 +10903,17 @@
         function initKhamLongBienCalendar() {
             renderKhamLongBienCalendar();
         }
+        // Helper: đảm bảo cấu trúc dữ liệu cho 1 ngày Long Biên
+        function getKhamLongBienDayData(dateStr) {
+            let day = khamlongbienData[dateStr];
+            if (!day || typeof day !== 'object') {
+                day = {};
+            }
+            if (!day.early) day.early = { san: '', sieuam: '' };
+            if (!day.rooms) day.rooms = {};
+            if (!day.sundayDoctor) day.sundayDoctor = '';
+            return day;
+        }
         function renderKhamLongBienCalendar() {
             const container = document.getElementById('khamlongbienCalendarContainer');
             if (!container) return;
@@ -10770,28 +10924,270 @@
                 cycleStartDate = new Date(today.getFullYear(), today.getMonth() - 1, 25);
             }
             const numCycles = 5;
+            const doctorOptions = getKhamCauGiayDoctorOptions();
+            const hasEditPermission = hasPermission('khamlongbien') || currentUser?.role === 'admin';
             container.innerHTML = '';
             for (let i = 0; i < numCycles; i++) {
                 const cycleStart = new Date(cycleStartDate.getFullYear(), cycleStartDate.getMonth() + i, 25);
                 const cycleEnd = new Date(cycleStart.getFullYear(), cycleStart.getMonth() + 1, 24);
-                const monthEl = renderSingleDoctorMonthCycle(cycleStart, cycleEnd, khamlongbienData, 'khamlongbien', 'updateKhamLongBienDate', 'saveKhamLongBienData');
+                const monthEl = document.createElement('div');
+                monthEl.className = 'calendar-month-card';
+                monthEl.style.cssText = 'flex:0 1 100%;width:100%;background:#fff;border-radius:12px;padding:18px;box-shadow:0 4px 16px rgba(0,0,0,0.08);border:1px solid #e8ecf0;';
+                const monthNum = cycleEnd.getMonth() + 1;
+                const year = cycleEnd.getFullYear();
+                const title = document.createElement('div');
+                title.style.cssText = 'text-align:center;font-weight:700;font-size:16px;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #667eea;';
+                title.textContent = `Lịch khám Long Biên tháng ${monthNum}/${year}`;
+                monthEl.appendChild(title);
+
+                const grid = document.createElement('div');
+                grid.className = 'calendar-grid';
+                grid.style.cssText = 'display:grid;grid-template-columns:repeat(7,1fr);gap:10px;';
+                ['T2','T3','T4','T5','T6','T7','CN'].forEach(w => {
+                    const wEl = document.createElement('div');
+                    wEl.style.cssText = 'text-align:center;font-size:14px;color:#666;';
+                    wEl.textContent = w;
+                    grid.appendChild(wEl);
+                });
+
+                const firstWeekday = cycleStart.getDay();
+                const startOffset = firstWeekday === 0 ? 6 : firstWeekday - 1;
+                for (let j = 0; j < startOffset; j++) grid.appendChild(document.createElement('div'));
+
+                const allDates = [];
+                let d = new Date(cycleStart);
+                while (d <= cycleEnd) { allDates.push(new Date(d)); d.setDate(d.getDate() + 1); }
+                const toLocalDateKey = (dd) => dd.getFullYear() + '-' + String(dd.getMonth() + 1).padStart(2, '0') + '-' + String(dd.getDate()).padStart(2, '0');
+                const todayKey = toLocalDateKey(today);
+
+                allDates.forEach(date => {
+                    const key = toLocalDateKey(date);
+                    const isPastDate = key < todayKey;
+                    const dayDataRaw = khamlongbienData[key] || {};
+                    const dayData = getKhamLongBienDayData(key);
+                    // Nghỉ phép theo buổi
+                    const excludeMorningKeys = getDoctorsOnLeaveForDateAndPeriod(key, 'morning');
+                    const excludeAfternoonKeys = getDoctorsOnLeaveForDateAndPeriod(key, 'afternoon');
+                    // Bác sĩ đang khám Cầu Giấy cùng ngày thì không được khám Long Biên
+                    const cauGiayBusyKeys = getKhamCauGiayDoctorsForDate ? getKhamCauGiayDoctorsForDate(key) : new Set();
+
+                    // Lịch nghỉ / lịch trực giống lịch khám Cầu Giấy
+                    const lichNghiText = (() => {
+                        const parts = [];
+                        ['ld','c1','c2','c3'].forEach(col => {
+                            const cd = (quanlynghiphepData[key] || {})[col];
+                            const fixedObj = new Date(key + 'T00:00:00');
+                            const wd = fixedObj.getDay();
+                            const wdKey = wd === 0 ? 7 : wd;
+                            let doctors = [];
+                            if (cd && Array.isArray(cd.doctors)) {
+                                doctors = (cd.doctors || []).map(x => (x && x.key) ? getDoctorDisplayNameAnyColumn(x.key) : '').filter(Boolean);
+                            } else if (wdKey >= 1 && wdKey <= 6) {
+                                const fixed = getFixedScheduleForWeekday(col, wdKey);
+                                doctors = fixed.map(f => getDoctorDisplayNameAnyColumn((f && f.key) || f)).filter(Boolean);
+                            }
+                            if (doctors.length) parts.push((col === 'ld' ? 'LĐ' : col.toUpperCase()) + ': ' + doctors.join(', '));
+                        });
+                        return parts.length ? parts.join(' | ') : '-';
+                    })();
+                    const lichTrucDay = lichTrucData[key] || {};
+                    const ldName = getLĐFromTructhuongtru(key);
+                    const lichTrucParts = [];
+                    lichTrucParts.push('LĐ: ' + (ldName || '-'));
+                    ['c1','c2','c3'].forEach(col => {
+                        const cd = lichTrucDay[col] || {};
+                        const dayName = cd.day ? (getDoctorDisplayNameAnyColumn(cd.day) || cd.day) : '';
+                        const nightName = cd.night ? (getDoctorDisplayNameAnyColumn(cd.night) || cd.night) : '';
+                        lichTrucParts.push('C' + col.slice(-1) + ': ' + (dayName || '-') + '/' + (nightName || '-'));
+                    });
+                    const wd = date.getDay();
+                    if (wd === 6) {
+                        const t1630 = lichTrucDay.truc1630 ? getDoctorDisplayNameAnyColumn(lichTrucDay.truc1630) : '';
+                        lichTrucParts.push('16h30: ' + (t1630 || '-'));
+                    }
+                    const lichTrucText = lichTrucParts.join(' | ');
+
+                    const dayCell = document.createElement('div');
+                    dayCell.className = 'nghiphep-day-cell';
+                    dayCell.style.cssText = 'border:1px solid #e6e9ef;border-radius:6px;padding:8px;background:#f8fafc;min-height:220px;display:flex;flex-direction:column;gap:4px;';
+                    const isHoliday = typeof isHolidayCell === 'function' && isHolidayCell(key);
+                    if (isHoliday) { dayCell.style.background = '#d32f2f'; dayCell.style.color = '#fff'; }
+                    if (isPastDate) { dayCell.style.opacity = '0.35'; dayCell.style.background = '#e9ecef'; dayCell.style.pointerEvents = 'none'; }
+
+                    const dayLabel = document.createElement('div');
+                    dayLabel.style.cssText = 'font-size:13px;font-weight:600;margin-bottom:4px;';
+                    dayLabel.textContent = formatDateWithWeekday(date);
+                    dayCell.appendChild(dayLabel);
+
+                    if (isHoliday) {
+                        const hl = typeof getHolidayDisplayLabel === 'function' ? getHolidayDisplayLabel(key) : { label: '' };
+                        if (hl.label) {
+                            const hb = document.createElement('div');
+                            hb.textContent = '🏮 ' + hl.label;
+                            hb.style.fontSize = '11px';
+                            dayCell.appendChild(hb);
+                        }
+                    }
+
+                    // Dòng 1: Lịch khám sớm (1 BS sản + 1 BS siêu âm)
+                    const earlyRow = document.createElement('div');
+                    earlyRow.style.cssText = 'display:flex;align-items:center;gap:6px;font-size:11px;flex-wrap:wrap;margin-bottom:2px;';
+                    const earlyLabel = document.createElement('span');
+                    earlyLabel.textContent = 'Khám sớm:';
+                    earlyLabel.style.minWidth = '70px';
+                    earlyLabel.style.fontWeight = '600';
+                    earlyRow.appendChild(earlyLabel);
+                    const makeEarlySelect = (currentKey, placeholder, onChange) => {
+                        const sel = document.createElement('select');
+                        sel.style.cssText = 'flex:1;min-width:80px;padding:4px 6px;border:1px solid #ddd;border-radius:4px;font-size:11px;';
+                        sel.disabled = isPastDate || !hasEditPermission;
+                        sel.innerHTML = '<option value="">' + placeholder + '</option>' + doctorOptions.map(n => {
+                            const k = normalizeKey(n);
+                            // Khám sớm: coi như buổi sáng -> loại bác sĩ nghỉ sáng hoặc đang khám Cầu Giấy
+                            if (excludeMorningKeys.has(k) || cauGiayBusyKeys.has(k)) return '';
+                            return `<option value="${k}" ${k === currentKey ? 'selected' : ''}>${(n || '').replace(/"/g, '&quot;')}</option>`;
+                        }).filter(Boolean).join('');
+                        sel.onchange = () => onChange(sel.value);
+                        return sel;
+                    };
+                    const earlySanKey = (dayDataRaw.early && dayDataRaw.early.san) || dayData.early.san || '';
+                    const earlySieuAmKey = (dayDataRaw.early && dayDataRaw.early.sieuam) || dayData.early.sieuam || '';
+                    earlyRow.appendChild(makeEarlySelect(earlySanKey, 'BS sản', (val) => updateKhamLongBienEarly(key, 'san', val)));
+                    earlyRow.appendChild(makeEarlySelect(earlySieuAmKey, 'BS siêu âm', (val) => updateKhamLongBienEarly(key, 'sieuam', val)));
+                    dayCell.appendChild(earlyRow);
+
+                    const isSunday = wd === 0;
+                    if (isSunday) {
+                        // Chủ nhật: 1 bác sĩ khám chung cho tất cả phòng
+                        const cnRow = document.createElement('div');
+                        cnRow.style.cssText = 'display:flex;align-items:center;gap:6px;font-size:11px;flex-wrap:wrap;margin-bottom:4px;';
+                        const cnLabel = document.createElement('span');
+                        cnLabel.textContent = 'BS khám CN:';
+                        cnLabel.style.minWidth = '70px';
+                        cnLabel.style.fontWeight = '600';
+                        cnRow.appendChild(cnLabel);
+                        const sundayKey = dayDataRaw.sundayDoctor || dayData.sundayDoctor || '';
+                        const cnSel = document.createElement('select');
+                        cnSel.style.cssText = 'flex:1;min-width:80px;padding:4px 6px;border:1px solid #ddd;border-radius:4px;font-size:11px;';
+                        cnSel.disabled = isPastDate || !hasEditPermission;
+                        cnSel.innerHTML = '<option value="">--</option>' + doctorOptions.map(n => {
+                            const k = normalizeKey(n);
+                            // CN dùng chung cả sáng + chiều -> loại bác sĩ nghỉ sáng hoặc chiều, hoặc đang khám Cầu Giấy
+                            if (excludeMorningKeys.has(k) || excludeAfternoonKeys.has(k) || cauGiayBusyKeys.has(k)) return '';
+                            return `<option value="${k}" ${k === sundayKey ? 'selected' : ''}>${(n || '').replace(/"/g, '&quot;')}</option>`;
+                        }).filter(Boolean).join('');
+                        cnSel.onchange = () => updateKhamLongBienSundayDoctor(key, cnSel.value);
+                        cnRow.appendChild(cnSel);
+                        dayCell.appendChild(cnRow);
+
+                        // Thông tin nhắc: dùng bác sĩ chung cho tất cả phòng
+                        const noteRow = document.createElement('div');
+                        noteRow.style.cssText = 'font-size:10px;color:#555;margin-bottom:4px;';
+                        noteRow.textContent = 'Tất cả phòng dùng chung bác sĩ trên cho cả sáng và chiều.';
+                        dayCell.appendChild(noteRow);
+                    } else {
+                        // Các ngày thường: 10+ phòng, mỗi phòng 2 phiên sáng/chiều
+                        (khamlongbienRooms || []).forEach(room => {
+                            const roomsData = (dayDataRaw.rooms && dayDataRaw.rooms[room.id]) || (dayData.rooms && dayData.rooms[room.id]) || {};
+                            const slotMorning = roomsData.morning || '';
+                            const slotAfternoon = roomsData.afternoon || '';
+                            const row = document.createElement('div');
+                            row.style.cssText = 'display:flex;align-items:center;gap:6px;font-size:11px;flex-wrap:wrap;';
+                            const lbl = document.createElement('span');
+                            lbl.textContent = (room.name || room.id) + ':';
+                            lbl.style.minWidth = '70px';
+                            lbl.style.fontWeight = '600';
+                            row.appendChild(lbl);
+
+                            const makeRoomSelect = (currentKey, labelText, onChange, periodKey) => {
+                                const wrap = document.createElement('label');
+                                wrap.style.cssText = 'display:flex;align-items:center;gap:4px;font-size:10px;cursor:pointer;white-space:nowrap;flex:1;min-width:80px;';
+                                const span = document.createElement('span');
+                                span.textContent = labelText;
+                                span.style.minWidth = '32px';
+                                const sel = document.createElement('select');
+                                sel.style.cssText = 'flex:1;min-width:80px;padding:4px 6px;border:1px solid #ddd;border-radius:4px;font-size:11px;';
+                                sel.disabled = isPastDate || !hasEditPermission;
+                                sel.innerHTML = '<option value="">--</option>' + doctorOptions.map(n => {
+                                    const k = normalizeKey(n);
+                                    // Theo ca: sáng/chiều, và không được trùng với lịch Cầu Giấy
+                                    const leaveSet = periodKey === 'morning' ? excludeMorningKeys : excludeAfternoonKeys;
+                                    if (leaveSet.has(k) || cauGiayBusyKeys.has(k)) return '';
+                                    return `<option value="${k}" ${k === currentKey ? 'selected' : ''}>${(n || '').replace(/"/g, '&quot;')}</option>`;
+                                }).filter(Boolean).join('');
+                                sel.onchange = () => onChange(sel.value);
+                                wrap.appendChild(span);
+                                wrap.appendChild(sel);
+                                return wrap;
+                            };
+
+                            row.appendChild(makeRoomSelect(slotMorning, 'Sáng', (val) => updateKhamLongBienRoomSlot(key, room.id, 'morning', val), 'morning'));
+                            row.appendChild(makeRoomSelect(slotAfternoon, 'Chiều', (val) => updateKhamLongBienRoomSlot(key, room.id, 'afternoon', val), 'afternoon'));
+                            dayCell.appendChild(row);
+                        });
+                    }
+
+                    const nghiRow = document.createElement('div');
+                    nghiRow.style.cssText = 'font-size:10px;color:#666;margin-top:4px;padding-top:4px;border-top:1px dashed #ddd;';
+                    nghiRow.innerHTML = '<strong>Lịch nghỉ:</strong> ' + lichNghiText;
+                    dayCell.appendChild(nghiRow);
+                    const trucRow = document.createElement('div');
+                    trucRow.style.cssText = 'font-size:10px;color:#666;';
+                    trucRow.innerHTML = '<strong>Lịch trực:</strong> ' + lichTrucText;
+                    dayCell.appendChild(trucRow);
+
+                    grid.appendChild(dayCell);
+                });
+
+                monthEl.appendChild(grid);
                 container.appendChild(monthEl);
             }
         }
-        function updateKhamLongBienDate(dateStr, doctorName) {
+        function updateKhamLongBienEarly(dateStr, field, doctorKey) {
             const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            const dateObj = new Date(dateStr + 'T00:00:00');
-            if (dateObj < today) {
-                alert('Không thể chỉnh sửa ngày đã qua.');
-                return;
+            const todayKey = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+            if (dateStr < todayKey) return;
+            if (!hasPermission('khamlongbien') && currentUser?.role !== 'admin') return;
+            const day = getKhamLongBienDayData(dateStr);
+            if (!day.early) day.early = { san: '', sieuam: '' };
+            day.early[field] = doctorKey || '';
+            // Chỉ lưu nếu có dữ liệu thực sự
+            if (day.early.san || day.early.sieuam || day.sundayDoctor || (day.rooms && Object.keys(day.rooms).length)) {
+                khamlongbienData[dateStr] = day;
+            } else {
+                delete khamlongbienData[dateStr];
             }
-            if (!hasPermission('khamlongbien')) {
-                alert('Bạn không có quyền chỉnh sửa.');
-                return;
+            saveKhamLongBienData();
+        }
+        function updateKhamLongBienSundayDoctor(dateStr, doctorKey) {
+            const today = new Date();
+            const todayKey = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+            if (dateStr < todayKey) return;
+            if (!hasPermission('khamlongbien') && currentUser?.role !== 'admin') return;
+            const day = getKhamLongBienDayData(dateStr);
+            day.sundayDoctor = doctorKey || '';
+            if (day.early.san || day.early.sieuam || day.sundayDoctor || (day.rooms && Object.keys(day.rooms).length)) {
+                khamlongbienData[dateStr] = day;
+            } else {
+                delete khamlongbienData[dateStr];
             }
-            if (doctorName && doctorName.trim()) {
-                khamlongbienData[dateStr] = doctorName.trim();
+            saveKhamLongBienData();
+        }
+        function updateKhamLongBienRoomSlot(dateStr, roomId, shift, doctorKey) {
+            const today = new Date();
+            const todayKey = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+            if (dateStr < todayKey) return;
+            if (!hasPermission('khamlongbien') && currentUser?.role !== 'admin') return;
+            const day = getKhamLongBienDayData(dateStr);
+            if (!day.rooms) day.rooms = {};
+            if (!day.rooms[roomId]) day.rooms[roomId] = { morning: '', afternoon: '' };
+            day.rooms[roomId][shift] = doctorKey || '';
+            // Nếu phòng không còn dữ liệu thì xóa
+            if (!day.rooms[roomId].morning && !day.rooms[roomId].afternoon) {
+                delete day.rooms[roomId];
+            }
+            if (day.early.san || day.early.sieuam || day.sundayDoctor || (day.rooms && Object.keys(day.rooms).length)) {
+                khamlongbienData[dateStr] = day;
             } else {
                 delete khamlongbienData[dateStr];
             }
@@ -10800,6 +11196,21 @@
         function saveKhamLongBienData() {
             StorageUtil.saveJson(STORAGE_KEYS.khamlongbienData, khamlongbienData);
             if (typeof syncToBackend === 'function' && USE_DATABASE_BACKEND) syncToBackend();
+        }
+
+        // Lấy danh sách bác sĩ đang khám Cầu Giấy (lịch chính ban ngày) trong 1 ngày – để tránh trùng với Long Biên
+        function getKhamCauGiayDoctorsForDate(dateStr) {
+            const keys = new Set();
+            const dayData = khamcaugiayData[dateStr];
+            if (!dayData || typeof dayData !== 'object') return keys;
+            const rooms = khamcaugiayRooms || [];
+            rooms.forEach(r => {
+                const slot = getKhamCauGiaySlotData(dayData, r.id);
+                if (slot && slot.doctor) {
+                    keys.add(slot.doctor);
+                }
+            });
+            return keys;
         }
 
         // Helper: render 1 chu kỳ tháng cho lịch 1 bác sĩ/ngày (dùng cho khamcaugiay, khamlongbien)

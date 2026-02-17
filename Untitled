@@ -54,3 +54,5 @@ lệnh:
 git add .
 git commit -m "deploy render"
 git push
+
+Giữ render không ngủ bằng cron-job.org

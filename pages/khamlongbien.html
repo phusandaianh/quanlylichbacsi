@@ -12,7 +12,34 @@
         <div id="khamlongbien" class="tab-content active admin-only">
             <div class="form-container">
                 <h2>Lịch khám Long Biên</h2>
-                <p>Quản lý lịch khám tại cơ sở Long Biên</p>
+                <p>Lịch 5 tháng (chu kỳ 25–24) cho cơ sở Long Biên. Mỗi ngày chia 2 phiên: khám sáng và khám chiều. </p>
+                <div style="margin-top: 12px; display:flex; gap:10px; flex-wrap:wrap;">
+                    <button class="add-btn" onclick="openKhamLongBienRoomsModal()">⚙️ Quản lý phòng khám Long Biên</button>
+                </div>
+                <div style="margin-top: 20px;">
+                    <div id="khamlongbienCalendarContainer" style="display:flex; gap:20px; flex-wrap:wrap; max-width: 100%; overflow-x: auto;"></div>
+                </div>
+
+                <!-- Modal cấu hình phòng khám Long Biên -->
+                <div id="khamLongBienRoomsModal" class="login-modal">
+                    <div class="login-box" style="max-width: 520px; max-height: 80vh; overflow-y: auto;">
+                        <div class="login-header">
+                            <h2>⚙️ Phòng khám Long Biên</h2>
+                            <button class="login-close" onclick="closeKhamLongBienRoomsModal()">✕</button>
+                        </div>
+                        <div style="padding: 20px;">
+                            <p style="font-size: 13px; color:#666; margin-bottom: 12px;">
+                                Quản lý danh sách phòng khám Long Biên. Mặc định có 10 phòng, bạn có thể đổi tên hoặc thêm bớt phòng theo nhu cầu.
+                            </p>
+                            <div id="khamLongBienRoomsList" style="margin-bottom: 12px;"></div>
+                            <button type="button" class="add-btn" onclick="addKhamLongBienRoom()">➕ Thêm phòng khám</button>
+                        </div>
+                        <div style="padding: 20px; border-top: 1px solid #eee; display: flex; gap: 10px; justify-content: flex-end;">
+                            <button class="delete-btn" onclick="closeKhamLongBienRoomsModal()">Hủy</button>
+                            <button class="submit-btn" onclick="saveKhamLongBienRooms()">💾 Lưu</button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
