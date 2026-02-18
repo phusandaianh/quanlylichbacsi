@@ -261,6 +261,17 @@ body {
     font-size: 14px;
 }
 
+/* Ẩn mũi tên mở danh sách (chevron) trên tất cả select, chức năng dropdown vẫn hoạt động */
+select {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: none;
+}
+select::-ms-expand {
+    display: none;
+}
+
 .form-group input,
 .form-group select,
 .form-group textarea {
@@ -795,6 +806,14 @@ body {
 }
 
 .admin-only.show {
+    display: block;
+}
+
+/* Tab content admin-only: chỉ hiển thị khi active (tránh lộ nhiều tab cùng lúc) */
+.tab-content.admin-only.show {
+    display: none;
+}
+.tab-content.admin-only.show.active {
     display: block;
 }
 

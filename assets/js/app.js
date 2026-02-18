@@ -3721,6 +3721,13 @@
             // Nếu là tab danh sách bác sĩ, hiển thị lại danh sách
             if (['cot1', 'cot2', 'cot3', 'partime', 'khac'].includes(tabName)) {
                 displayDoctors(tabName);
+            } else if (tabName === 'trangchu' || tabName === '') {
+                if (typeof renderTrangChuLanhDaoList === 'function') renderTrangChuLanhDaoList();
+                if (tabName === '' && document.getElementById('trangchu')) {
+                    document.getElementById('trangchu').classList.add('active');
+                }
+            } else if (tabName === 'lanhdao') {
+                displayDoctors('lanhdao');
             } else if (tabName === 'nghiphep') {
                 // Render calendar cho tab Đăng ký nghỉ phép (hiển thị giống admin nhưng vẫn có tính năng xin nghỉ phép)
                 if (typeof renderNghiPhepCalendars === 'function') {
@@ -4117,6 +4124,37 @@
                         <span>📞 ${doctor.phone || 'Chưa có'}</span>
                     </div>
                     ${editDeleteButtons}
+                </div>
+                `;
+            }).join('');
+
+            // Đồng bộ danh sách lãnh đạo lên block Trang chủ (chỉ xem, không nút Sửa/Xóa)
+            if (type === 'lanhdao') {
+                renderTrangChuLanhDaoList();
+            }
+        }
+
+        // Hiển thị danh sách lãnh đạo trên Trang chủ (block #trangchuLanhdaoList)
+        function renderTrangChuLanhDaoList() {
+            const container = document.getElementById('trangchuLanhdaoList');
+            if (!container) return;
+            const doctorList = doctors.lanhdao || [];
+            if (doctorList.length === 0) {
+                container.innerHTML = '<div class="empty-state">Chưa có lãnh đạo nào</div>';
+                return;
+            }
+            container.innerHTML = doctorList.map(doctor => {
+                const accKey = normalizeKey(doctor.name);
+                const account = accounts[accKey];
+                const usernameDisplay = account ? account.username : doctor.name;
+                return `
+                <div class="doctor-item">
+                    <div class="doctor-info">
+                        <strong>${(doctor.name || '').replace(/</g, '&lt;')}</strong>
+                        <span>👤 Tài khoản: ${(usernameDisplay || '').replace(/</g, '&lt;')}</span>
+                        <span>🏷️ Tên hiển thị: ${(doctor.displayName || doctor.name || '').replace(/</g, '&lt;')}</span>
+                        <span>📞 ${(doctor.phone || 'Chưa có').replace(/</g, '&lt;')}</span>
+                    </div>
                 </div>
                 `;
             }).join('');
@@ -9474,8 +9512,11 @@
             submissions = StorageUtil.loadJson(STORAGE_KEYS.leaveSubmissions, []);
             // cleanup old submissions older than 2 months
             cleanupOldSubmissions();
-            renderThreeMonthCalendars('calendarContainer', onUserDateClick);
+            // Đã bỏ lịch đăng ký nghỉ phép khỏi trang chủ
+            // renderThreeMonthCalendars('calendarContainer', onUserDateClick);
             if (currentUser && currentUser.role === 'admin') renderAdminCalendars();
+            // Hiển thị danh sách lãnh đạo trên Trang chủ (block #trangchuLanhdaoList)
+            if (typeof renderTrangChuLanhDaoList === 'function') renderTrangChuLanhDaoList();
         }
 
         function cleanupOldSubmissions() {
@@ -10631,13 +10672,48 @@
                     }
                     (khamcaugiayRooms || []).forEach(room => {
                         const slot = getKhamCauGiaySlotData(dayData, room.id);
-                        const row = document.createElement('div');
-                        row.style.cssText = 'display:flex;align-items:center;gap:6px;font-size:11px;flex-wrap:wrap;';
+                        // Dòng trên: Tên phòng + 2 checkbox trưa và 20h (cùng 1 hàng)
+                        const row1 = document.createElement('div');
+                        row1.style.cssText = 'display:flex;align-items:center;gap:6px;font-size:11px;flex-wrap:nowrap;margin-bottom:2px;';
                         const lbl = document.createElement('span');
                         lbl.textContent = (room.name || room.id) + ':';
-                        lbl.style.minWidth = '70px';
+                        lbl.style.minWidth = '60px';
+                        lbl.style.flexShrink = '0';
                         lbl.style.fontWeight = '600';
-                        row.appendChild(lbl);
+                        row1.appendChild(lbl);
+                        if (room.khamTrua) {
+                            const cbTrua = document.createElement('label');
+                            cbTrua.style.cssText = 'display:flex;align-items:center;gap:3px;font-size:10px;cursor:pointer;white-space:nowrap;flex-shrink:0;';
+                            const inpTrua = document.createElement('input');
+                            inpTrua.type = 'checkbox';
+                            inpTrua.checked = slot.khamTrua;
+                            inpTrua.disabled = isPastDate || !hasEditPermission;
+                            inpTrua.onchange = () => updateKhamCauGiayRoomOption(key, room.id, 'khamTrua', inpTrua.checked);
+                            cbTrua.appendChild(inpTrua);
+                            cbTrua.appendChild(document.createTextNode('trưa'));
+                            row1.appendChild(cbTrua);
+                        }
+                        if (room.kham20h) {
+                            const cb20h = document.createElement('label');
+                            cb20h.style.cssText = 'display:flex;align-items:center;gap:3px;font-size:10px;cursor:pointer;white-space:nowrap;flex-shrink:0;';
+                            const inp20h = document.createElement('input');
+                            inp20h.type = 'checkbox';
+                            inp20h.checked = slot.kham20h;
+                            inp20h.disabled = isPastDate || !hasEditPermission;
+                            inp20h.onchange = () => updateKhamCauGiayRoomOption(key, room.id, 'kham20h', inp20h.checked);
+                            cb20h.appendChild(inp20h);
+                            cb20h.appendChild(document.createTextNode('20h'));
+                            row1.appendChild(cb20h);
+                        }
+                        dayCell.appendChild(row1);
+                        // Dòng dưới: Dropdown chọn bác sĩ
+                        const row2 = document.createElement('div');
+                        row2.style.cssText = 'display:flex;align-items:center;gap:6px;font-size:11px;flex-wrap:wrap;margin-bottom:4px;';
+                        const selLabel = document.createElement('span');
+                        selLabel.textContent = 'Bác sĩ:';
+                        selLabel.style.minWidth = '70px';
+                        selLabel.style.fontWeight = '600';
+                        row2.appendChild(selLabel);
                         const sel = document.createElement('select');
                         sel.style.cssText = 'flex:1;min-width:80px;padding:4px 6px;border:1px solid #ddd;border-radius:4px;font-size:11px;';
                         sel.disabled = isPastDate || !hasEditPermission;
@@ -10647,32 +10723,8 @@
                             return `<option value="${k}" ${k === slot.doctor ? 'selected' : ''}>${(n || '').replace(/"/g, '&quot;')}</option>`;
                         }).filter(Boolean).join('');
                         sel.onchange = () => updateKhamCauGiayRoom(key, room.id, sel.value);
-                        row.appendChild(sel);
-                        if (room.khamTrua) {
-                            const cbTrua = document.createElement('label');
-                            cbTrua.style.cssText = 'display:flex;align-items:center;gap:4px;font-size:10px;cursor:pointer;white-space:nowrap;';
-                            const inpTrua = document.createElement('input');
-                            inpTrua.type = 'checkbox';
-                            inpTrua.checked = slot.khamTrua;
-                            inpTrua.disabled = isPastDate || !hasEditPermission;
-                            inpTrua.onchange = () => updateKhamCauGiayRoomOption(key, room.id, 'khamTrua', inpTrua.checked);
-                            cbTrua.appendChild(inpTrua);
-                            cbTrua.appendChild(document.createTextNode('Trưa'));
-                            row.appendChild(cbTrua);
-                        }
-                        if (room.kham20h) {
-                            const cb20h = document.createElement('label');
-                            cb20h.style.cssText = 'display:flex;align-items:center;gap:4px;font-size:10px;cursor:pointer;white-space:nowrap;';
-                            const inp20h = document.createElement('input');
-                            inp20h.type = 'checkbox';
-                            inp20h.checked = slot.kham20h;
-                            inp20h.disabled = isPastDate || !hasEditPermission;
-                            inp20h.onchange = () => updateKhamCauGiayRoomOption(key, room.id, 'kham20h', inp20h.checked);
-                            cb20h.appendChild(inp20h);
-                            cb20h.appendChild(document.createTextNode('20h'));
-                            row.appendChild(cb20h);
-                        }
-                        dayCell.appendChild(row);
+                        row2.appendChild(sel);
+                        dayCell.appendChild(row2);
                     });
                     const nghiRow = document.createElement('div');
                     nghiRow.style.cssText = 'font-size:10px;color:#666;margin-top:4px;padding-top:4px;border-top:1px dashed #ddd;';
@@ -11009,7 +11061,7 @@
 
                     const dayCell = document.createElement('div');
                     dayCell.className = 'nghiphep-day-cell';
-                    dayCell.style.cssText = 'border:1px solid #e6e9ef;border-radius:6px;padding:8px;background:#f8fafc;min-height:220px;display:flex;flex-direction:column;gap:4px;';
+                    dayCell.style.cssText = 'border:1px solid #e6e9ef;border-radius:6px;padding:6px 8px;background:#f8fafc;min-height:180px;display:flex;flex-direction:column;gap:4px;';
                     const isHoliday = typeof isHolidayCell === 'function' && isHolidayCell(key);
                     if (isHoliday) { dayCell.style.background = '#d32f2f'; dayCell.style.color = '#fff'; }
                     if (isPastDate) { dayCell.style.opacity = '0.35'; dayCell.style.background = '#e9ecef'; dayCell.style.pointerEvents = 'none'; }
@@ -11086,45 +11138,43 @@
                         noteRow.textContent = 'Tất cả phòng dùng chung bác sĩ trên cho cả sáng và chiều.';
                         dayCell.appendChild(noteRow);
                     } else {
-                        // Các ngày thường: 10+ phòng, mỗi phòng 2 phiên sáng/chiều
+                        // Các ngày thường: 1 dòng tiêu đề (Phòng | Sáng | Chiều), mỗi phòng 1 dòng 3 ô — Tên phòng | Bác sĩ sáng | Bác sĩ chiều
+                        const roomGridWrap = document.createElement('div');
+                        roomGridWrap.style.cssText = 'display:flex;flex-direction:column;gap:2px;';
+                        const headerRow = document.createElement('div');
+                        headerRow.style.cssText = 'display:grid;grid-template-columns:minmax(52px,auto) 1fr 1fr;align-items:center;gap:6px;font-size:10px;color:#666;font-weight:700;padding-bottom:2px;border-bottom:1px solid #e0e0e0;';
+                        headerRow.innerHTML = '<span>Phòng</span><span>Sáng</span><span>Chiều</span>';
+                        roomGridWrap.appendChild(headerRow);
+                        const makeRoomSelect = (currentKey, onChange, periodKey) => {
+                            const sel = document.createElement('select');
+                            sel.style.cssText = 'width:100%;min-width:0;padding:3px 4px;border:1px solid #ddd;border-radius:4px;font-size:10px;';
+                            sel.disabled = isPastDate || !hasEditPermission;
+                            sel.innerHTML = '<option value="">--</option>' + doctorOptions.map(n => {
+                                const k = normalizeKey(n);
+                                const leaveSet = periodKey === 'morning' ? excludeMorningKeys : excludeAfternoonKeys;
+                                if (leaveSet.has(k) || cauGiayBusyKeys.has(k)) return '';
+                                return `<option value="${k}" ${k === currentKey ? 'selected' : ''}>${(n || '').replace(/"/g, '&quot;')}</option>`;
+                            }).filter(Boolean).join('');
+                            sel.onchange = () => onChange(sel.value);
+                            return sel;
+                        };
                         (khamlongbienRooms || []).forEach(room => {
                             const roomsData = (dayDataRaw.rooms && dayDataRaw.rooms[room.id]) || (dayData.rooms && dayData.rooms[room.id]) || {};
                             const slotMorning = roomsData.morning || '';
                             const slotAfternoon = roomsData.afternoon || '';
                             const row = document.createElement('div');
-                            row.style.cssText = 'display:flex;align-items:center;gap:6px;font-size:11px;flex-wrap:wrap;';
+                            row.style.cssText = 'display:grid;grid-template-columns:minmax(52px,auto) 1fr 1fr;align-items:center;gap:6px;font-size:10px;';
                             const lbl = document.createElement('span');
-                            lbl.textContent = (room.name || room.id) + ':';
-                            lbl.style.minWidth = '70px';
+                            lbl.textContent = (room.name || room.id);
                             lbl.style.fontWeight = '600';
+                            lbl.style.overflow = 'hidden';
+                            lbl.style.textOverflow = 'ellipsis';
                             row.appendChild(lbl);
-
-                            const makeRoomSelect = (currentKey, labelText, onChange, periodKey) => {
-                                const wrap = document.createElement('label');
-                                wrap.style.cssText = 'display:flex;align-items:center;gap:4px;font-size:10px;cursor:pointer;white-space:nowrap;flex:1;min-width:80px;';
-                                const span = document.createElement('span');
-                                span.textContent = labelText;
-                                span.style.minWidth = '32px';
-                                const sel = document.createElement('select');
-                                sel.style.cssText = 'flex:1;min-width:80px;padding:4px 6px;border:1px solid #ddd;border-radius:4px;font-size:11px;';
-                                sel.disabled = isPastDate || !hasEditPermission;
-                                sel.innerHTML = '<option value="">--</option>' + doctorOptions.map(n => {
-                                    const k = normalizeKey(n);
-                                    // Theo ca: sáng/chiều, và không được trùng với lịch Cầu Giấy
-                                    const leaveSet = periodKey === 'morning' ? excludeMorningKeys : excludeAfternoonKeys;
-                                    if (leaveSet.has(k) || cauGiayBusyKeys.has(k)) return '';
-                                    return `<option value="${k}" ${k === currentKey ? 'selected' : ''}>${(n || '').replace(/"/g, '&quot;')}</option>`;
-                                }).filter(Boolean).join('');
-                                sel.onchange = () => onChange(sel.value);
-                                wrap.appendChild(span);
-                                wrap.appendChild(sel);
-                                return wrap;
-                            };
-
-                            row.appendChild(makeRoomSelect(slotMorning, 'Sáng', (val) => updateKhamLongBienRoomSlot(key, room.id, 'morning', val), 'morning'));
-                            row.appendChild(makeRoomSelect(slotAfternoon, 'Chiều', (val) => updateKhamLongBienRoomSlot(key, room.id, 'afternoon', val), 'afternoon'));
-                            dayCell.appendChild(row);
+                            row.appendChild(makeRoomSelect(slotMorning, (val) => updateKhamLongBienRoomSlot(key, room.id, 'morning', val), 'morning'));
+                            row.appendChild(makeRoomSelect(slotAfternoon, (val) => updateKhamLongBienRoomSlot(key, room.id, 'afternoon', val), 'afternoon'));
+                            roomGridWrap.appendChild(row);
                         });
+                        dayCell.appendChild(roomGridWrap);
                     }
 
                     const nghiRow = document.createElement('div');
