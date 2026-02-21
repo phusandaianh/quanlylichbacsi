@@ -57,6 +57,9 @@
             lichTrucData: 'lichTrucData',
             lamviechangngayData: 'lamviechangngayData',
             lamviechangngayDoctorList: 'lamviechangngayDoctorList',
+            lamviechangngayRooms: 'lamviechangngayRooms',
+            lamviechangngayRoomsCauGiay: 'lamviechangngayRoomsCauGiay',
+            lamviechangngayRoomsLongBien: 'lamviechangngayRoomsLongBien',
             phumoData: 'phumoData',
             phumoDoctorList: 'phumoDoctorList',
             livetreamData: 'livetreamData',
@@ -446,6 +449,31 @@
         let lamviechangngayData = StorageUtil.loadJson(STORAGE_KEYS.lamviechangngayData, {});
         // Danh sách bác sĩ khám chủ nhật (tick chọn từ danh sách toàn bộ) - mảng tên bác sĩ
         let lamviechangngayDoctorList = StorageUtil.loadJson(STORAGE_KEYS.lamviechangngayDoctorList, []);
+        // Phòng khám chủ nhật (giống lịch khám Cầu Giấy): [{ id, name }, ...] — giữ để tương thích cũ
+        let lamviechangngayRooms = StorageUtil.loadJson(STORAGE_KEYS.lamviechangngayRooms, [
+            { id: 'r1', name: 'Phòng 1' }, { id: 'r2', name: 'Phòng 2' },
+            { id: 'r3', name: 'Phòng 3' }, { id: 'r4', name: 'Phòng 4' }
+        ]);
+        if (!Array.isArray(lamviechangngayRooms) || lamviechangngayRooms.length === 0) {
+            lamviechangngayRooms = [
+                { id: 'r1', name: 'Phòng 1' }, { id: 'r2', name: 'Phòng 2' },
+                { id: 'r3', name: 'Phòng 3' }, { id: 'r4', name: 'Phòng 4' }
+            ];
+            StorageUtil.saveJson(STORAGE_KEYS.lamviechangngayRooms, lamviechangngayRooms);
+        }
+        // Phòng khám chủ nhật: Cầu Giấy và Long Biên riêng (mỗi bên 1–3 phòng)
+        let lamviechangngayRoomsCauGiay = StorageUtil.loadJson(STORAGE_KEYS.lamviechangngayRoomsCauGiay, null);
+        let lamviechangngayRoomsLongBien = StorageUtil.loadJson(STORAGE_KEYS.lamviechangngayRoomsLongBien, null);
+        if (!Array.isArray(lamviechangngayRoomsCauGiay) || lamviechangngayRoomsCauGiay.length === 0) {
+            lamviechangngayRoomsCauGiay = (lamviechangngayRooms || []).slice(0, 2).map((r, i) => ({ id: r.id || 'cg' + (i + 1), name: r.name || 'Phòng ' + (i + 1) }));
+            if (lamviechangngayRoomsCauGiay.length === 0) lamviechangngayRoomsCauGiay = [{ id: 'cg1', name: 'Phòng 1' }];
+            StorageUtil.saveJson(STORAGE_KEYS.lamviechangngayRoomsCauGiay, lamviechangngayRoomsCauGiay);
+        }
+        if (!Array.isArray(lamviechangngayRoomsLongBien) || lamviechangngayRoomsLongBien.length === 0) {
+            lamviechangngayRoomsLongBien = (lamviechangngayRooms || []).slice(2, 4).map((r, i) => ({ id: r.id || 'lb' + (i + 1), name: r.name || 'Phòng ' + (i + 1) }));
+            if (lamviechangngayRoomsLongBien.length === 0) lamviechangngayRoomsLongBien = [{ id: 'lb1', name: 'Phòng 1' }];
+            StorageUtil.saveJson(STORAGE_KEYS.lamviechangngayRoomsLongBien, lamviechangngayRoomsLongBien);
+        }
         
         // Lịch làm việc data - lưu theo format: { "YYYY-MM-DD": { "positionId": { "shift": "doctor names" } } }
         let lichlamviecData = StorageUtil.loadJson(STORAGE_KEYS.lichlamviecData, {});
@@ -545,7 +573,19 @@
                 StorageUtil.saveJson(STORAGE_KEYS.doctorsKhac, doctors.khac);
             }
             if (data.accounts != null) {
-                accounts = data.accounts;
+                const raw = data.accounts;
+                // Đảm bảo accounts luôn là object keyed by normalizeKey(username) (tránh lỗi đăng nhập khi server trả về array hoặc format khác)
+                if (Array.isArray(raw)) {
+                    accounts = {};
+                    raw.forEach(function (acc) {
+                        const k = normalizeKey(acc.username || acc.name || '');
+                        if (k) accounts[k] = { username: acc.username || acc.name || '', password: acc.password || '', role: acc.role || 'doctor', name: acc.name || acc.username || '' };
+                    });
+                } else if (typeof raw === 'object' && raw !== null) {
+                    accounts = raw;
+                } else {
+                    accounts = {};
+                }
                 StorageUtil.saveJson(STORAGE_KEYS.accounts, accounts);
             }
             if (data.passwordRequests != null) {
@@ -610,6 +650,9 @@
             if (data.lichTrucData != null) { lichTrucData = data.lichTrucData; StorageUtil.saveJson(STORAGE_KEYS.lichTrucData, lichTrucData); }
             if (data.lamviechangngayData != null) { lamviechangngayData = data.lamviechangngayData; StorageUtil.saveJson(STORAGE_KEYS.lamviechangngayData, lamviechangngayData); }
             if (data.lamviechangngayDoctorList != null) { lamviechangngayDoctorList = data.lamviechangngayDoctorList; StorageUtil.saveJson(STORAGE_KEYS.lamviechangngayDoctorList, lamviechangngayDoctorList); }
+            if (data.lamviechangngayRooms != null) { lamviechangngayRooms = data.lamviechangngayRooms; StorageUtil.saveJson(STORAGE_KEYS.lamviechangngayRooms, lamviechangngayRooms); }
+            if (data.lamviechangngayRoomsCauGiay != null) { lamviechangngayRoomsCauGiay = data.lamviechangngayRoomsCauGiay; StorageUtil.saveJson(STORAGE_KEYS.lamviechangngayRoomsCauGiay, lamviechangngayRoomsCauGiay); }
+            if (data.lamviechangngayRoomsLongBien != null) { lamviechangngayRoomsLongBien = data.lamviechangngayRoomsLongBien; StorageUtil.saveJson(STORAGE_KEYS.lamviechangngayRoomsLongBien, lamviechangngayRoomsLongBien); }
             if (data.lichlamviecData != null) { lichlamviecData = data.lichlamviecData; StorageUtil.saveJson(STORAGE_KEYS.lichlamviecData, lichlamviecData); }
             if (data.quydinhData != null) { quydinhData = data.quydinhData; StorageUtil.saveJson(STORAGE_KEYS.quydinhData, quydinhData); }
         }
@@ -664,6 +707,9 @@
                 lichTrucData: lichTrucData,
                 lamviechangngayData: lamviechangngayData,
                 lamviechangngayDoctorList: lamviechangngayDoctorList,
+                lamviechangngayRooms: lamviechangngayRooms,
+                lamviechangngayRoomsCauGiay: lamviechangngayRoomsCauGiay,
+                lamviechangngayRoomsLongBien: lamviechangngayRoomsLongBien,
                 lichlamviecData: lichlamviecData,
                 quanlynghiphepData: quanlynghiphepData,
                 maxCountByWeekday: maxCountByWeekday,
@@ -1098,17 +1144,17 @@
                 case 'khamcaugiay':
                     if (typeof initKhamCauGiayCalendar === 'function') initKhamCauGiayCalendar();
                     break;
+                case 'khamsomTruaLB':
+                    if (typeof initKhamSomTruaLBCalendar === 'function') initKhamSomTruaLBCalendar();
+                    break;
                 case 'khamcaugiay20h':
                     if (typeof initKhamCauGiay20hCalendar === 'function') initKhamCauGiay20hCalendar();
                     break;
                 case 'khamlongbien':
                     if (typeof initKhamLongBienCalendar === 'function') initKhamLongBienCalendar();
                     break;
-                case 'khamsanvip':
-                    if (typeof initKhamSanVipCalendar === 'function') initKhamSanVipCalendar();
-                    break;
-                case 'sieuamvip':
-                    if (typeof initSieuAmVipCalendar === 'function') initSieuAmVipCalendar();
+                case 'khamsanSieuamVip':
+                    if (typeof initKhamSanSieuamVipCalendar === 'function') initKhamSanSieuamVipCalendar();
                     break;
                 case 'tructrua':
                     if (typeof initTructruaCalendar === 'function') initTructruaCalendar();
@@ -1535,8 +1581,9 @@
         function handleLogin(event) {
             event.preventDefault();
             
-            // Đảm bảo admin account được khởi tạo
+            // Đảm bảo admin account được khởi tạo và dùng đúng dữ liệu accounts (từ localStorage nếu đã load từ server trước đó)
             initAdminAccount();
+            const accountsToUse = StorageUtil.loadJson(STORAGE_KEYS.accounts, {});
             
             const usernameInput = document.getElementById('loginUsername');
             const passwordInput = document.getElementById('loginPassword');
@@ -1544,11 +1591,17 @@
             
             // Hàm hiển thị lỗi
             function showError(message, highlightInput = null) {
-                if (errorMsg) {
-                    errorMsg.textContent = message;
-                    errorMsg.style.display = 'block';
-                    // Scroll đến thông báo lỗi
-                    errorMsg.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                try {
+                    if (errorMsg) {
+                        errorMsg.textContent = message;
+                        errorMsg.style.display = 'block';
+                        errorMsg.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    } else if (typeof alert !== 'undefined') {
+                        alert(message);
+                    }
+                } catch (e) {
+                    console.error('showError:', e);
+                    if (typeof alert !== 'undefined') alert(message);
                 }
                 
                 // Xóa highlight cũ
@@ -1590,12 +1643,12 @@
             
             const key = normalizeKey(username);
 
-            if (!accounts[key]) {
+            if (!accountsToUse[key]) {
                 showError('❌ Tên đăng nhập không tồn tại! Vui lòng kiểm tra lại.', 'username');
                 return;
             }
 
-            if (accounts[key].password !== password) {
+            if (accountsToUse[key].password !== password) {
                 showError('❌ Mật khẩu không đúng! Vui lòng thử lại.', 'password');
                 return;
             }
@@ -1609,16 +1662,16 @@
                 }
                 
                 // Kiểm tra lại account trước khi đăng nhập
-                if (!accounts[key]) {
+                if (!accountsToUse[key]) {
                     showError('❌ Tài khoản không tồn tại! Vui lòng kiểm tra lại.', 'username');
                     return;
                 }
                 
                 currentUser = {
                     key: key,
-                    username: accounts[key].username,
-                    name: accounts[key].name,
-                    role: accounts[key].role
+                    username: accountsToUse[key].username,
+                    name: accountsToUse[key].name,
+                    role: accountsToUse[key].role
                 };
                 
                 // Lưu currentUser vào localStorage
@@ -1658,6 +1711,7 @@
                 showError('❌ Lỗi hệ thống: ' + (error.message || 'Lỗi không xác định') + '. Vui lòng thử lại sau hoặc tải lại trang.');
             }
         }
+        window.handleLogin = handleLogin;
 
         // Đăng xuất
         function logout() {
@@ -2570,12 +2624,10 @@
             { id: 'hoichancot1', name: 'Lịch hội chẩn cột1' },
             { id: 'khamcaugiay', name: 'Lịch khám Cầu Giấy' },
             { id: 'khamlongbien', name: 'Lịch khám Long Biên' },
-            { id: 'tructrua', name: 'Lịch trực trưa' },
+            { id: 'khamsomTruaLB', name: 'Lịch khám sớm + khám trưa Long Biên' },
             { id: 'tieuphau', name: 'Lịch tiểu phẫu' },
-            { id: 'khamsom', name: 'Lịch khám sớm' },
             { id: 'khamcaugiay20h', name: 'Lịch khám Cầu Giấy buổi trưa +20h' },
-            { id: 'khamsanvip', name: 'Lịch khám sản VIP' },
-            { id: 'sieuamvip', name: 'Lịch siêu âm VIP' },
+            { id: 'khamsanSieuamVip', name: 'Lịch khám Sản + Siêu âm VIP' },
             { id: 'lichlamviec', name: 'Lịch làm việc' },
             { id: 'phumo', name: 'Lịch phụ mổ' },
             { id: 'khamhotropk', name: 'Khám hỗ trợ PK' },
@@ -3770,20 +3822,16 @@
                 initcvcot23Table();
             } else if (tabName === 'khamhotropk') {
                 initKhamHoTroPKTable();
-            } else if (tabName === 'khamsom') {
-                initKhamSomCalendar();
+            } else if (tabName === 'khamsomTruaLB') {
+                initKhamSomTruaLBCalendar();
             } else if (tabName === 'khamcaugiay') {
                 initKhamCauGiayCalendar();
             } else if (tabName === 'khamcaugiay20h') {
                 initKhamCauGiay20hCalendar();
             } else if (tabName === 'khamlongbien') {
                 initKhamLongBienCalendar();
-            } else if (tabName === 'khamsanvip') {
-                initKhamSanVipCalendar();
-            } else if (tabName === 'sieuamvip') {
-                initSieuAmVipCalendar();
-            } else if (tabName === 'tructrua') {
-                initTructruaCalendar();
+            } else if (tabName === 'khamsanSieuamVip') {
+                initKhamSanSieuamVipCalendar();
             } else if (tabName === 'tieuphau') {
                 inittieuphauCalendar();
             } else if (tabName === 'livetream') {
@@ -11135,7 +11183,7 @@
                         // Thông tin nhắc: dùng bác sĩ chung cho tất cả phòng
                         const noteRow = document.createElement('div');
                         noteRow.style.cssText = 'font-size:10px;color:#555;margin-bottom:4px;';
-                        noteRow.textContent = 'Tất cả phòng dùng chung bác sĩ trên cho cả sáng và chiều.';
+                        noteRow.textContent = 'Chủ nhật có 1 bác sĩ khám ';
                         dayCell.appendChild(noteRow);
                     } else {
                         // Các ngày thường: 1 dòng tiêu đề (Phòng | Sáng | Chiều), mỗi phòng 1 dòng 3 ô — Tên phòng | Bác sĩ sáng | Bác sĩ chiều
@@ -11520,6 +11568,134 @@
             renderKhamCauGiay20hCalendar();
         }
 
+        // ========== Lịch khám sớm + khám trưa Long Biên (gộp Lịch khám sớm + Lịch trực trưa, hiển thị giống Cầu Giấy trưa+20h) ==========
+        function initKhamSomTruaLBCalendar() {
+            renderKhamSomTruaLBCalendar();
+        }
+        function renderKhamSomTruaLBCalendar() {
+            const container = document.getElementById('khamsomTruaLBCalendarContainer');
+            if (!container) return;
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            let cycleStartDate = new Date(today.getFullYear(), today.getMonth(), 25);
+            if (today.getDate() < 25) cycleStartDate = new Date(today.getFullYear(), today.getMonth() - 1, 25);
+            const toLocalDateKey = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+            const doctorOptions = getKhamCauGiayDoctorOptions();
+            const hasEditPermission = hasPermission('khamsom') || hasPermission('tructrua') || hasPermission('khamsomTruaLB') || currentUser?.role === 'admin';
+            container.innerHTML = '';
+            for (let i = 0; i < 5; i++) {
+                const cycleStart = new Date(cycleStartDate.getFullYear(), cycleStartDate.getMonth() + i, 25);
+                const cycleEnd = new Date(cycleStart.getFullYear(), cycleStart.getMonth() + 1, 24);
+                const monthEl = document.createElement('div');
+                monthEl.className = 'calendar-month-card';
+                monthEl.style.cssText = 'flex:0 1 100%;width:100%;background:#fff;border-radius:12px;padding:18px;box-shadow:0 4px 16px rgba(0,0,0,0.08);border:1px solid #e8ecf0;';
+                const monthNum = cycleEnd.getMonth() + 1;
+                const year = cycleEnd.getFullYear();
+                const title = document.createElement('div');
+                title.style.cssText = 'text-align:center;font-weight:700;font-size:16px;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #667eea;';
+                title.textContent = `Lịch khám sớm + khám trưa Long Biên tháng ${monthNum}/${year}`;
+                monthEl.appendChild(title);
+                const grid = document.createElement('div');
+                grid.className = 'calendar-grid';
+                grid.style.cssText = 'display:grid;grid-template-columns:repeat(7,1fr);gap:10px;';
+                ['T2','T3','T4','T5','T6','T7','CN'].forEach(w => {
+                    const wEl = document.createElement('div');
+                    wEl.style.cssText = 'text-align:center;font-size:14px;color:#666;';
+                    wEl.textContent = w;
+                    grid.appendChild(wEl);
+                });
+                const firstWeekday = cycleStart.getDay();
+                const startOffset = firstWeekday === 0 ? 6 : firstWeekday - 1;
+                for (let j = 0; j < startOffset; j++) grid.appendChild(document.createElement('div'));
+                const allDates = [];
+                let d = new Date(cycleStart);
+                while (d <= cycleEnd) { allDates.push(new Date(d)); d.setDate(d.getDate() + 1); }
+                const todayKey = toLocalDateKey(today);
+                allDates.forEach(date => {
+                    const key = toLocalDateKey(date);
+                    const khamSomVal = (khamsomData[key] || '').trim();
+                    const khamTruaVal = (tructruaData[key] || '').trim();
+                    const excludeKeys = getDoctorsOnLeaveForDate(key);
+                    const isPast = key < todayKey;
+                    const isHoliday = typeof isHolidayCell === 'function' && isHolidayCell(key);
+                    // Chỉ khóa chỉnh sửa khi ngày đã qua; ngày lễ vẫn được phép sửa
+                    const canEdit = !isPast && hasEditPermission;
+                    const dayCell = document.createElement('div');
+                    dayCell.className = 'nghiphep-day-cell';
+                    dayCell.style.cssText = 'border:1px solid #e6e9ef;border-radius:6px;padding:8px;background:#f8fafc;min-height:120px;display:flex;flex-direction:column;gap:6px;';
+                    if (isHoliday) { dayCell.style.background = '#d32f2f'; dayCell.style.color = '#fff'; }
+                    if (isPast) { dayCell.style.opacity = '0.35'; dayCell.style.background = '#e9ecef'; }
+                    const dayLabel = document.createElement('div');
+                    dayLabel.style.cssText = 'font-size:12px;font-weight:600;margin-bottom:2px;';
+                    dayLabel.textContent = formatDateWithWeekday(date);
+                    dayCell.appendChild(dayLabel);
+                    if (isHoliday) {
+                        const hl = typeof getHolidayDisplayLabel === 'function' ? getHolidayDisplayLabel(key) : { label: '' };
+                        if (hl.label) { const hb = document.createElement('div'); hb.textContent = '🏮 ' + hl.label; hb.style.fontSize = '11px'; dayCell.appendChild(hb); }
+                    }
+                    const rowSom = document.createElement('div');
+                    rowSom.style.cssText = 'display:flex;align-items:center;gap:6px;font-size:11px;';
+                    const lblSom = document.createElement('span');
+                    lblSom.textContent = 'Bác sĩ khám sớm:';
+                    lblSom.style.minWidth = '120px';
+                    lblSom.style.fontWeight = '600';
+                    rowSom.appendChild(lblSom);
+                    const selSom = document.createElement('select');
+                    selSom.style.cssText = 'flex:1;padding:4px 6px;border:1px solid #ddd;border-radius:4px;font-size:11px;';
+                    selSom.disabled = !canEdit;
+                    selSom.innerHTML = '<option value="">--</option>' + (doctorOptions || []).map(n => {
+                        const displayName = (n || '').trim();
+                        if (!displayName) return '';
+                        if (excludeKeys.has(normalizeKey(displayName))) return '';
+                        const selected = (normalizeKey(khamSomVal) === normalizeKey(displayName)) ? ' selected' : '';
+                        return '<option value="' + (displayName || '').replace(/"/g, '&quot;').replace(/</g, '&lt;') + '"' + selected + '>' + (displayName || '').replace(/</g, '&lt;').replace(/"/g, '&quot;') + '</option>';
+                    }).filter(Boolean).join('');
+                    selSom.onchange = () => updateKhamSomTruaLBSlot(key, 'khamSom', selSom.value);
+                    rowSom.appendChild(selSom);
+                    dayCell.appendChild(rowSom);
+                    const rowTrua = document.createElement('div');
+                    rowTrua.style.cssText = 'display:flex;align-items:center;gap:6px;font-size:11px;';
+                    const lblTrua = document.createElement('span');
+                    lblTrua.textContent = 'Bác sĩ khám trưa:';
+                    lblTrua.style.minWidth = '120px';
+                    lblTrua.style.fontWeight = '600';
+                    rowTrua.appendChild(lblTrua);
+                    const selTrua = document.createElement('select');
+                    selTrua.style.cssText = 'flex:1;padding:4px 6px;border:1px solid #ddd;border-radius:4px;font-size:11px;';
+                    selTrua.disabled = !canEdit;
+                    selTrua.innerHTML = '<option value="">--</option>' + (doctorOptions || []).map(n => {
+                        const displayName = (n || '').trim();
+                        if (!displayName) return '';
+                        if (excludeKeys.has(normalizeKey(displayName))) return '';
+                        const selected = (normalizeKey(khamTruaVal) === normalizeKey(displayName)) ? ' selected' : '';
+                        return '<option value="' + (displayName || '').replace(/"/g, '&quot;').replace(/</g, '&lt;') + '"' + selected + '>' + (displayName || '').replace(/</g, '&lt;').replace(/"/g, '&quot;') + '</option>';
+                    }).filter(Boolean).join('');
+                    selTrua.onchange = () => updateKhamSomTruaLBSlot(key, 'khamTrua', selTrua.value);
+                    rowTrua.appendChild(selTrua);
+                    dayCell.appendChild(rowTrua);
+                    grid.appendChild(dayCell);
+                });
+                monthEl.appendChild(grid);
+                container.appendChild(monthEl);
+            }
+        }
+        function updateKhamSomTruaLBSlot(dateStr, slotType, displayName) {
+            const today = new Date();
+            const todayKey = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+            if (dateStr < todayKey) return;
+            if (!hasPermission('khamsom') && !hasPermission('tructrua') && !hasPermission('khamsomTruaLB') && currentUser?.role !== 'admin') return;
+            const val = (displayName || '').trim();
+            if (slotType === 'khamSom') {
+                if (val) khamsomData[dateStr] = val; else delete khamsomData[dateStr];
+                StorageUtil.saveJson(STORAGE_KEYS.khamsomData, khamsomData);
+            } else {
+                if (val) tructruaData[dateStr] = val; else delete tructruaData[dateStr];
+                StorageUtil.saveJson(STORAGE_KEYS.tructruaData, tructruaData);
+            }
+            if (typeof syncToBackend === 'function' && USE_DATABASE_BACKEND) syncToBackend();
+            renderKhamSomTruaLBCalendar();
+        }
+
         // ========== Lịch khám sản VIP (sáng/chiều) ==========
         function initKhamSanVipCalendar() {
             renderVipMorningAfternoonCalendar('khamsanvip', khamsanvipData, 'khamsanvipCalendarContainer', 'updateKhamSanVipDate', 'saveKhamSanVipData', 'khamsanvip');
@@ -11548,6 +11724,101 @@
         function saveSieuAmVipData() {
             localStorage.setItem('sieuamvipData', JSON.stringify(sieuamvipData));
             if (typeof syncToBackend === 'function' && USE_DATABASE_BACKEND) syncToBackend();
+        }
+
+        // ========== Lịch khám Sản + Siêu âm VIP (gộp 2 tab: 4 dòng Khám VIP sáng/chiều, Siêu âm VIP sáng/chiều) ==========
+        const KHAMSAN_SIEUAM_VIP_ROWS = [
+            { label: 'Khám VIP sáng', slot: 'khamVipSang', getData: (d) => (khamsanvipData[d] || {}).morning || '', setData: (d, v) => { if (!khamsanvipData[d]) khamsanvipData[d] = {}; khamsanvipData[d].morning = v; } },
+            { label: 'Khám VIP chiều', slot: 'khamVipChieu', getData: (d) => (khamsanvipData[d] || {}).afternoon || '', setData: (d, v) => { if (!khamsanvipData[d]) khamsanvipData[d] = {}; khamsanvipData[d].afternoon = v; } },
+            { label: 'Siêu âm VIP sáng', slot: 'sieuAmSang', getData: (d) => (sieuamvipData[d] || {}).morning || '', setData: (d, v) => { if (!sieuamvipData[d]) sieuamvipData[d] = {}; sieuamvipData[d].morning = v; } },
+            { label: 'Siêu âm VIP chiều', slot: 'sieuAmChieu', getData: (d) => (sieuamvipData[d] || {}).afternoon || '', setData: (d, v) => { if (!sieuamvipData[d]) sieuamvipData[d] = {}; sieuamvipData[d].afternoon = v; } }
+        ];
+        function initKhamSanSieuamVipCalendar() {
+            renderKhamSanSieuamVipCalendar();
+        }
+        function renderKhamSanSieuamVipCalendar() {
+            const container = document.getElementById('khamsanSieuamVipContainer');
+            if (!container) return;
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            let cycleStartDate = new Date(today.getFullYear(), today.getMonth(), 25);
+            if (today.getDate() < 25) cycleStartDate = new Date(today.getFullYear(), today.getMonth() - 1, 25);
+            const toKey = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+            const doctorOptions = getKhamCauGiayDoctorOptions();
+            const hasEdit = hasPermission('khamsanvip') || hasPermission('sieuamvip') || hasPermission('khamsanSieuamVip') || currentUser?.role === 'admin';
+            container.innerHTML = '';
+            for (let m = 0; m < 5; m++) {
+                const cycleStart = new Date(cycleStartDate.getFullYear(), cycleStartDate.getMonth() + m, 25);
+                const cycleEnd = new Date(cycleStart.getFullYear(), cycleStart.getMonth() + 1, 24);
+                const monthDiv = document.createElement('div');
+                monthDiv.style.cssText = 'margin-bottom:24px;background:#fff;border-radius:12px;padding:16px;box-shadow:0 4px 16px rgba(0,0,0,0.08);border:1px solid #e8ecf0;overflow-x:auto;';
+                const title = document.createElement('div');
+                title.style.cssText = 'font-weight:700;font-size:16px;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #667eea;';
+                title.textContent = 'Lịch khám Sản + Siêu âm VIP tháng ' + (cycleEnd.getMonth() + 1) + '/' + cycleEnd.getFullYear() + ' (25/' + (cycleStart.getMonth() + 1) + ' - 24/' + (cycleEnd.getMonth() + 1) + ')';
+                monthDiv.appendChild(title);
+                const allDates = [];
+                let d = new Date(cycleStart);
+                while (d <= cycleEnd) { allDates.push(new Date(d)); d.setDate(d.getDate() + 1); }
+                const todayKey = toKey(today);
+                const table = document.createElement('table');
+                table.style.cssText = 'width:100%;border-collapse:collapse;font-size:13px;';
+                const thead = document.createElement('thead');
+                let headerRow = '<tr><th style="padding:10px;border:1px solid #ddd;background:#667eea;color:#fff;min-width:140px;text-align:left;">Lịch khám</th>';
+                allDates.forEach(date => {
+                    const key = toKey(date);
+                    const isPast = key < todayKey;
+                    headerRow += '<th style="padding:8px;border:1px solid #ddd;background:#' + (isPast ? '95a5a6' : '667eea') + ';color:#fff;min-width:100px;text-align:center;font-size:11px;">' + formatDateWithWeekday(date) + '</th>';
+                });
+                headerRow += '</tr>';
+                thead.innerHTML = headerRow;
+                table.appendChild(thead);
+                const tbody = document.createElement('tbody');
+                KHAMSAN_SIEUAM_VIP_ROWS.forEach(rowDef => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = '<td style="padding:10px;border:1px solid #ddd;background:#f0f0f0;font-weight:600;">' + rowDef.label + '</td>';
+                    allDates.forEach(date => {
+                        const dateStr = toKey(date);
+                        const isPast = dateStr < todayKey;
+                        const leaveKeys = getDoctorsOnLeaveForDate(dateStr);
+                        const currentVal = rowDef.getData(dateStr).trim();
+                        const td = document.createElement('td');
+                        td.style.cssText = 'padding:6px;border:1px solid #ddd;vertical-align:middle;';
+                        const sel = document.createElement('select');
+                        sel.style.cssText = 'width:100%;padding:6px 8px;border:1px solid #ddd;border-radius:4px;font-size:12px;';
+                        sel.disabled = isPast || !hasEdit;
+                        sel.innerHTML = '<option value="">--</option>' + (doctorOptions || []).map(n => {
+                            const name = (n || '').trim();
+                            if (!name) return '';
+                            if (leaveKeys.has(normalizeKey(name))) return '';
+                            const selected = (normalizeKey(currentVal) === normalizeKey(name)) ? ' selected' : '';
+                            return '<option value="' + (name || '').replace(/"/g, '&quot;').replace(/</g, '&lt;') + '"' + selected + '>' + (name || '').replace(/</g, '&lt;').replace(/"/g, '&quot;') + '</option>';
+                        }).filter(Boolean).join('');
+                        sel.onchange = function() { updateKhamSanSieuamVipSlot(dateStr, rowDef, this.value.trim()); };
+                        td.appendChild(sel);
+                        tr.appendChild(td);
+                    });
+                    tbody.appendChild(tr);
+                });
+                table.appendChild(tbody);
+                monthDiv.appendChild(table);
+                container.appendChild(monthDiv);
+            }
+        }
+        function updateKhamSanSieuamVipSlot(dateStr, rowDef, value) {
+            const today = new Date();
+            const todayKey = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+            if (dateStr < todayKey) return;
+            if (!hasPermission('khamsanvip') && !hasPermission('sieuamvip') && !hasPermission('khamsanSieuamVip') && currentUser?.role !== 'admin') return;
+            rowDef.setData(dateStr, value || '');
+            if (rowDef.slot.indexOf('khamVip') === 0) {
+                if (!khamsanvipData[dateStr].morning && !khamsanvipData[dateStr].afternoon) delete khamsanvipData[dateStr];
+                StorageUtil.saveJson(STORAGE_KEYS.khamsanvipData, khamsanvipData);
+            } else {
+                if (!sieuamvipData[dateStr].morning && !sieuamvipData[dateStr].afternoon) delete sieuamvipData[dateStr];
+                StorageUtil.saveJson(STORAGE_KEYS.sieuamvipData, sieuamvipData);
+            }
+            if (typeof syncToBackend === 'function' && USE_DATABASE_BACKEND) syncToBackend();
+            renderKhamSanSieuamVipCalendar();
         }
 
         // Render calendar với 2 cộtsáng/chiều mỗi ngày - 5 tháng (chu kỳ 25-24) - dùng chung cho khamsanvip & sieuamvip
@@ -12724,6 +12995,83 @@
                     }
                 }
                 
+                // Migration: chuyển từ 4 slot (sang_caugiay, sang_longbien, chieu_caugiay, chieu_longbien) sang theo phòng (r1, r2, r3, r4)
+                const oldKeys = ['sang_caugiay', 'sang_longbien', 'chieu_caugiay', 'chieu_longbien'];
+                const roomIds = (lamviechangngayRooms || []).slice(0, 4).map(r => r.id);
+                for (const dateKey in lamviechangngayData) {
+                    const dayData = lamviechangngayData[dateKey];
+                    if (!dayData || typeof dayData !== 'object') continue;
+                    let needConvert = false;
+                    oldKeys.forEach(k => { if (k in dayData) needConvert = true; });
+                    if (!needConvert) continue;
+                    const newDay = {};
+                    roomIds.forEach((rid, i) => {
+                        newDay[rid] = (dayData[oldKeys[i]] || '').trim();
+                    });
+                    oldKeys.forEach(k => { delete dayData[k]; });
+                    Object.assign(dayData, newDay);
+                    hasChanges = true;
+                }
+                
+                // Migration: từ format roomId -> string sang slot_roomId -> string (1 bác sĩ/phòng)
+                const cgIds = (lamviechangngayRoomsCauGiay || []).map(r => r.id);
+                const lbIds = (lamviechangngayRoomsLongBien || []).map(r => r.id);
+                for (const dateKey in lamviechangngayData) {
+                    const dayData = lamviechangngayData[dateKey];
+                    if (!dayData || typeof dayData !== 'object') continue;
+                    const keys = Object.keys(dayData);
+                    const isNewFormat = keys.some(k => k.indexOf('sang_caugiay_') === 0 || k.indexOf('chieu_caugiay_') === 0);
+                    if (isNewFormat) continue;
+                    const newDay = {};
+                    keys.forEach(roomId => {
+                        const val = dayData[roomId];
+                        const str = (typeof val === 'string' ? val : (Array.isArray(val) ? (val[0] || '') : '')).trim();
+                        if (cgIds.indexOf(roomId) !== -1) {
+                            newDay['sang_caugiay_' + roomId] = str;
+                            newDay['chieu_caugiay_' + roomId] = '';
+                        } else if (lbIds.indexOf(roomId) !== -1) {
+                            newDay['sang_longbien_' + roomId] = str;
+                            newDay['chieu_longbien_' + roomId] = '';
+                        }
+                    });
+                    Object.keys(newDay).forEach(k => { dayData[k] = newDay[k]; });
+                    keys.forEach(k => { if (newDay[k] === undefined) delete dayData[k]; });
+                    hasChanges = true;
+                }
+                
+                // Chuẩn hóa: ô nào đang lưu mảng [doc1, doc2, doc3] thì chuyển thành string (doc1)
+                for (const dateKey in lamviechangngayData) {
+                    const dayData = lamviechangngayData[dateKey];
+                    if (!dayData || typeof dayData !== 'object') continue;
+                    for (const k of Object.keys(dayData)) {
+                        const v = dayData[k];
+                        if (Array.isArray(v)) {
+                            dayData[k] = (v[0] || '').trim();
+                            hasChanges = true;
+                        }
+                    }
+                }
+                // Migration: từ sang/chiều sang 1 ca/ngày — sang_caugiay_* -> caugiay_*, sang_longbien_* -> longbien_*, xóa chieu_*
+                for (const dateKey in lamviechangngayData) {
+                    const dayData = lamviechangngayData[dateKey];
+                    if (!dayData || typeof dayData !== 'object') continue;
+                    const hasOldSlotKeys = Object.keys(dayData).some(k => k.indexOf('sang_caugiay_') === 0 || k.indexOf('chieu_caugiay_') === 0 || k.indexOf('sang_longbien_') === 0 || k.indexOf('chieu_longbien_') === 0);
+                    if (!hasOldSlotKeys) continue;
+                    cgIds.forEach(roomId => {
+                        const v = dayData['sang_caugiay_' + roomId] || dayData['chieu_caugiay_' + roomId];
+                        const str = (Array.isArray(v) ? (v[0] || '') : (typeof v === 'string' ? v : '')) || '';
+                        dayData['caugiay_' + roomId] = str.trim();
+                    });
+                    lbIds.forEach(roomId => {
+                        const v = dayData['sang_longbien_' + roomId] || dayData['chieu_longbien_' + roomId];
+                        const str = (Array.isArray(v) ? (v[0] || '') : (typeof v === 'string' ? v : '')) || '';
+                        dayData['longbien_' + roomId] = str.trim();
+                    });
+                    ['sang_caugiay_', 'chieu_caugiay_', 'sang_longbien_', 'chieu_longbien_'].forEach(prefix => {
+                        [...cgIds, ...lbIds].forEach(rid => { if (dayData[prefix + rid] !== undefined) delete dayData[prefix + rid]; });
+                    });
+                    hasChanges = true;
+                }
                 if (hasChanges) {
                     saveLamviechangngayData();
                     console.log('✅ Đã chuyển đổi dữ liệu sang format mới (Lịch khám chủ nhật với Cầu Giấy/Long Biên)');
@@ -12876,49 +13224,43 @@
             renderLamviechangngayTable();
         }
         
-        // Render Lịch khám chủ nhật table
+        // Cấu trúc slot: mỗi ngày 1 ca khám (không chia sáng/chiều). Chỉ 2 khu: Cầu Giấy, Long Biên
+        const LAMVIECHANGNGAY_SLOTS = [
+            { label: 'Lịch khám Cầu Giấy', key: 'caugiay', rooms: () => lamviechangngayRoomsCauGiay || [] },
+            { label: 'Lịch khám Long Biên', key: 'longbien', rooms: () => lamviechangngayRoomsLongBien || [] }
+        ];
+        
+        // Render Lịch khám chủ nhật table: mỗi phòng 1 bác sĩ/ngày, chọn từ danh sách bác sĩ khám chủ nhật
         function renderLamviechangngayTable() {
             const thead = document.getElementById('lamviechangngayTableHeader');
             const tbody = document.getElementById('lamviechangngayTableBody');
             if (!thead || !tbody) return;
 
-            // Tính toán 7 chủ nhật
             const sundays = get7Sundays();
-            
-            // Xóa nội dung cũ
             thead.innerHTML = '';
             tbody.innerHTML = '';
             
-            // Tạo header: cộtđầu là "Lịch khám chủ nhật", các cộtsau là các ngày chủ nhật
-            const thFirst = document.createElement('th');
-            thFirst.textContent = 'Lịch khám chủ nhật';
-            thFirst.style.padding = '12px';
-            thFirst.style.textAlign = 'center';
-            thFirst.style.border = '1px solid #ddd';
-            thFirst.style.background = '#667eea';
-            thFirst.style.color = 'white';
-            thead.appendChild(thFirst);
-            
+            const th1 = document.createElement('th');
+            th1.textContent = 'Lịch khám chủ nhật';
+            th1.style.cssText = 'padding:10px;text-align:center;border:1px solid #ddd;background:#667eea;color:white;min-width:140px;';
+            thead.appendChild(th1);
+            const th2 = document.createElement('th');
+            th2.textContent = 'Phòng';
+            th2.style.cssText = 'padding:10px;text-align:center;border:1px solid #ddd;background:#667eea;color:white;min-width:80px;';
+            thead.appendChild(th2);
             sundays.forEach(sunday => {
                 const th = document.createElement('th');
-                th.style.padding = '12px';
-                th.style.textAlign = 'center';
-                th.style.border = '1px solid #ddd';
+                th.textContent = 'CN ' + formatDateDisplayForLamviechangngay(sunday);
+                th.style.cssText = 'padding:10px;text-align:center;border:1px solid #ddd;background:#667eea;color:white;';
                 const dateKey = formatDateForLamviechangngay(sunday);
                 if (isLamviechangngayDatePast(dateKey)) {
-                    th.style.background = '#e9ecef';
-                    th.style.color = '#6c757d';
-                    th.style.opacity = '0.7';
+                    th.style.background = '#95a5a6';
+                    th.style.opacity = '0.9';
                 }
-                th.textContent = `CN ${formatDateDisplayForLamviechangngay(sunday)}`;
                 thead.appendChild(th);
             });
             
             const hasEditPermission = hasPermission('lamviechangngay');
-            const disabledAttr = hasEditPermission ? '' : 'disabled';
-            const disabledStyle = hasEditPermission ? '' : 'background-color: #ffffff; color: #333333; cursor: not-allowed; opacity: 1;';
-            
-            // Tạo datalist cho dropdown (dùng chung cho tất cả ô)
             const doctorOptions = getLamviechangngayDoctorListForInput();
             let datalistEl = document.getElementById('lamviechangngayDoctorsDatalist');
             if (!datalistEl) {
@@ -12928,80 +13270,206 @@
             }
             datalistEl.innerHTML = doctorOptions.map(n => `<option value="${(n || '').replace(/"/g, '&quot;')}">`).join('');
             
-            // Định nghĩa 4 hàng
-            const rows = [
-                { label: 'Lịch khám sáng Cầu Giấy', key: 'sang_caugiay' },
-                { label: 'Lịch khám sáng Long Biên', key: 'sang_longbien' },
-                { label: 'Lịch khám chiều Cầu Giấy', key: 'chieu_caugiay' },
-                { label: 'Lịch khám chiều Long Biên', key: 'chieu_longbien' }
-            ];
-            
-            rows.forEach(row => {
-                const tr = document.createElement('tr');
-                const th = document.createElement('th');
-                th.textContent = row.label;
-                th.style.padding = '12px';
-                th.style.textAlign = 'center';
-                th.style.border = '1px solid #ddd';
-                th.style.background = '#f0f0f0';
-                th.style.fontWeight = 'bold';
-                tr.appendChild(th);
-                
-                sundays.forEach(sunday => {
-                    const dateKey = formatDateForLamviechangngay(sunday);
-                    const isPast = isLamviechangngayDatePast(dateKey);
-                    const cellDisabled = !hasEditPermission || isPast;
-                    const cellDisabledAttr = cellDisabled ? 'disabled' : '';
-                    const cellDisabledStyle = cellDisabled ? 'background-color: #e9ecef; color: #6c757d; cursor: not-allowed; opacity: 0.8;' : '';
+            LAMVIECHANGNGAY_SLOTS.forEach(slot => {
+                const roomList = slot.rooms();
+                roomList.forEach(room => {
+                    const tr = document.createElement('tr');
+                    const tdSlot = document.createElement('td');
+                    tdSlot.textContent = slot.label;
+                    tdSlot.style.cssText = 'padding:8px;border:1px solid #ddd;background:#f0f0f0;font-weight:600;vertical-align:middle;';
+                    tr.appendChild(tdSlot);
+                    const tdRoom = document.createElement('td');
+                    tdRoom.textContent = room.name || room.id;
+                    tdRoom.style.cssText = 'padding:8px;border:1px solid #ddd;background:#fafafa;vertical-align:middle;';
+                    tr.appendChild(tdRoom);
                     
-                    const td = document.createElement('td');
-                    td.style.padding = '12px';
-                    td.style.border = '1px solid #ddd';
-                    td.style.textAlign = 'center';
-                    if (isPast) {
-                        td.style.background = '#f8f9fa';
-                        td.style.opacity = '0.85';
-                    }
-                    
-                    const currentValue = (lamviechangngayData[dateKey] && lamviechangngayData[dateKey][row.key]) ? 
-                        lamviechangngayData[dateKey][row.key] : '';
-                    
-                    td.innerHTML = `
-                        <input type="text" 
-                               list="lamviechangngayDoctorsDatalist"
-                               ${cellDisabledAttr}
-                               value="${currentValue.replace(/"/g, '&quot;')}" 
-                               placeholder="Nhập hoặc chọn bác sĩ"
-                               onchange="updateLamviechangngayData('${dateKey}', '${row.key}', this.value)"
-                               style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; text-align: center; font-family: inherit; ${cellDisabledStyle}">
-                    `;
-                    tr.appendChild(td);
+                    const dataKey = slot.key + '_' + room.id;
+                    sundays.forEach(sunday => {
+                        const dateKey = formatDateForLamviechangngay(sunday);
+                        const isPast = isLamviechangngayDatePast(dateKey);
+                        const dayData = lamviechangngayData[dateKey] || {};
+                        const val = dayData[dataKey];
+                        const currentName = (Array.isArray(val) ? (val[0] || '') : (typeof val === 'string' ? val : '')) || '';
+                        
+                        const td = document.createElement('td');
+                        td.style.cssText = 'padding:6px;border:1px solid #ddd;vertical-align:middle;';
+                        if (isPast) td.style.background = '#f8f9fa';
+                        const inp = document.createElement('input');
+                        inp.type = 'text';
+                        inp.setAttribute('list', 'lamviechangngayDoctorsDatalist');
+                        inp.placeholder = 'Chọn bác sĩ';
+                        inp.value = currentName.trim();
+                        inp.style.cssText = 'width:100%;padding:6px 8px;border:1px solid #ddd;border-radius:4px;font-size:13px;';
+                        if (isPast || !hasEditPermission) inp.disabled = true;
+                        inp.onchange = function() {
+                            updateLamviechangngaySlotDoctor(dateKey, slot.key, room.id, this.value.trim());
+                        };
+                        td.appendChild(inp);
+                        tr.appendChild(td);
+                    });
+                    tbody.appendChild(tr);
                 });
-                
-                tbody.appendChild(tr);
             });
         }
         
-        // Update data
-        function updateLamviechangngayData(dateKey, shift, value) {
+        // Tập tên bác sĩ đã dùng trong ngày (1 bác sĩ/phòng), loại trừ ô (slotKey, roomId) đang sửa
+        function getLamviechangngayUsedDoctorNamesForDate(dateKey, excludeSlotKey, excludeRoomId) {
+            const used = new Set();
+            const dayData = lamviechangngayData[dateKey] || {};
+            LAMVIECHANGNGAY_SLOTS.forEach(slot => {
+                (slot.rooms() || []).forEach(room => {
+                    if (slot.key === excludeSlotKey && room.id === excludeRoomId) return;
+                    const key = slot.key + '_' + room.id;
+                    const val = dayData[key];
+                    const n = (Array.isArray(val) ? (val[0] || '') : (typeof val === 'string' ? val : '')) || '';
+                    const name = (n || '').trim();
+                    if (name) {
+                        used.add(normalizeKey(name));
+                        used.add(name);
+                    }
+                });
+            });
+            return used;
+        }
+        
+        function updateLamviechangngaySlotDoctor(dateKey, slotKey, roomId, value) {
             if (!hasPermission('lamviechangngay')) {
-                alert('Bạn không có quyền chỉnh sửa. Vui lòng liên hệ admin để được cấp quyền.');
+                alert('Bạn không có quyền chỉnh sửa.');
                 return;
             }
-            if (isLamviechangngayDatePast(dateKey)) {
-                return; // Ngày đã qua - không cho sửa
+            if (isLamviechangngayDatePast(dateKey)) return;
+            const leaveKeys = getDoctorsOnLeaveForDate(dateKey);
+            if (value) {
+                const used = getLamviechangngayUsedDoctorNamesForDate(dateKey, slotKey, roomId);
+                if (used.has(normalizeKey(value)) || used.has(value)) {
+                    alert('Tên bác sĩ này đã được chọn ở phòng khác trong cùng ngày. Vui lòng chọn bác sĩ khác.');
+                    renderLamviechangngayTable();
+                    return;
+                }
+                const doctorKey = normalizeKey(value);
+                if (leaveKeys.has(doctorKey)) {
+                    alert('Bác sĩ này đang nghỉ phép ngày ' + dateKey + '. Vui lòng chọn bác sĩ khác.');
+                    renderLamviechangngayTable();
+                    return;
+                }
             }
-            if (!lamviechangngayData[dateKey]) {
-                lamviechangngayData[dateKey] = {};
-            }
-            lamviechangngayData[dateKey][shift] = value;
+            if (!lamviechangngayData[dateKey]) lamviechangngayData[dateKey] = {};
+            const dataKey = slotKey + '_' + roomId;
+            lamviechangngayData[dateKey][dataKey] = value || '';
             saveLamviechangngayData();
+        }
+        
+        // Giữ tên cũ cho tương thích (gọi từ HTML cũ nếu có) — lưu 1 bác sĩ/phòng (string), 1 ca/ngày
+        function updateLamviechangngayData(dateKey, roomId, value) {
+            if (!lamviechangngayData[dateKey]) lamviechangngayData[dateKey] = {};
+            const cgIds = (lamviechangngayRoomsCauGiay || []).map(r => r.id);
+            const lbIds = (lamviechangngayRoomsLongBien || []).map(r => r.id);
+            const v = (value || '').trim();
+            if (cgIds.indexOf(roomId) !== -1) {
+                lamviechangngayData[dateKey]['caugiay_' + roomId] = v;
+            } else if (lbIds.indexOf(roomId) !== -1) {
+                lamviechangngayData[dateKey]['longbien_' + roomId] = v;
+            }
+            saveLamviechangngayData();
+            renderLamviechangngayTable();
         }
         
         // Save data to localStorage and sync to server
         function saveLamviechangngayData() {
-            localStorage.setItem('lamviechangngayData', JSON.stringify(lamviechangngayData));
+            StorageUtil.saveJson(STORAGE_KEYS.lamviechangngayData, lamviechangngayData);
             if (typeof syncToBackend === 'function' && USE_DATABASE_BACKEND) syncToBackend();
+        }
+        
+        // ========== Quản lý phòng khám Lịch khám chủ nhật: Cầu Giấy và Long Biên riêng ==========
+        function renderLamviechangngayRoomsInModal() {
+            const renderList = (containerId, rooms) => {
+                const container = document.getElementById(containerId);
+                if (!container) return;
+                container.innerHTML = '';
+                (rooms || []).forEach((room) => {
+                    const div = document.createElement('div');
+                    div.style.cssText = 'display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;padding:10px;background:#f8f9fa;border-radius:8px;border:1px solid #e9ecef;';
+                    div.innerHTML = `
+                        <input type="text" value="${(room.name || '').replace(/"/g, '&quot;')}" data-room-id="${room.id}"
+                               style="flex:1;min-width:120px;padding:8px 12px;border:1px solid #ddd;border-radius:6px;font-size:14px;"
+                               placeholder="Tên phòng">
+                        <button class="delete-btn" onclick="removeLamviechangngayRoom('${room.id}')" style="padding:6px 12px;">🗑️ Xóa</button>
+                    `;
+                    container.appendChild(div);
+                });
+            };
+            renderList('lamviechangngayRoomsListCauGiay', lamviechangngayRoomsCauGiay || []);
+            renderList('lamviechangngayRoomsListLongBien', lamviechangngayRoomsLongBien || []);
+        }
+        function openLamviechangngayRoomsModal() {
+            if (!hasPermission('lamviechangngay') && currentUser?.role !== 'admin') return;
+            renderLamviechangngayRoomsInModal();
+            document.getElementById('lamviechangngayRoomsModal')?.classList.add('active');
+        }
+        function closeLamviechangngayRoomsModal() {
+            document.getElementById('lamviechangngayRoomsModal')?.classList.remove('active');
+        }
+        function addLamviechangngayRoom(type) {
+            const prefix = type === 'longbien' ? 'lb' : 'cg';
+            const id = prefix + (Date.now().toString(36));
+            const list = type === 'longbien' ? lamviechangngayRoomsLongBien : lamviechangngayRoomsCauGiay;
+            list.push({ id, name: 'Phòng mới' });
+            const containerId = type === 'longbien' ? 'lamviechangngayRoomsListLongBien' : 'lamviechangngayRoomsListCauGiay';
+            const container = document.getElementById(containerId);
+            if (container) {
+                const div = document.createElement('div');
+                div.style.cssText = 'display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;padding:10px;background:#f8f9fa;border-radius:8px;border:1px solid #e9ecef;';
+                div.innerHTML = `
+                    <input type="text" value="Phòng mới" data-room-id="${id}"
+                           style="flex:1;min-width:120px;padding:8px 12px;border:1px solid #ddd;border-radius:6px;font-size:14px;"
+                           placeholder="Tên phòng">
+                    <button class="delete-btn" onclick="removeLamviechangngayRoom('${id}')" style="padding:6px 12px;">🗑️ Xóa</button>
+                `;
+                container.appendChild(div);
+            }
+        }
+        function collectLamviechangngayRoomsFromDOM() {
+            ['lamviechangngayRoomsListCauGiay', 'lamviechangngayRoomsListLongBien'].forEach(containerId => {
+                const container = document.getElementById(containerId);
+                if (!container) return;
+                const list = containerId.indexOf('LongBien') !== -1 ? lamviechangngayRoomsLongBien : lamviechangngayRoomsCauGiay;
+                container.querySelectorAll('input[type="text"]').forEach(inp => {
+                    const rid = inp.getAttribute('data-room-id');
+                    const r = (list || []).find(x => x.id === rid);
+                    if (r) r.name = (inp.value || '').trim() || r.name;
+                });
+            });
+        }
+        function removeLamviechangngayRoom(roomId) {
+            collectLamviechangngayRoomsFromDOM();
+            const removeFrom = (list, storageKey) => {
+                const arr = (list || []).filter(r => r.id !== roomId);
+                if (list === lamviechangngayRoomsCauGiay) lamviechangngayRoomsCauGiay = arr;
+                else if (list === lamviechangngayRoomsLongBien) lamviechangngayRoomsLongBien = arr;
+                for (const dateKey in lamviechangngayData) {
+                    const day = lamviechangngayData[dateKey];
+                    if (!day || typeof day !== 'object') continue;
+                    ['sang_caugiay_', 'chieu_caugiay_', 'sang_longbien_', 'chieu_longbien_', 'caugiay_', 'longbien_'].forEach(prefix => {
+                        if (day[prefix + roomId] !== undefined) delete day[prefix + roomId];
+                    });
+                }
+                return arr;
+            };
+            if ((lamviechangngayRoomsCauGiay || []).some(r => r.id === roomId)) {
+                lamviechangngayRoomsCauGiay = removeFrom(lamviechangngayRoomsCauGiay, STORAGE_KEYS.lamviechangngayRoomsCauGiay);
+            } else {
+                lamviechangngayRoomsLongBien = removeFrom(lamviechangngayRoomsLongBien, STORAGE_KEYS.lamviechangngayRoomsLongBien);
+            }
+            renderLamviechangngayRoomsInModal();
+        }
+        function saveLamviechangngayRooms() {
+            collectLamviechangngayRoomsFromDOM();
+            StorageUtil.saveJson(STORAGE_KEYS.lamviechangngayRoomsCauGiay, lamviechangngayRoomsCauGiay);
+            StorageUtil.saveJson(STORAGE_KEYS.lamviechangngayRoomsLongBien, lamviechangngayRoomsLongBien);
+            if (typeof syncToBackend === 'function' && USE_DATABASE_BACKEND) syncToBackend();
+            closeLamviechangngayRoomsModal();
+            renderLamviechangngayTable();
+            alert('✅ Đã lưu danh sách phòng khám chủ nhật.');
         }
 
         // ========== Lịch Làm Việc Functions ==========
@@ -14188,6 +14656,9 @@
                 lichTrucData: lichTrucData,
                 lamviechangngayData: lamviechangngayData,
                 lamviechangngayDoctorList: lamviechangngayDoctorList,
+                lamviechangngayRooms: lamviechangngayRooms,
+                lamviechangngayRoomsCauGiay: lamviechangngayRoomsCauGiay,
+                lamviechangngayRoomsLongBien: lamviechangngayRoomsLongBien,
                 lichlamviecData: lichlamviecData,
                 quanlynghiphepData: quanlynghiphepData,
                 maxCountByWeekday: maxCountByWeekday,
@@ -14387,6 +14858,10 @@
                         lamviechangngayDoctorList = importedData.lamviechangngayDoctorList;
                         StorageUtil.saveJson(STORAGE_KEYS.lamviechangngayDoctorList, lamviechangngayDoctorList);
                     }
+                    if (importedData.lamviechangngayRooms) {
+                        lamviechangngayRooms = importedData.lamviechangngayRooms;
+                        StorageUtil.saveJson(STORAGE_KEYS.lamviechangngayRooms, lamviechangngayRooms);
+                    }
                     
                     if (importedData.lichlamviecData) {
                         lichlamviecData = importedData.lichlamviecData;
@@ -14438,15 +14913,83 @@
         }
 
         // Clear all data (with confirmation)
-        function clearAllData() {
-            if (!confirm('⚠️ CẢNH BÁO: Bạn có chắc chắn muốn XÓA TẤT CẢ dữ liệu? Hành động này không thể hoàn tác!')) {
+        function openClearDataPasswordModal() {
+            if (!currentUser) {
+                alert('Vui lòng đăng nhập để thực hiện thao tác này.');
+                return;
+            }
+            ensureClearDataPasswordModalInDom();
+            const modal = document.getElementById('clearDataPasswordModal');
+            if (modal) {
+                document.getElementById('clearDataPasswordInput').value = '';
+                document.getElementById('clearDataPasswordError').style.display = 'none';
+                modal.classList.add('active');
+            }
+        }
+        function closeClearDataPasswordModal() {
+            const modal = document.getElementById('clearDataPasswordModal');
+            if (modal) modal.classList.remove('active');
+        }
+        function ensureClearDataPasswordModalInDom() {
+            if (document.getElementById('clearDataPasswordModal')) return;
+            const modal = document.createElement('div');
+            modal.id = 'clearDataPasswordModal';
+            modal.className = 'login-modal';
+            modal.innerHTML = `
+                <div class="login-box" style="max-width: 420px;">
+                    <h2>⚠️ Xác Nhận Xóa Dữ Liệu</h2>
+                    <p style="font-size: 14px; color: #e74c3c; margin-bottom: 15px; font-weight: 600;">
+                        ⚠️ CẢNH BÁO: Hành động này sẽ XÓA TẤT CẢ dữ liệu và không thể hoàn tác!
+                    </p>
+                    <div id="clearDataPasswordError" class="error-message" style="display: none;"></div>
+                    <form onsubmit="confirmClearData(event)">
+                        <div class="form-group">
+                            <label for="clearDataPasswordInput">Nhập mật khẩu để xác nhận <span class="required">*</span></label>
+                            <div class="password-wrapper">
+                                <input type="password" id="clearDataPasswordInput" required autocomplete="off">
+                                <button type="button" class="password-toggle" onclick="togglePassword('clearDataPasswordInput', this)" aria-label="Hiện mật khẩu">👁️</button>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 10px;">
+                            <button type="button" class="submit-btn" onclick="closeClearDataPasswordModal()" style="background: #95a5a6; flex: 1;">Hủy</button>
+                            <button type="submit" class="submit-btn" style="background: #e74c3c; flex: 1;">⚠️ Xóa Tất Cả</button>
+                        </div>
+                    </form>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+        function confirmClearData(event) {
+            event.preventDefault();
+            const password = document.getElementById('clearDataPasswordInput').value;
+            const errorMsg = document.getElementById('clearDataPasswordError');
+            errorMsg.style.display = 'none';
+            
+            if (!currentUser) {
+                errorMsg.textContent = '❌ Vui lòng đăng nhập để thực hiện thao tác này.';
+                errorMsg.style.display = 'block';
                 return;
             }
             
+            const accKey = currentUser && currentUser.key ? currentUser.key : normalizeKey(currentUser && currentUser.username);
+            if (!accounts[accKey] || accounts[accKey].password !== password) {
+                errorMsg.textContent = '❌ Mật khẩu không đúng! Vui lòng thử lại.';
+                errorMsg.style.display = 'block';
+                return;
+            }
+            
+            // Xác nhận lần cuối
             if (!confirm('⚠️ XÁC NHẬN LẦN CUỐI: Bạn thực sự muốn xóa TẤT CẢ dữ liệu?')) {
                 return;
             }
             
+            closeClearDataPasswordModal();
+            clearAllData();
+        }
+        window.openClearDataPasswordModal = openClearDataPasswordModal;
+        window.closeClearDataPasswordModal = closeClearDataPasswordModal;
+        window.confirmClearData = confirmClearData;
+        function clearAllData() {
             // Clear all localStorage
             localStorage.removeItem('doctorsLanhdao');
             localStorage.removeItem('doctorscot1');
@@ -14476,6 +15019,7 @@
             localStorage.removeItem('tructhuongtruDoctorList');
             localStorage.removeItem('lamviechangngayData');
             localStorage.removeItem('lamviechangngayDoctorList');
+            localStorage.removeItem('lamviechangngayRooms');
             localStorage.removeItem('lichlamviecData');
             localStorage.removeItem('quanlynghiphepData');
             localStorage.removeItem('permissions');

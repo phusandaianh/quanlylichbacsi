@@ -12,10 +12,13 @@
         <div id="lamviechangngay" class="tab-content active admin-only">
             <div class="form-container">
                 <h2>Lịch khám chủ nhật</h2>
-                <p>Quản lý lịch khám chủ nhật - 7 chủ nhật từ tuần hiện tại</p>
-                <div style="margin-top: 15px; margin-bottom: 15px;">
+                <p>Quản lý lịch khám chủ nhật</p>
+                <div style="margin-top: 15px; margin-bottom: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
                     <button type="button" class="btn btn-primary" onclick="openLamviechangngayDoctorListModal()" style="padding: 8px 16px;">
                         📋 Danh sách bác sĩ khám chủ nhật
+                    </button>
+                    <button type="button" class="add-btn" onclick="openLamviechangngayRoomsModal()" style="padding: 8px 16px;">
+                        ⚙️ Quản lý phòng khám
                     </button>
                 </div>
                 <div style="margin-top: 20px;">
@@ -30,6 +33,32 @@
                                 <!-- Rows will be added here -->
                             </tbody>
                         </table>
+                    </div>
+                </div>
+                <!-- Modal quản lý phòng khám chủ nhật: Cầu Giấy và Long Biên riêng -->
+                <div id="lamviechangngayRoomsModal" class="login-modal">
+                    <div class="login-box" style="max-width: 560px; max-height: 85vh; overflow-y: auto;">
+                        <div class="login-header">
+                            <h2>⚙️ Phòng khám chủ nhật</h2>
+                            <button class="login-close" onclick="closeLamviechangngayRoomsModal()">✕</button>
+                        </div>
+                        <div style="padding: 20px;">
+                            <p style="font-size: 13px; color:#666; margin-bottom: 16px;">Quản lý phòng khám Cầu Giấy và Long Biên riêng biệt. Có thể đổi tên, thêm hoặc xóa phòng từng khu vực.</p>
+                            <div style="margin-bottom: 20px;">
+                                <h3 style="font-size: 14px; margin-bottom: 10px; color: #667eea;">📍 Phòng Cầu Giấy</h3>
+                                <div id="lamviechangngayRoomsListCauGiay" style="margin-bottom: 10px;"></div>
+                                <button type="button" class="add-btn" onclick="addLamviechangngayRoom('caugiay')" style="padding: 6px 12px;">➕ Thêm phòng Cầu Giấy</button>
+                            </div>
+                            <div>
+                                <h3 style="font-size: 14px; margin-bottom: 10px; color: #27ae60;">📍 Phòng Long Biên</h3>
+                                <div id="lamviechangngayRoomsListLongBien" style="margin-bottom: 10px;"></div>
+                                <button type="button" class="add-btn" onclick="addLamviechangngayRoom('longbien')" style="padding: 6px 12px; background: #27ae60;">➕ Thêm phòng Long Biên</button>
+                            </div>
+                        </div>
+                        <div style="padding: 20px; border-top: 1px solid #eee; display: flex; gap: 10px; justify-content: flex-end;">
+                            <button class="delete-btn" onclick="closeLamviechangngayRoomsModal()">Hủy</button>
+                            <button class="submit-btn" onclick="saveLamviechangngayRooms()">💾 Lưu</button>
+                        </div>
                     </div>
                 </div>
             </div>

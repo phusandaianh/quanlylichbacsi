@@ -2320,11 +2320,9 @@
                 <a class="tab admin-only" data-tab="khamcaugiay" href="pages/khamcaugiay.html">Lịch khám Cầu Giấy</a>
                 <a class="tab admin-only" data-tab="khamcaugiay20h" href="pages/khamcaugiay20h.html">Lịch khám Cầu Giấy buổi trưa +20h</a>
                 <a class="tab admin-only" data-tab="khamlongbien" href="pages/khamlongbien.html">Lịch khám Long Biên</a>
-                <a class="tab admin-only" data-tab="tructrua" href="pages/tructrua.html">Lịch trực trưa</a>
+                <a class="tab admin-only" data-tab="khamsomTruaLB" href="pages/khamsomTruaLB.html">Lịch khám sớm + khám trưa Long Biên</a>
                 <a class="tab admin-only" data-tab="tieuphau" href="pages/tieuphau.html">Lịch tiểu phẫu</a>
-                <a class="tab admin-only" data-tab="khamsom" href="pages/khamsom.html">Lịch khám sớm</a>
-                <a class="tab admin-only" data-tab="khamsanvip" href="pages/khamsanvip.html">Lịch khám sản VIP</a>
-                <a class="tab admin-only" data-tab="sieuamvip" href="pages/sieuamvip.html">Lịch siêu âm VIP</a>
+                <a class="tab admin-only" data-tab="khamsanSieuamVip" href="pages/khamsanSieuamVip.html">Lịch khám Sản + Siêu âm VIP</a>
                 <a class="tab admin-only" data-tab="phumo" href="pages/phumo.html">Lịch phụ mổ</a>
                 <a class="tab admin-only" data-tab="tang4" href="pages/tang4.html">Lịch tầng 4</a>
                 <a class="tab admin-only" data-tab="cvcot1" href="pages/cvcot1.html">cv cột1</a>
@@ -2839,12 +2837,11 @@
                         <p style="margin-bottom: 15px; color: #333;">Xuất tất cả dữ liệu để sao lưu hoặc khôi phục dữ liệu từ file đã xuất.</p>
                         <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                             <button class="add-btn" onclick="exportAllData()" style="background: #27ae60;">📥 Xuất Dữ Liệu (Export)</button>
-                            <button class="add-btn" onclick="syncToBackend && syncToBackend()" style="background: #9b59b6;">☁️ Đồng bộ lên server</button>
                             <label class="add-btn" style="background: #3498db; cursor: pointer; margin: 0;">
                                 📤 Nhập Dữ Liệu (Import)
                                 <input type="file" accept=".json" onchange="importAllData(event)" style="display: none;">
                             </label>
-                            <button class="add-btn" onclick="clearAllData()" style="background: #e74c3c;">⚠️ Xóa Tất Cả Dữ Liệu</button>
+                            <button class="add-btn" onclick="openClearDataPasswordModal()" style="background: #e74c3c;">⚠️ Xóa Tất Cả Dữ Liệu</button>
                         </div>
                         <p style="margin-top: 15px; font-size: 12px; color: #666;">
                             <strong>Lưu ý:</strong> Dữ liệu được tự động lưu vào trình duyệt. Xuất dữ liệu để sao lưu an toàn. 
@@ -3394,16 +3391,13 @@
             </div>
         </div>
 
-        <!-- Tab Lịch trực trưa -->
-        <div id="tructrua" class="tab-content admin-only">
+        <!-- Tab Lịch khám sớm + khám trưa Long Biên (gộp từ Lịch khám sớm + Lịch trực trưa) -->
+        <div id="khamsomTruaLB" class="tab-content admin-only">
             <div class="form-container">
-                <h2>Lịch trực trưa</h2>
-                <p>Quản lý lịch trực ca trưa</p>
-                
+                <h2>Lịch khám sớm + khám trưa Long Biên</h2>
+                <p>Lịch 5 tháng (chu kỳ 25–24). Mỗi ngày: Bác sĩ khám sớm và Bác sĩ khám trưa Long Biên.</p>
                 <div style="margin-top: 20px;">
-                    <div id="tructruaCalendarContainer" style="overflow-x: auto;">
-                        <!-- Calendar will be generated here -->
-                    </div>
+                    <div id="khamsomTruaLBCalendarContainer" style="display:flex; gap:20px; flex-wrap:wrap; max-width: 100%; overflow-x: auto;"></div>
                 </div>
             </div>
         </div>
@@ -3422,38 +3416,13 @@
             </div>
         </div>
 
-        <!-- Tab Lịch khám sớm -->
-        <div id="khamsom" class="tab-content admin-only">
+        <!-- Tab Lịch khám Sản + Siêu âm VIP (gộp Khám sản VIP + Siêu âm VIP) -->
+        <div id="khamsanSieuamVip" class="tab-content admin-only">
             <div class="form-container">
-                <h2>Lịch khám sớm</h2>
-                <p>Quản lý lịch khám sớm</p>
-                
+                <h2>Lịch khám Sản + Siêu âm VIP</h2>
+                <p>Lịch 5 tháng (chu kỳ 25–24). Khám VIP sáng/chiều, Siêu âm VIP sáng/chiều. Chọn bác sĩ từ danh sách; không trùng lịch nghỉ phép.</p>
                 <div style="margin-top: 20px;">
-                    <div id="khamsomCalendarContainer" style="overflow-x: auto;">
-                        <!-- Calendar will be generated here -->
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Tab Lịch khám sản VIP (sáng/chiều) -->
-        <div id="khamsanvip" class="tab-content admin-only">
-            <div class="form-container">
-                <h2>Lịch khám sản VIP</h2>
-                <p>Quản lý lịch khám sản VIP – mỗi ngày 2 ca: sáng và chiều</p>
-                <div style="margin-top: 20px;">
-                    <div id="khamsanvipCalendarContainer" style="overflow-x: auto;"></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Tab Lịch siêu âm VIP (sáng/chiều) -->
-        <div id="sieuamvip" class="tab-content admin-only">
-            <div class="form-container">
-                <h2>Lịch siêu âm VIP</h2>
-                <p>Quản lý lịch siêu âm VIP – mỗi ngày 2 ca: sáng và chiều</p>
-                <div style="margin-top: 20px;">
-                    <div id="sieuamvipCalendarContainer" style="overflow-x: auto;"></div>
+                    <div id="khamsanSieuamVipContainer" style="overflow-x: auto;"></div>
                 </div>
             </div>
         </div>
@@ -3719,10 +3688,13 @@
         <div id="lamviechangngay" class="tab-content admin-only">
             <div class="form-container">
                 <h2>Lịch khám chủ nhật</h2>
-                <p>Quản lý lịch khám chủ nhật - 7 chủ nhật từ tuần hiện tại</p>
-                <div style="margin-top: 15px; margin-bottom: 15px;">
+                <p>Quản lý lịch khám chủ nhật</p>
+                <div style="margin-top: 15px; margin-bottom: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
                     <button type="button" class="btn btn-primary" onclick="openLamviechangngayDoctorListModal()" style="padding: 8px 16px;">
                         📋 Danh sách bác sĩ khám chủ nhật
+                    </button>
+                    <button type="button" class="add-btn" onclick="openLamviechangngayRoomsModal()" style="padding: 8px 16px;">
+                        ⚙️ Quản lý phòng khám
                     </button>
                 </div>
                 <div style="margin-top: 20px;">
@@ -3737,6 +3709,32 @@
                                 <!-- Rows will be added here -->
                             </tbody>
                         </table>
+                    </div>
+                </div>
+                <!-- Modal quản lý phòng khám chủ nhật: Cầu Giấy và Long Biên riêng -->
+                <div id="lamviechangngayRoomsModal" class="login-modal">
+                    <div class="login-box" style="max-width: 560px; max-height: 85vh; overflow-y: auto;">
+                        <div class="login-header">
+                            <h2>⚙️ Phòng khám chủ nhật</h2>
+                            <button class="login-close" onclick="closeLamviechangngayRoomsModal()">✕</button>
+                        </div>
+                        <div style="padding: 20px;">
+                            <p style="font-size: 13px; color:#666; margin-bottom: 16px;">Quản lý phòng khám Cầu Giấy và Long Biên riêng biệt. Có thể đổi tên, thêm hoặc xóa phòng từng khu vực.</p>
+                            <div style="margin-bottom: 20px;">
+                                <h3 style="font-size: 14px; margin-bottom: 10px; color: #667eea;">📍 Phòng Cầu Giấy</h3>
+                                <div id="lamviechangngayRoomsListCauGiay" style="margin-bottom: 10px;"></div>
+                                <button type="button" class="add-btn" onclick="addLamviechangngayRoom('caugiay')" style="padding: 6px 12px;">➕ Thêm phòng Cầu Giấy</button>
+                            </div>
+                            <div>
+                                <h3 style="font-size: 14px; margin-bottom: 10px; color: #27ae60;">📍 Phòng Long Biên</h3>
+                                <div id="lamviechangngayRoomsListLongBien" style="margin-bottom: 10px;"></div>
+                                <button type="button" class="add-btn" onclick="addLamviechangngayRoom('longbien')" style="padding: 6px 12px; background: #27ae60;">➕ Thêm phòng Long Biên</button>
+                            </div>
+                        </div>
+                        <div style="padding: 20px; border-top: 1px solid #eee; display: flex; gap: 10px; justify-content: flex-end;">
+                            <button class="delete-btn" onclick="closeLamviechangngayRoomsModal()">Hủy</button>
+                            <button class="submit-btn" onclick="saveLamviechangngayRooms()">💾 Lưu</button>
+                        </div>
                     </div>
                 </div>
             </div>
