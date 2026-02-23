@@ -13124,7 +13124,8 @@
                     if (!dayData || typeof dayData !== 'object') continue;
                     const keys = Object.keys(dayData);
                     const isNewFormat = keys.some(k => k.indexOf('sang_caugiay_') === 0 || k.indexOf('chieu_caugiay_') === 0);
-                    if (isNewFormat) continue;
+                    const isCurrentFormat = keys.some(k => k.indexOf('caugiay_') === 0 || k.indexOf('longbien_') === 0);
+                    if (isNewFormat || isCurrentFormat) continue;
                     const newDay = {};
                     keys.forEach(roomId => {
                         const val = dayData[roomId];
