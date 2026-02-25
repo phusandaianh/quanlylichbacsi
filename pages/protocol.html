@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Quản lý các mẫu protocol phẫu thuật</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 20px;
+        }
+        .home-button {
+            display: inline-block;
+            margin: 10px;
+            padding: 8px 16px;
+            color: #880088;
+            background: white;
+            border: 2px solid #880088;
+            border-radius: 4px;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+        .home-button:hover {
+            background: #880088;
+            color: white;
+        }
+        h1 {
+            color: #880088;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .protocol-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .category-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .category-title {
+            font-weight: bold;
+            font-size: 1.2em;
+            color: #880088;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .template-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .template-dropdown {
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background: white;
+            margin-bottom: 10px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            transition: box-shadow 0.2s;
+        }
+        .template-dropdown:hover {
+            box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+        }
+        .template-header {
+            background: #f8f8f8;
+            padding: 15px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            user-select: none;
+            border-radius: 6px;
+            transition: background-color 0.2s;
+        }
+        .template-header:hover {
+            background: #f0f0f0;
+        }
+        .template-name {
+            font-weight: bold;
+            color: #333;
+            margin: 0;
+            flex: 1;
+        }
+        .template-arrow {
+            font-size: 1em;
+            color: #666;
+            transition: transform 0.3s;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .template-arrow.open {
+            transform: rotate(180deg);
+        }
+        .template-content {
+            height: 0;
+            opacity: 0;
+            overflow: hidden;
+            transition: height 0.3s ease-out, opacity 0.3s ease-out, padding 0.3s;
+            background: white;
+            padding: 0 15px;
+            position: relative;
+        }
+        .template-content.open {
+            height: auto;
+            opacity: 1;
+            padding: 15px;
+            border-top: 1px solid #ddd;
+        }
+        .template-text {
+            white-space: pre-line;
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+        .template-text.copied {
+            background: #d0f5e8 !important;
+            transition: background 0.3s;
+        }
+        .button-row {
+            display: flex;
+            gap: 10px;
+            padding: 15px;
+            background: #f8f8f8;
+            border-top: 1px solid #eee;
+            border-radius: 0 0 6px 6px;
+        }
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9em;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+        }
+        .btn:active {
+            transform: translateY(0);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+        .btn-primary {
+            background: #880088;
+        }
+        .btn-primary:hover {
+            background: #a000a0;
+        }
+        .btn-secondary {
+            background: #666;
+        }
+        .btn-secondary:hover {
+            background: #777;
+        }
+        .btn-danger {
+            background: #dc3545;
+        }
+        .btn-danger:hover {
+            background: #c82333;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+        }
+        .modal-content {
+            position: relative;
+            background: white;
+            margin: 50px auto;
+            padding: 20px;
+            width: 90%;
+            max-width: 800px;
+            border-radius: 8px;
+        }
+        .modal-close {
+            position: absolute;
+            right: 20px;
+            top: 15px;
+            cursor: pointer;
+            font-size: 1.5em;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-family: inherit;
+        }
+        .form-group textarea {
+            height: 280px;
+        }
+        .copy-alert {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+        .alert-content {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            max-width: 400px;
+            width: 90%;
+        }
+        .alert-content h4 {
+            color: #dc3545;
+            margin-top: 0;
+            margin-bottom: 15px;
+        }
+        .alert-content ul {
+            margin: 15px 0;
+            padding-left: 20px;
+        }
+        .alert-content li {
+            margin: 8px 0;
+            color: #444;
+        }
+        /* Dropdown giới tính */
+        .gender-select .gender-options {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div style="margin: 10px;">
+        <a href="hosobenhan.html" class="home-button">⬅️ Quay lại Hồ Sơ Bệnh Án</a>
+    </div>
+
+    <div class="container">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+            <h1 style="margin:0;">Quản lý các mẫu protocol phẫu thuật</h1>
+            <button id="resetTemplatesBtn" class="btn btn-secondary" style="display:none;">
+                ↩ Reset về mẫu admin
+            </button>
+        </div>
+
+        <div class="protocol-grid" id="protocolGrid"></div>
+    </div>
+
+    <!-- Modal thêm / sửa mẫu -->
+    <div id="templateModal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeModal()">×</span>
+            <h2 id="modalTitle">Sửa mẫu</h2>
+            <form id="templateForm" onsubmit="saveTemplate(event)">
+                <input type="hidden" id="editingCategory" value="">
+                <input type="hidden" id="editingId" value="">
+                <div class="form-group">
+                    <label for="templateName">Tên mẫu:</label>
+                    <input type="text" id="templateName" required>
+                </div>
+                <div class="form-group">
+                    <label for="templateContent">Nội dung:</label>
+                    <textarea id="templateContent" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="skinClosureMethod">Phương pháp đóng da:</label>
+                    <select id="skinClosureMethod" onchange="handleSkinClosureChange()">
+                        <option value="">-- Chọn phương pháp đóng da --</option>
+                        <option value="rapid">Khâu da bằng chỉ Rapid 3.0</option>
+                        <option value="dermabond">Dán da bằng Dermabond</option>
+                        <option value="dafilon">Khâu da bằng chỉ dafilon</option>
+                        <option value="other">Tùy chọn khác</option>
+                    </select>
+                    <input type="text" id="otherSkinClosure" style="display:none; margin-top:8px;" placeholder="Nhập phương pháp đóng da khác">
+                </div>
+                <div class="button-row" style="margin-top:10px;">
+                    <button type="submit" class="btn btn-primary">Lưu</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Hủy</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+    // Lấy thông tin tài khoản hiện tại từ localStorage (do app chính lưu)
+    const CURRENT_USER = (function () {
+        try {
+            const raw = localStorage.getItem('currentUser');
+            return raw ? JSON.parse(raw) : null;
+        } catch (e) {
+            console.warn('Không đọc được currentUser từ localStorage:', e);
+            return null;
+        }
+    })();
+    const IS_ADMIN = CURRENT_USER && CURRENT_USER.role === 'admin';
+    const USER_KEY = CURRENT_USER && !IS_ADMIN ? CURRENT_USER.key : null;
+
+    function getListUrl() {
+        if (USER_KEY && !IS_ADMIN) {
+            return `/api/surgery_templates/user?user_key=${encodeURIComponent(USER_KEY)}`;
+        }
+        return '/api/surgery_templates';
+    }
+
+    function getCategoryUrl(categoryId) {
+        if (USER_KEY && !IS_ADMIN) {
+            return `/api/surgery_templates/user/${encodeURIComponent(categoryId)}?user_key=${encodeURIComponent(USER_KEY)}`;
+        }
+        return `/api/surgery_templates/${encodeURIComponent(categoryId)}`;
+    }
+
+    function getCreateUrl() {
+        if (USER_KEY && !IS_ADMIN) {
+            return `/api/surgery_templates/user?user_key=${encodeURIComponent(USER_KEY)}`;
+        }
+        return '/api/surgery_templates';
+    }
+
+    function getUpdateUrl(templateId) {
+        if (USER_KEY && !IS_ADMIN) {
+            return `/api/surgery_templates/user/${encodeURIComponent(templateId)}?user_key=${encodeURIComponent(USER_KEY)}`;
+        }
+        return `/api/surgery_templates/${encodeURIComponent(templateId)}`;
+    }
+
+    function getDeleteUrl(templateId) {
+        if (USER_KEY && !IS_ADMIN) {
+            return `/api/surgery_templates/user/${encodeURIComponent(templateId)}?user_key=${encodeURIComponent(USER_KEY)}`;
+        }
+        return `/api/surgery_templates/${encodeURIComponent(templateId)}`;
+    }
+
+    function loadTemplates() {
+        fetch(getListUrl())
+            .then(response => response.json())
+            .then(data => {
+                const grid = document.getElementById('protocolGrid');
+                grid.innerHTML = '';
+
+                for (const [categoryId, category] of Object.entries(data)) {
+                    const categoryCard = document.createElement('div');
+                    categoryCard.className = 'category-card';
+                    categoryCard.innerHTML = `
+                        <div class="category-title">
+                            <span>${category.name}</span>
+                            <button class="btn btn-primary" onclick="showAddTemplate('${categoryId}')">
+                                + Thêm mẫu mới
+                            </button>
+                        </div>
+                        <div class="template-list">
+                            ${category.templates.map(template => `
+                                <div class="template-dropdown" id="template-${template.id}">
+                                    <div class="template-header" onclick="toggleTemplate('${template.id}')">
+                                        <h3 class="template-name">${template.name}</h3>
+                                        <span class="template-arrow">▼</span>
+                                    </div>
+                                    <div class="template-content">
+                                        <div class="template-text">${template.content}</div>
+                                        <div class="button-row">
+                                            <button class="btn btn-primary" onclick="editTemplate('${categoryId}', '${template.id}')">
+                                                ✏️ Sửa
+                                            </button>
+                                            <button class="btn btn-secondary" onclick="copyTemplate('${categoryId}', '${template.id}')">
+                                                📋 Copy
+                                            </button>
+                                            <button class="btn btn-danger" onclick="deleteTemplate('${template.id}')">
+                                                🗑️ Xóa
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                    grid.appendChild(categoryCard);
+                }
+                renderGenderDropdowns();
+            });
+    }
+
+    function showAddTemplate(categoryId) {
+        document.getElementById('modalTitle').textContent = 'Thêm mẫu mới';
+        document.getElementById('editingCategory').value = categoryId;
+        document.getElementById('editingId').value = '';
+        document.getElementById('templateName').value = '';
+        document.getElementById('templateContent').value = '';
+        document.getElementById('skinClosureMethod').value = '';
+        document.getElementById('otherSkinClosure').value = '';
+        document.getElementById('otherSkinClosure').style.display = 'none';
+        document.getElementById('templateModal').style.display = 'block';
+    }
+
+    function editTemplate(categoryId, templateId) {
+        fetch(getCategoryUrl(categoryId))
+            .then(response => response.json())
+            .then(category => {
+                const template = category.templates.find(t => t.id === templateId);
+                if (template) {
+                    document.getElementById('modalTitle').textContent = 'Sửa mẫu';
+                    document.getElementById('editingCategory').value = categoryId;
+                    document.getElementById('editingId').value = templateId;
+                    document.getElementById('templateName').value = template.name;
+
+                    const content = template.content;
+                    const skinClosureMatch = content.match(/- Đóng bụng, (.+)\.$/);
+
+                    if (skinClosureMatch) {
+                        const skinClosureText = skinClosureMatch[1];
+                        const mainContent = content.replace(/- Đóng bụng, .+\.$/, '').trim();
+                        document.getElementById('templateContent').value = mainContent;
+
+                        if (skinClosureText.includes('Rapid 3.0')) {
+                            document.getElementById('skinClosureMethod').value = 'rapid';
+                        } else if (skinClosureText.includes('Dermabond')) {
+                            document.getElementById('skinClosureMethod').value = 'dermabond';
+                        } else if (skinClosureText.includes('dafilon')) {
+                            document.getElementById('skinClosureMethod').value = 'dafilon';
+                        } else {
+                            document.getElementById('skinClosureMethod').value = 'other';
+                            document.getElementById('otherSkinClosure').value = skinClosureText;
+                            document.getElementById('otherSkinClosure').style.display = 'block';
+                        }
+                    } else {
+                        document.getElementById('templateContent').value = content;
+                        document.getElementById('skinClosureMethod').value = '';
+                    }
+
+                    document.getElementById('templateModal').style.display = 'block';
+                }
+            });
+    }
+
+    function showCopyAlert() {
+        const alertEl = document.createElement('div');
+        alertEl.className = 'copy-alert';
+        alertEl.innerHTML = `
+            <div class="alert-content">
+                <h4>⚠️ Lưu ý quan trọng</h4>
+                <p>Vui lòng kiểm tra kỹ các thông tin sau:</p>
+                <ul>
+                    <li>Giới tính của bé (Nam/Nữ)</li>
+                    <li>Cân nặng của bé (g)</li>
+                    <li>Số lượng máu mất</li>
+                    <li>Phương pháp đóng vết mổ</li>
+                </ul>
+                <button onclick="this.parentElement.parentElement.remove()" class="btn btn-primary">Đã hiểu</button>
+            </div>
+        `;
+        document.body.appendChild(alertEl);
+    }
+
+    function copyTemplate(categoryId, templateId) {
+        fetch(getCategoryUrl(categoryId))
+            .then(response => response.json())
+            .then(category => {
+                const template = category.templates.find(t => t.id === templateId);
+                if (template) {
+                    const tempTextarea = document.createElement('textarea');
+                    tempTextarea.value = template.content;
+                    document.body.appendChild(tempTextarea);
+                    tempTextarea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(tempTextarea);
+
+                    const templateEl = document.getElementById(`template-${templateId}`);
+                    const textEl = templateEl.querySelector('.template-text');
+                    textEl.classList.add('copied');
+                    setTimeout(() => {
+                        textEl.classList.remove('copied');
+                    }, 2000);
+
+                    showCopyAlert();
+                }
+            });
+    }
+
+    function deleteTemplate(templateId) {
+        if (!confirm('Bạn có chắc chắn muốn xóa mẫu này?')) {
+            return;
+        }
+        fetch(getDeleteUrl(templateId), {
+            method: 'DELETE'
+        })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    loadTemplates();
+                } else {
+                    alert('Có lỗi khi xóa mẫu');
+                }
+            });
+    }
+
+    function handleSkinClosureChange() {
+        const method = document.getElementById('skinClosureMethod').value;
+        const otherInput = document.getElementById('otherSkinClosure');
+        if (method === 'other') {
+            otherInput.style.display = 'block';
+        } else {
+            otherInput.style.display = 'none';
+        }
+    }
+
+    function saveTemplate(event) {
+        event.preventDefault();
+        const categoryId = document.getElementById('editingCategory').value;
+        const templateId = document.getElementById('editingId').value;
+        const skinClosureMethod = document.getElementById('skinClosureMethod').value;
+        const otherSkinClosure = document.getElementById('otherSkinClosure').value;
+
+        let skinClosureText = '';
+        switch (skinClosureMethod) {
+            case 'rapid':
+                skinClosureText = 'khâu da bằng chỉ Rapid 3.0';
+                break;
+            case 'dermabond':
+                skinClosureText = 'dán da bằng Dermabond';
+                break;
+            case 'dafilon':
+                skinClosureText = 'khâu da bằng chỉ dafilon';
+                break;
+            case 'other':
+                skinClosureText = otherSkinClosure;
+                break;
+        }
+
+        const data = {
+            name: document.getElementById('templateName').value,
+            content: document.getElementById('templateContent').value + '\n- Đóng bụng, ' + skinClosureText + '.'
+        };
+
+        if (templateId) {
+            fetch(getUpdateUrl(templateId), {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            })
+                .then(response => response.json())
+                .then(result => {
+                    if (result.success) {
+                        closeModal();
+                        loadTemplates();
+                    } else {
+                        alert('Có lỗi khi cập nhật mẫu');
+                    }
+                });
+        } else {
+            data.category = categoryId;
+            fetch(getCreateUrl(), {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            })
+                .then(response => response.json())
+                .then(result => {
+                    if (result.success) {
+                        closeModal();
+                        loadTemplates();
+                    } else {
+                        alert('Có lỗi khi thêm mẫu mới');
+                    }
+                });
+        }
+    }
+
+    function toggleTemplate(templateId) {
+        const templateEl = document.getElementById(`template-${templateId}`);
+        if (!templateEl) return;
+        const contentEl = templateEl.querySelector('.template-content');
+        const arrowEl = templateEl.querySelector('.template-arrow');
+
+        document.querySelectorAll('.template-content').forEach(el => {
+            if (el !== contentEl) {
+                el.classList.remove('open');
+                const a = el.parentElement.querySelector('.template-arrow');
+                if (a) a.classList.remove('open');
+            }
+        });
+
+        if (!contentEl.classList.contains('open')) {
+            contentEl.classList.add('open');
+            arrowEl.classList.add('open');
+        } else {
+            contentEl.classList.remove('open');
+            arrowEl.classList.remove('open');
+        }
+    }
+
+    function closeModal() {
+        document.getElementById('templateModal').style.display = 'none';
+    }
+
+    window.onclick = function(event) {
+        const modal = document.getElementById('templateModal');
+        if (event.target === modal) {
+            closeModal();
+        }
+    };
+
+    function renderGenderDropdowns() {
+        document.querySelectorAll('.template-text').forEach(function(el) {
+            if (el.innerHTML.match(/\[(Nam|Nữ|Boy|Girl)\]/gi)) {
+                el.innerHTML = el.innerHTML.replace(/\[(Nam|Nữ|Boy|Girl)\]/gi, function() {
+                    return `<span class="gender-select" tabindex="0" style="background:#fff3cd; border:1px solid #ffeeba; border-radius:3px; padding:2px 8px; cursor:pointer; position:relative; display:inline-block;">
+                        <span class="gender-text">[Chọn giới tính]</span>
+                        <span class="gender-arrow" style="margin-left:4px;">▼</span>
+                        <span class="gender-options" style="display:none; position:absolute; left:0; top:100%; background:white; border:1px solid #ddd; border-radius:4px; box-shadow:0 2px 8px rgba(0,0,0,0.15); min-width:100%; z-index:1000;">
+                            <span class="gender-option" data-value="Trai" style="display:block; padding:8px 16px; cursor:pointer;">Trai</span>
+                            <span class="gender-option" data-value="Gái" style="display:block; padding:8px 16px; cursor:pointer;">Gái</span>
+                        </span>
+                    </span>`;
+                });
+            }
+        });
+
+        document.querySelectorAll('.gender-select').forEach(function(drop) {
+            drop.addEventListener('click', function(e) {
+                e.stopPropagation();
+                document.querySelectorAll('.gender-options').forEach(opt => {
+                    if (opt !== drop.querySelector('.gender-options')) opt.style.display = 'none';
+                });
+                const options = drop.querySelector('.gender-options');
+                options.style.display = (options.style.display === 'block') ? 'none' : 'block';
+            });
+            drop.querySelectorAll('.gender-option').forEach(function(opt) {
+                opt.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    drop.querySelector('.gender-text').textContent = this.getAttribute('data-value');
+                    drop.querySelector('.gender-options').style.display = 'none';
+                    drop.style.background = '#d4edda';
+                    drop.style.borderColor = '#c3e6cb';
+                });
+            });
+        });
+
+        document.addEventListener('click', function() {
+            document.querySelectorAll('.gender-options').forEach(opt => opt.style.display = 'none');
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        // Hiển thị nút Reset cho bác sĩ (không phải admin)
+        const resetBtn = document.getElementById('resetTemplatesBtn');
+        if (resetBtn && USER_KEY && !IS_ADMIN) {
+            resetBtn.style.display = 'inline-flex';
+            resetBtn.addEventListener('click', function () {
+                if (!confirm('Bạn có chắc chắn muốn reset về các mẫu protocol mặc định của admin?')) {
+                    return;
+                }
+                fetch(`/api/surgery_templates/user/reset?user_key=${encodeURIComponent(USER_KEY)}`, {
+                    method: 'POST'
+                })
+                    .then(r => r.json())
+                    .then(result => {
+                        if (result && result.success) {
+                            loadTemplates();
+                            alert('✅ Đã reset về mẫu mặc định của admin.');
+                        } else {
+                            alert('❌ Không reset được mẫu. Vui lòng thử lại.');
+                        }
+                    })
+                    .catch(err => {
+                        console.error('Lỗi khi reset templates:', err);
+                        alert('❌ Lỗi khi reset mẫu. Vui lòng thử lại.');
+                    });
+            });
+        }
+
+        loadTemplates();
+    });
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>Chế độ nghỉ làm việc</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #fff;
+            margin: 0;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        .rest-mode {
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            padding: 10px;
+            background: #fafafa;
+            transition: background 0.3s;
+        }
+        .rest-mode-header {
+            font-weight: bold;
+            color: #b00;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+        }
+        .rest-mode-title {
+            font-size: 1.1em;
+            margin-right: 10px;
+        }
+        .rest-mode-controls {
+            margin-left: auto;
+            display: flex;
+            gap: 4px;
+        }
+        .rest-mode-content {
+            margin-top: 6px;
+            color: #333;
+            font-size: 0.98em;
+        }
+        .rest-mode input[type="number"] {
+            width: 60px;
+            font-size: 1em;
+        }
+        .home-button {
+            display: inline-block;
+            padding: 8px 15px;
+            background-color: #f0f0f0;
+            color: #333;
+            text-decoration: none;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            margin: 5px 0;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .home-button:hover {
+            background-color: #e0e0e0;
+        }
+        .icon-btn {
+            background: #fff;
+            border: 1px solid #ccc;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.86em;
+            color: #333;
+        }
+        .icon-btn:hover {
+            background-color: #f0f0f0;
+        }
+        .copied-highlight {
+            background: #d2f8d2 !important;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <button class="home-button" onclick="window.location.href='hosobenhan.html'">⬅️ Quay lại Hồ Sơ Bệnh Án</button>
+    <h2 style="color:#d00; margin-top:10px;">
+        <span style="font-size:1.2em;">📋</span> Chế độ nghỉ làm việc
+    </h2>
+    <p style="color:#555; font-size:0.95em;">
+        Chọn chế độ nghỉ phù hợp, điều chỉnh số ngày nếu cần rồi bấm <strong>Sao chép</strong> để copy nội dung vào sổ khám / hồ sơ bệnh án.
+    </p>
+
+    <div id="restModes"></div>
+
+    <div style="margin-top:18px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+        <input type="text" id="newTitle" placeholder="Tên chế độ nghỉ mới" style="flex:1; min-width:220px; padding:6px 8px; border:1px solid #ccc; border-radius:4px;">
+        <input type="number" id="newDays" min="1" value="10" style="width:80px; padding:6px 8px; border:1px solid #ccc; border-radius:4px;">
+        <button class="icon-btn" onclick="addRestMode()">+ Thêm chế độ nghỉ mới</button>
+    </div>
+</div>
+
+<script>
+// Danh sách chế độ nghỉ (sẽ được lưu trong localStorage để nhớ theo trình duyệt)
+let restModes = [
+    { title: '1. Dọa sảy thai', days: 20 },
+    { title: '2. Sau mổ phụ khoa', days: 10 },
+    { title: '3. Thai dưới 05 tuần tuổi', days: 10 },
+    { title: '4. Thai từ 05 - 13 tuần tuổi', days: 20 },
+    { title: '5. Thai từ 13 - 25 tuần tuổi', days: 30 },
+    { title: '6. Thai từ 25 tuần tuổi trở lên chết lưu', days: 40 },
+    { title: '7. Sau sinh thường / sinh mổ', days: 180 }
+];
+
+function formatDate(date) {
+    return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
+function calcDates(days) {
+    const today = new Date();
+    const start = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+    const end = new Date(start.getFullYear(), start.getMonth(), start.getDate() + parseInt(days, 10) - 1);
+    return { start: formatDate(start), end: formatDate(end) };
+}
+
+function buildMessage(days) {
+    const d = parseInt(days, 10) || 1;
+    const { start, end } = calcDates(d);
+    return `Nghỉ làm việc ${d} ngày từ ngày ${start} đến hết ngày ${end}. Hẹn khám lại sau 01 tuần hoặc khi có bất thường khám lại ngay.`;
+}
+
+function saveToStorage() {
+    try {
+        localStorage.setItem('restModesData', JSON.stringify(restModes));
+    } catch (e) {
+        console.warn('Không lưu được restModes vào localStorage:', e);
+    }
+}
+
+function loadFromStorage() {
+    try {
+        const raw = localStorage.getItem('restModesData');
+        if (raw) {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed) && parsed.length) {
+                restModes = parsed;
+            }
+        }
+    } catch (e) {
+        console.warn('Không đọc được restModes từ localStorage:', e);
+    }
+}
+
+let editingIdx = null;
+
+function renderRestModes() {
+    const container = document.getElementById('restModes');
+    container.innerHTML = '';
+    restModes.forEach((mode, idx) => {
+        const div = document.createElement('div');
+        div.className = 'rest-mode';
+        const msg = buildMessage(mode.days);
+        const isEditing = editingIdx === idx;
+
+        if (isEditing) {
+            div.innerHTML = `
+                <div class="rest-mode-header">
+                    <input type="text" id="editTitle${idx}" value="${mode.title || ''}" style="flex:1; max-width:360px; padding:4px 6px; border:1px solid #ccc; border-radius:4px;">
+                    <span style="margin-left:20px;">
+                        Số ngày nghỉ:
+                        <input type="number" id="editDays${idx}" min="1" value="${mode.days || 10}" style="width:70px; padding:4px 6px; border:1px solid #ccc; border-radius:4px;" onchange="updateSampleMsg(${idx})">
+                    </span>
+                    <span class="rest-mode-controls">
+                        <button class="icon-btn" onclick="saveEdit(${idx})" title="Lưu">💾 Lưu</button>
+                        <button class="icon-btn" onclick="cancelEdit()" title="Hủy">✖ Hủy</button>
+                        <button class="icon-btn" onclick="copyMsg(${idx})" title="Sao chép">📋 Sao chép</button>
+                    </span>
+                </div>
+                <textarea id="editContent${idx}" style="width:100%; min-height:48px; margin-top:6px; padding:6px 8px; font-size:0.96em;">${msg}</textarea>
+                <div class="rest-mode-content" id="sampleMsg${idx}" style="font-style:italic; color:#555; margin-top:4px;">${msg}</div>
+            `;
+        } else {
+            div.innerHTML = `
+                <div class="rest-mode-header">
+                    <span class="rest-mode-title">${mode.title}</span>
+                    <span style="margin-left:20px;">
+                        Số ngày nghỉ:
+                        <input type="number" min="1" value="${mode.days}" onchange="updateDays(${idx}, this.value)">
+                    </span>
+                    <span class="rest-mode-controls">
+                        <button class="icon-btn" onclick="editRestMode(${idx})" title="Chỉnh sửa">✏️ Sửa</button>
+                        <button class="icon-btn" onclick="deleteRestMode(${idx})" title="Xóa">🗑 Xóa</button>
+                        <button class="icon-btn" onclick="copyMsg(${idx})" title="Sao chép">📋 Sao chép</button>
+                    </span>
+                </div>
+                <div class="rest-mode-content" id="restContent${idx}">${msg}</div>
+            `;
+        }
+        container.appendChild(div);
+    });
+}
+
+function updateDays(idx, value) {
+    const v = parseInt(value, 10);
+    if (!v || v <= 0) return;
+    restModes[idx].days = v;
+    saveToStorage();
+    renderRestModes();
+}
+
+function copyMsg(idx) {
+    let msg = '';
+    if (editingIdx === idx) {
+        const contentEl = document.getElementById('editContent' + idx);
+        msg = (contentEl && (contentEl.value || contentEl.innerText || contentEl.textContent)) || '';
+    } else {
+        const el = document.getElementById('restContent' + idx);
+        if (!el) return;
+        msg = el.innerText || el.textContent || '';
+    }
+
+    const row = document.getElementById('restContent' + idx)?.closest('.rest-mode') || document.getElementById('sampleMsg' + idx)?.closest('.rest-mode');
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(msg).then(() => {
+            if (row) {
+                row.classList.add('copied-highlight');
+                setTimeout(() => row.classList.remove('copied-highlight'), 1500);
+            }
+        }).catch(() => fallbackCopy(msg, row));
+    } else {
+        fallbackCopy(msg, row);
+    }
+}
+
+function fallbackCopy(msg, row) {
+    const textarea = document.createElement('textarea');
+    textarea.value = msg;
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textarea);
+    if (row) {
+        row.classList.add('copied-highlight');
+        setTimeout(() => row.classList.remove('copied-highlight'), 1500);
+    }
+}
+
+function addRestMode() {
+    const titleInput = document.getElementById('newTitle');
+    const daysInput = document.getElementById('newDays');
+    const title = (titleInput.value || '').trim();
+    const days = parseInt(daysInput.value, 10) || 10;
+    if (!title) return;
+    restModes.push({ title, days });
+    titleInput.value = '';
+    daysInput.value = '10';
+    saveToStorage();
+    renderRestModes();
+}
+
+function editRestMode(idx) {
+    editingIdx = idx;
+    renderRestModes();
+}
+
+function cancelEdit() {
+    editingIdx = null;
+    renderRestModes();
+}
+
+function saveEdit(idx) {
+    const titleEl = document.getElementById('editTitle' + idx);
+    const daysEl = document.getElementById('editDays' + idx);
+    if (!titleEl || !daysEl) return;
+    const title = titleEl.value.trim();
+    const days = parseInt(daysEl.value, 10) || 10;
+    restModes[idx].title = title || restModes[idx].title;
+    restModes[idx].days = days;
+    editingIdx = null;
+    saveToStorage();
+    renderRestModes();
+}
+
+function updateSampleMsg(idx) {
+    const daysEl = document.getElementById('editDays' + idx);
+    const sampleEl = document.getElementById('sampleMsg' + idx);
+    const contentEl = document.getElementById('editContent' + idx);
+    if (!daysEl || !sampleEl || !contentEl) return;
+    const msg = buildMessage(daysEl.value);
+    sampleEl.innerText = msg;
+    contentEl.value = msg;
+}
+
+function deleteRestMode(idx) {
+    if (!confirm('Bạn có chắc chắn muốn xóa chế độ nghỉ này?')) return;
+    restModes.splice(idx, 1);
+    if (editingIdx === idx) editingIdx = null;
+    saveToStorage();
+    renderRestModes();
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    loadFromStorage();
+    renderRestModes();
+});
+</script>
+</body>
+</html>
+

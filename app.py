@@ -90,6 +90,13 @@ app.mount(
     name="pages",
 )
 
+# Phục vụ thêm toàn bộ thư mục gốc (để các trang con có thể đọc các file HTML tham chiếu, như 'Quản lý mô bệnh học.html')
+app.mount(
+    "/raw",
+    StaticFiles(directory=str(BASE_DIR)),
+    name="raw",
+)
+
 
 # API backend (FastAPI)
 app.include_router(api_router, prefix="/api")

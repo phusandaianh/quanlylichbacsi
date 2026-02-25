@@ -9,7 +9,7 @@
     var currentTab = (document.body && document.body.getAttribute('data-current-tab')) || '';
 
     var tabs = [
-        { id: '', label: 'Trang chủ', href: '/', adminOnly: false },
+        { id: '', label: '🏠', href: '/', adminOnly: false },
         { id: 'lanhdao', label: 'Lãnh đạo', href: 'lanhdao.html', adminOnly: true },
         { id: 'cot1', label: 'Cột 1', href: 'cot1.html', adminOnly: true },
         { id: 'cot2', label: 'Cột 2', href: 'cot2.html', adminOnly: true },
@@ -37,7 +37,8 @@
         { id: 'lamviechangngay', label: 'Lịch khám chủ nhật', href: 'lamviechangngay.html', adminOnly: true },
         { id: 'lichlamviec', label: 'Lịch làm việc', href: 'lichlamviec.html', adminOnly: true },
         { id: 'nghiphep', label: 'Đăng Ký Nghỉ Phép', href: 'nghiphep.html', adminOnly: false },
-        { id: 'lichtruc', label: 'Lịch Trực', href: 'lichtruc.html', adminOnly: true }
+        { id: 'lichtruc', label: 'Lịch Trực', href: 'lichtruc.html', adminOnly: true },
+        { id: 'hosobenhan', label: 'Hồ Sơ Bệnh Án', href: 'hosobenhan.html', adminOnly: false }
     ];
 
     var tabHtml = tabs.map(function (t) {
@@ -45,7 +46,8 @@
         var active = (t.id === currentTab) ? ' active' : '';
         var cls = 'tab' + (t.adminOnly ? ' admin-only' : '') + active;
         var href = t.id === '' ? t.href : t.href;
-        return '<a class="' + cls + '" data-tab="' + t.id + '" href="' + href + '">' + t.label + '</a>';
+        var titleAttr = (t.id === '') ? ' title="Trang chủ" aria-label="Trang chủ"' : (' title="' + t.label + '"');
+        return '<a class="' + cls + '" data-tab="' + t.id + '" href="' + href + '"' + titleAttr + '>' + t.label + '</a>';
     }).join('');
 
     var headerHtml =

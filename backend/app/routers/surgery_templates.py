@@ -1,85 +1,41 @@
-"""
-Import / seed dữ liệu vào database.
-Chỉ dùng một lần khi chuyển từ localStorage sang DB hoặc khởi tạo dữ liệu mẫu.
-"""
-import json
 from typing import Any, Dict, List
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from ..database import get_db
 from .. import models
 
-router = APIRouter(tags=["migration"])
 
-# Ánh xạ key trong backup -> key lưu trong app_storage (doctors được tách thành nhiều key)
-DOCTORS_KEYS = ["lanhdao", "cot1", "cot2", "cot3", "partime", "khac"]
+router = APIRouter(tags=["surgery_templates"])
 
 
-def _flatten_backup_to_storage(backup: Dict[str, Any]) -> Dict[str, str]:
-    """Chuyển backup (có doctors là object) thành dict key -> value_json cho bảng app_storage."""
-    out = {}
-    doctors = backup.get("doctors") or {}
-    mapping = {
-        "lanhdao": "doctorsLanhdao",
-        "cot1": "doctorscot1",
-        "cot2": "doctorscot2",
-        "cot3": "doctorscot3",
-        "partime": "doctorsPartime",
-        "khac": "doctorsKhac",
-    }
-    for g in DOCTORS_KEYS:
-        storage_key = mapping.get(g, f"doctors{g}")
-        val = doctors.get(g)
-        out[storage_key] = json.dumps(val if val is not None else [])
-
-    # Các key còn lại giữ nguyên tên (top-level trong backup)
-    skip = {"doctors", "version", "exportDate"}
-    for key, value in backup.items():
-        if key in skip:
-            continue
-        out[key] = json.dumps(value) if value is not None else "null"
-    return out
+CATEGORY_NAMES: Dict[str, str] = {
+    "moLayThai": "Phẫu thuật mổ lấy thai",
+    "moPhuKhoa": "Phẫu thuật mổ phụ khoa",
+    "moVoSinh": "Phẫu thuật mổ vô sinh",
+    "thuThuat": "Thủ thuật",
+}
 
 
-@router.post("/import")
-def import_backup(body: Dict[str, Any], db: Session = Depends(get_db)):
+class TemplateBase(BaseModel):
+    name: str = Field(..., min_length=1)
+    content: str = Field(..., min_length=1)
+
+
+class TemplateCreate(TemplateBase):
+    category: str = Field(..., min_length=1)
+
+
+def _seed_default_templates(db: Session) -> None:
     """
-    Import dữ liệu từ file backup (format export của ứng dụng).
-    Gửi body JSON đúng format export (có doctors, accounts, leaveSubmissions, ...).
-    Sẽ ghi đè toàn bộ dữ liệu hiện có trong app_storage.
-    """
-    if not body:
-        raise HTTPException(status_code=400, detail="Body rỗng")
-    if "doctors" not in body and "accounts" not in body:
-        raise HTTPException(
-            status_code=400,
-            detail="Thiếu doctors hoặc accounts. File backup không đúng định dạng.",
-        )
-
-    flat = _flatten_backup_to_storage(body)
-    for key, value_json in flat.items():
-        row = db.query(models.AppStorage).filter(models.AppStorage.key == key).first()
-        if row:
-            row.value_json = value_json
-        else:
-            row = models.AppStorage(key=key, value_json=value_json)
-            db.add(row)
-    db.commit()
-    return {"ok": True, "keys_imported": len(flat)}
-
-
-@router.post("/seed_surgery_templates")
-def seed_surgery_templates(db: Session = Depends(get_db)):
-    """
-    Khởi tạo các mẫu protocol phẫu thuật mặc định vào bảng surgery_templates.
-    Gọi một lần: POST /api/migration/seed_surgery_templates
+    Nếu bảng surgery_templates đang trống thì tự động khởi tạo các mẫu mặc định
+    (giống nội dung trang 'Quản lý các mẫu protocol phẫu thuật').
     """
 
-    existing = db.query(models.SurgeryTemplate).count()
-    if existing > 0:
-        return {"ok": True, "skipped": True, "message": "Đã có dữ liệu, không seed lại."}
+    if db.query(models.SurgeryTemplate).count() > 0:
+        return
 
     templates: List[Dict[str, str]] = [
         # Phẫu thuật mổ lấy thai
@@ -332,4 +288,342 @@ def seed_surgery_templates(db: Session = Depends(get_db)):
         db.add(obj)
 
     db.commit()
-    return {"ok": True, "inserted": len(templates)}
+
+
+def _serialize_template(t: models.SurgeryTemplate) -> Dict[str, Any]:
+    return {
+        "id": f"{t.category}_{t.id}",
+        "name": t.name,
+        "content": t.content,
+    }
+
+
+def _parse_template_id(template_id: str) -> int:
+    """
+    Chuyển id dạng 'moLayThai_1' thành id số trong DB (1).
+    """
+
+    try:
+        _, raw_id = template_id.rsplit("_", 1)
+        return int(raw_id)
+    except Exception:  # noqa: BLE001
+        raise HTTPException(status_code=404, detail="Template not found")
+
+
+def _get_or_clone_user_templates(db: Session, user_key: str) -> List[models.SurgeryTemplateUser]:
+    """
+    Lấy danh sách template dành riêng cho 1 user.
+    Nếu chưa có, clone toàn bộ từ bảng surgery_templates (mẫu admin).
+    """
+
+    rows = (
+        db.query(models.SurgeryTemplateUser)
+        .filter(models.SurgeryTemplateUser.user_key == user_key)
+        .order_by(models.SurgeryTemplateUser.category, models.SurgeryTemplateUser.id)
+        .all()
+    )
+    if rows:
+        return rows
+
+    # Nếu chưa có bộ riêng, dùng mẫu admin làm gốc
+    base_rows: List[models.SurgeryTemplate] = (
+        db.query(models.SurgeryTemplate)
+        .order_by(models.SurgeryTemplate.category, models.SurgeryTemplate.id)
+        .all()
+    )
+    if not base_rows:
+        _seed_default_templates(db)
+        base_rows = (
+            db.query(models.SurgeryTemplate)
+            .order_by(models.SurgeryTemplate.category, models.SurgeryTemplate.id)
+            .all()
+        )
+
+    for base in base_rows:
+        obj = models.SurgeryTemplateUser(
+            user_key=user_key,
+            base_template_id=base.id,
+            category=base.category,
+            name=base.name,
+            content=base.content,
+        )
+        db.add(obj)
+    db.commit()
+
+    return (
+        db.query(models.SurgeryTemplateUser)
+        .filter(models.SurgeryTemplateUser.user_key == user_key)
+        .order_by(models.SurgeryTemplateUser.category, models.SurgeryTemplateUser.id)
+        .all()
+    )
+
+
+def _serialize_user_template(t: models.SurgeryTemplateUser) -> Dict[str, Any]:
+    return {
+        "id": f"{t.category}_{t.id}",
+        "name": t.name,
+        "content": t.content,
+    }
+
+
+@router.get("")
+def list_templates(db: Session = Depends(get_db)) -> Dict[str, Any]:
+    """
+    Trả về tất cả category + templates:
+    {
+        "moLayThai": { "name": "...", "templates": [ { id, name, content }, ... ] },
+        ...
+    }
+    """
+
+    categories: Dict[str, Dict[str, Any]] = {
+        key: {"name": name, "templates": []} for key, name in CATEGORY_NAMES.items()
+    }
+
+    rows: List[models.SurgeryTemplate] = (
+        db.query(models.SurgeryTemplate)
+        .order_by(models.SurgeryTemplate.category, models.SurgeryTemplate.id)
+        .all()
+    )
+
+    # Nếu chưa có dữ liệu thì tự seed các mẫu mặc định một lần
+    if not rows:
+        _seed_default_templates(db)
+        rows = (
+            db.query(models.SurgeryTemplate)
+            .order_by(models.SurgeryTemplate.category, models.SurgeryTemplate.id)
+            .all()
+        )
+
+    for t in rows:
+        if t.category not in categories:
+            categories[t.category] = {"name": t.category, "templates": []}
+        categories[t.category]["templates"].append(_serialize_template(t))
+
+    return categories
+
+
+@router.get("/{category_id}")
+def get_category(category_id: str, db: Session = Depends(get_db)) -> Dict[str, Any]:
+    """
+    Lấy 1 nhóm theo category_id (moLayThai, moPhuKhoa, ...).
+    """
+
+    name = CATEGORY_NAMES.get(category_id, category_id)
+
+    rows: List[models.SurgeryTemplate] = (
+        db.query(models.SurgeryTemplate)
+        .where(models.SurgeryTemplate.category == category_id)
+        .order_by(models.SurgeryTemplate.id)
+        .all()
+    )
+
+    if not rows and category_id not in CATEGORY_NAMES:
+        raise HTTPException(status_code=404, detail="Category not found")
+
+    return {"name": name, "templates": [_serialize_template(t) for t in rows]}
+
+
+@router.post("")
+def create_template(body: TemplateCreate, db: Session = Depends(get_db)) -> Dict[str, Any]:
+    """
+    Tạo mẫu mới trong 1 nhóm.
+    """
+
+    obj = models.SurgeryTemplate(
+        category=body.category.strip(),
+        name=body.name.strip(),
+        content=body.content.strip(),
+    )
+    db.add(obj)
+    db.commit()
+    db.refresh(obj)
+
+    return {"success": True, "template": _serialize_template(obj)}
+
+
+@router.put("/{template_id}")
+def update_template(
+    template_id: str,
+    body: TemplateBase,
+    db: Session = Depends(get_db),
+) -> Dict[str, Any]:
+    """
+    Cập nhật tên + nội dung 1 mẫu.
+    """
+
+    db_id = _parse_template_id(template_id)
+    obj = db.query(models.SurgeryTemplate).get(db_id)  # type: ignore[attr-defined]
+    if not obj:
+        raise HTTPException(status_code=404, detail="Template not found")
+
+    obj.name = body.name.strip()
+    obj.content = body.content.strip()
+
+    db.add(obj)
+    db.commit()
+    db.refresh(obj)
+
+    return {"success": True, "template": _serialize_template(obj)}
+
+
+@router.delete("/{template_id}")
+def delete_template(
+    template_id: str,
+    db: Session = Depends(get_db),
+) -> Dict[str, Any]:
+    """
+    Xóa 1 mẫu.
+    """
+
+    db_id = _parse_template_id(template_id)
+    obj = db.query(models.SurgeryTemplate).get(db_id)  # type: ignore[attr-defined]
+    if not obj:
+        raise HTTPException(status_code=404, detail="Template not found")
+
+    db.delete(obj)
+    db.commit()
+
+    return {"success": True}
+
+
+# ====== API cho từng tài khoản (bác sĩ) sử dụng bộ mẫu riêng ======
+
+
+@router.get("/user")
+def list_templates_for_user(
+    user_key: str = Query(..., description="Khóa định danh tài khoản (currentUser.key)"),
+    db: Session = Depends(get_db),
+) -> Dict[str, Any]:
+    """
+    Lấy toàn bộ templates cho riêng 1 tài khoản.
+    Nếu user chưa có dữ liệu riêng, sẽ clone từ bảng surgery_templates (mẫu admin) một lần.
+    """
+
+    rows = _get_or_clone_user_templates(db, user_key)
+    categories: Dict[str, Dict[str, Any]] = {}
+    for t in rows:
+        if t.category not in categories:
+            categories[t.category] = {
+                "name": CATEGORY_NAMES.get(t.category, t.category),
+                "templates": [],
+            }
+        categories[t.category]["templates"].append(_serialize_user_template(t))
+    return categories
+
+
+@router.get("/user/{category_id}")
+def get_category_for_user(
+    category_id: str,
+    user_key: str = Query(..., description="Khóa định danh tài khoản (currentUser.key)"),
+    db: Session = Depends(get_db),
+) -> Dict[str, Any]:
+    """
+    Lấy 1 nhóm template cho riêng 1 tài khoản.
+    """
+
+    rows = _get_or_clone_user_templates(db, user_key)
+    name = CATEGORY_NAMES.get(category_id, category_id)
+    filtered = [t for t in rows if t.category == category_id]
+    return {"name": name, "templates": [_serialize_user_template(t) for t in filtered]}
+
+
+@router.post("/user")
+def create_template_for_user(
+    body: TemplateCreate,
+    user_key: str = Query(..., description="Khóa định danh tài khoản (currentUser.key)"),
+    db: Session = Depends(get_db),
+) -> Dict[str, Any]:
+    """
+    Tạo mẫu mới cho riêng 1 tài khoản.
+    """
+
+    obj = models.SurgeryTemplateUser(
+        user_key=user_key,
+        base_template_id=None,
+        category=body.category.strip(),
+        name=body.name.strip(),
+        content=body.content.strip(),
+    )
+    db.add(obj)
+    db.commit()
+    db.refresh(obj)
+    return {"success": True, "template": _serialize_user_template(obj)}
+
+
+@router.put("/user/{template_id}")
+def update_template_for_user(
+    template_id: str,
+    body: TemplateBase,
+    user_key: str = Query(..., description="Khóa định danh tài khoản (currentUser.key)"),
+    db: Session = Depends(get_db),
+) -> Dict[str, Any]:
+    """
+    Cập nhật 1 mẫu cho riêng 1 tài khoản.
+    """
+
+    db_id = _parse_template_id(template_id)
+    obj = (
+        db.query(models.SurgeryTemplateUser)
+        .filter(
+            models.SurgeryTemplateUser.id == db_id,
+            models.SurgeryTemplateUser.user_key == user_key,
+        )
+        .first()
+    )
+    if not obj:
+        raise HTTPException(status_code=404, detail="Template not found")
+
+    obj.name = body.name.strip()
+    obj.content = body.content.strip()
+    db.add(obj)
+    db.commit()
+    db.refresh(obj)
+    return {"success": True, "template": _serialize_user_template(obj)}
+
+
+@router.delete("/user/{template_id}")
+def delete_template_for_user(
+    template_id: str,
+    user_key: str = Query(..., description="Khóa định danh tài khoản (currentUser.key)"),
+    db: Session = Depends(get_db),
+) -> Dict[str, Any]:
+    """
+    Xóa 1 mẫu trong bộ của tài khoản (không ảnh hưởng mẫu admin).
+    """
+
+    db_id = _parse_template_id(template_id)
+    obj = (
+        db.query(models.SurgeryTemplateUser)
+        .filter(
+            models.SurgeryTemplateUser.id == db_id,
+            models.SurgeryTemplateUser.user_key == user_key,
+        )
+        .first()
+    )
+    if not obj:
+        raise HTTPException(status_code=404, detail="Template not found")
+
+    db.delete(obj)
+    db.commit()
+    return {"success": True}
+
+
+@router.post("/user/reset")
+def reset_templates_for_user(
+    user_key: str = Query(..., description="Khóa định danh tài khoản (currentUser.key)"),
+    db: Session = Depends(get_db),
+) -> Dict[str, Any]:
+    """
+    Reset bộ template của tài khoản về đúng mẫu admin hiện tại.
+    """
+
+    db.query(models.SurgeryTemplateUser).filter(
+        models.SurgeryTemplateUser.user_key == user_key
+    ).delete()
+    db.commit()
+
+    # Clone lại từ admin
+    _get_or_clone_user_templates(db, user_key)
+    return {"success": True}
+

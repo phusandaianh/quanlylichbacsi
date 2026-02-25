@@ -2666,6 +2666,7 @@
             { id: 'khamhotropk', name: 'Khám hỗ trợ PK' },
             { id: 'nghiphep', name: 'Đăng Ký Nghỉ Phép' },
             { id: 'lichtruc', name: 'Lịch Trực' },
+            { id: 'hosobenhan', name: 'Hồ Sơ Bệnh Án' },
             { id: 'quanlynghiphep_ld', name: 'Quản lý & Duyệt nghỉ phép - Lãnh đạo (LĐ)' },
             { id: 'quanlynghiphep_c1', name: 'Quản lý & Duyệt nghỉ phép - cột1' },
             { id: 'quanlynghiphep_c2', name: 'Quản lý & Duyệt nghỉ phép - cột2' },
@@ -3667,7 +3668,14 @@
             document.querySelectorAll('.tab-content[id]').forEach(tab => {
                 const tabId = tab.id;
                 // Bỏ qua các tab không cần xuất PDF
-                if (['loginModal', 'permissionsModal', 'editDoctorModal', 'requestModal', 'adminReviewModal'].includes(tabId)) {
+                if ([
+                    'loginModal',
+                    'permissionsModal',
+                    'editDoctorModal',
+                    'requestModal',
+                    'adminReviewModal',
+                    'hosobenhan', // Không tạo nút Xuất PDF cho tab Hồ Sơ Bệnh Án
+                ].includes(tabId)) {
                     return;
                 }
                 

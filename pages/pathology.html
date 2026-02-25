@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>Quản lý mô bệnh học</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f8f8f8;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px #0001;
+            padding: 24px;
+        }
+        h1 {
+            color: #880088;
+            margin-bottom: 24px;
+        }
+        .home-button {
+            display: inline-block;
+            padding: 8px 15px;
+            background-color: #f0f0f0;
+            color: #333;
+            text-decoration: none;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            margin: 5px 0 15px 0;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .home-button:hover {
+            background-color: #e0e0e0;
+        }
+        .copy-hint {
+            margin-top: 8px;
+            font-size: 0.9em;
+            color: #555;
+        }
+
+        /* Kẻ bảng giống trang mẫu */
+        #pathologyTable {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        #pathologyTable th,
+        #pathologyTable td {
+            border: 1px solid #ccc;
+            padding: 6px 8px;
+        }
+
+        /* Tô màu các nút hành động */
+        .actions {
+            text-align: center;
+            background: #880088;
+        }
+        .actions .btn {
+            border: none;
+            border-radius: 4px;
+            padding: 4px 8px;
+            margin: 0 2px;
+            cursor: pointer;
+            font-size: 14px;
+            background: #ffc107; /* vàng cho nút sửa/lưu */
+            color: #000;
+        }
+        .actions .btn.btn-secondary {
+            background: #6c757d; /* xám cho hủy */
+            color: #fff;
+        }
+        .actions .btn.btn-danger {
+            background: #dc3545; /* đỏ cho xóa */
+            color: #fff;
+        }
+
+        /* Highlight hàng vừa copy */
+        .copy-highlight {
+            background: #fff3cd !important;
+            transition: background 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <button class="home-button" onclick="window.location.href='hosobenhan.html'">⬅️ Quay lại Hồ Sơ Bệnh Án</button>
+    <h1>Quản lý danh mục xét nghiệm mô bệnh học</h1>
+    <p class="copy-hint">
+        
+    </p>
+    <div id="pathologyBody">
+        Đang tải danh mục mô bệnh học...
+    </div>
+</div>
+
+<script>
+// Dữ liệu mô bệnh học (loai, maSo, tenDichVu, gia)
+let pathoData = [];
+let editingIndex = null;
+
+function formatPrice(price) {
+    const n = parseInt(price, 10) || 0;
+    return new Intl.NumberFormat('vi-VN').format(n);
+}
+
+function copyRow(idx) {
+    const row = pathoData[idx];
+    if (!row) return;
+    const text = `${row.maSo} - ${row.tenDichVu} (${row.loai}, giá ${formatPrice(row.gia)} VNĐ)`;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+            const tr = document.querySelector(`#pathologyTable tbody tr[data-index="${idx}"]`);
+            if (tr) {
+                tr.classList.add('copy-highlight');
+                setTimeout(() => tr.classList.remove('copy-highlight'), 1500);
+            }
+        }).catch(() => fallbackCopy(text, idx));
+    } else {
+        fallbackCopy(text, idx);
+    }
+}
+
+function fallbackCopy(text, idx) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    const tr = document.querySelector(`#pathologyTable tbody tr[data-index="${idx}"]`);
+    if (tr) {
+        tr.classList.add('copy-highlight');
+        setTimeout(() => tr.classList.remove('copy-highlight'), 1500);
+    }
+}
+
+function renderPathologyTable(filterText = '') {
+    const tbody = document.querySelector('#pathologyTable tbody');
+    if (!tbody) return;
+    const search = (filterText || '').toLowerCase();
+    tbody.innerHTML = '';
+
+    pathoData.forEach((row, idx) => {
+        if (
+            search &&
+            !(
+                (row.loai || '').toLowerCase().includes(search) ||
+                (row.maSo || '').toLowerCase().includes(search) ||
+                (row.tenDichVu || '').toLowerCase().includes(search)
+            )
+        ) {
+            return;
+        }
+
+        const tr = document.createElement('tr');
+        tr.dataset.index = idx;
+
+        if (editingIndex === idx) {
+            tr.innerHTML = `
+                <td>${idx + 1}</td>
+                <td><input id="editLoai" value="${row.loai || ''}" style="width:100%;"></td>
+                <td><input id="editMaSo" value="${row.maSo || ''}" style="width:100%;"></td>
+                <td><input id="editTenDichVu" value="${row.tenDichVu || ''}" style="width:100%;"></td>
+                <td><input id="editGia" type="number" min="0" step="1000" value="${row.gia || 0}" style="width:100%; text-align:right;"></td>
+                <td class="actions">
+                    <button class="btn" onclick="saveEdit(${idx})">💾</button>
+                    <button class="btn btn-secondary" onclick="cancelEdit()">❌</button>
+                </td>
+            `;
+        } else {
+            tr.innerHTML = `
+                <td>${idx + 1}</td>
+                <td>${row.loai}</td>
+                <td>${row.maSo}</td>
+                <td>${row.tenDichVu}</td>
+                <td style="text-align:right;">${formatPrice(row.gia)}</td>
+                <td class="actions">
+                    <button class="btn" onclick="editRow(${idx}); event.stopPropagation();">✏️</button>
+                    <button class="btn btn-danger" onclick="deleteRow(${idx}); event.stopPropagation();">🗑️</button>
+                </td>
+            `;
+        }
+
+        tbody.appendChild(tr);
+    });
+}
+
+function editRow(idx) {
+    editingIndex = idx;
+    renderPathologyTable(document.getElementById('pathologySearch')?.value || '');
+}
+
+function cancelEdit() {
+    editingIndex = null;
+    renderPathologyTable(document.getElementById('pathologySearch')?.value || '');
+}
+
+function saveEdit(idx) {
+    const loaiEl = document.getElementById('editLoai');
+    const maSoEl = document.getElementById('editMaSo');
+    const tenEl = document.getElementById('editTenDichVu');
+    const giaEl = document.getElementById('editGia');
+    if (!loaiEl || !maSoEl || !tenEl || !giaEl) return;
+
+    pathoData[idx] = {
+        loai: loaiEl.value.trim(),
+        maSo: maSoEl.value.trim(),
+        tenDichVu: tenEl.value.trim(),
+        gia: parseInt(giaEl.value, 10) || 0,
+    };
+    editingIndex = null;
+    renderPathologyTable(document.getElementById('pathologySearch')?.value || '');
+    persistPathology();
+}
+
+function deleteRow(idx) {
+    if (!confirm('Bạn có chắc chắn muốn xóa dịch vụ này (chỉ xóa trên màn hình, không lưu)?')) return;
+    pathoData.splice(idx, 1);
+    if (editingIndex === idx) editingIndex = null;
+    renderPathologyTable(document.getElementById('pathologySearch')?.value || '');
+    persistPathology();
+}
+
+function addNewPathology() {
+    const loaiEl = document.getElementById('newLoai');
+    const maSoEl = document.getElementById('newMaSo');
+    const tenEl = document.getElementById('newTenDichVu');
+    const giaEl = document.getElementById('newGia');
+    if (!loaiEl || !maSoEl || !tenEl || !giaEl) return;
+
+    const loai = loaiEl.value.trim();
+    const maSo = maSoEl.value.trim();
+    const ten = tenEl.value.trim();
+    const gia = parseInt(giaEl.value, 10) || 0;
+
+    if (!loai || !maSo || !ten || !gia) {
+        alert('Vui lòng nhập đầy đủ Loại bệnh phẩm, Mã số, Tên dịch vụ và Giá.');
+        return;
+    }
+
+    // Kiểm tra trùng mã số trong danh sách hiện tại
+    if (pathoData.some(row => (row.maSo || '').toLowerCase() === maSo.toLowerCase())) {
+        alert('Mã số này đã tồn tại trong danh sách.');
+        return;
+    }
+
+    pathoData.push({ loai, maSo, tenDichVu: ten, gia });
+
+    // Xóa form nhập
+    loaiEl.value = '';
+    maSoEl.value = '';
+    tenEl.value = '';
+    giaEl.value = '';
+
+    renderPathologyTable(document.getElementById('pathologySearch')?.value || '');
+    persistPathology();
+}
+
+// Gửi toàn bộ pathoData lên server để lưu lại tự động
+function persistPathology() {
+    if (!pathoData || !pathoData.length) return;
+    fetch('/api/pathology/export', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(pathoData),
+    }).catch(err => {
+        console.error('Lỗi khi tự động lưu mô bệnh học lên server:', err);
+    });
+}
+
+function buildPathologyUI(target) {
+    target.innerHTML = `
+        <div style="margin-bottom: 16px;">
+            <input id="pathologySearch" type="text" placeholder="Tìm kiếm..." style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+        </div>
+        <div style="margin-bottom: 12px; display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end;">
+            <div style="flex:1; min-width:220px;">
+                <label style="font-weight:bold; display:block; margin-bottom:4px;">Loại bệnh phẩm</label>
+                <input id="newLoai" type="text" placeholder="Nhập tên loại bệnh phẩm" style="width:100%; padding:6px 8px; border:1px solid #ccc; border-radius:4px;">
+            </div>
+            <div style="width:180px;">
+                <label style="font-weight:bold; display:block; margin-bottom:4px;">Mã số</label>
+                <input id="newMaSo" type="text" placeholder="Nhập mã số" style="width:100%; padding:6px 8px; border:1px solid #ccc; border-radius:4px;">
+            </div>
+            <div style="flex:2; min-width:260px;">
+                <label style="font-weight:bold; display:block; margin-bottom:4px;">Tên dịch vụ</label>
+                <input id="newTenDichVu" type="text" placeholder="Nhập tên dịch vụ" style="width:100%; padding:6px 8px; border:1px solid #ccc; border-radius:4px;">
+            </div>
+            <div style="width:160px;">
+                <label style="font-weight:bold; display:block; margin-bottom:4px;">Giá</label>
+                <input id="newGia" type="number" min="0" step="1000" placeholder="Nhập giá" style="width:100%; padding:6px 8px; border:1px solid #ccc; border-radius:4px;">
+            </div>
+            <div>
+                <button type="button" onclick="addNewPathology()" style="padding:8px 16px; border:none; border-radius:6px; background:#880088; color:#fff; cursor:pointer;">Thêm mới</button>
+            </div>
+        </div>
+        <table id="pathologyTable" style="width:100%; border-collapse:collapse;">
+            <thead>
+                <tr>
+                    <th style="width:5%; border:1px solid #ccc; padding:6px 8px;">STT</th>
+                    <th style="width:20%; border:1px solid #ccc; padding:6px 8px;">Loại bệnh phẩm</th>
+                    <th style="width:10%; border:1px solid #ccc; padding:6px 8px;">Mã số</th>
+                    <th style="width:45%; border:1px solid #ccc; padding:6px 8px;">Tên dịch vụ</th>
+                    <th style="width:15%; border:1px solid #ccc; padding:6px 8px; text-align:right;">Giá (VNĐ)</th>
+                    <th style="width:10%; border:1px solid #ccc; padding:6px 8px;">Hành động</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    `;
+
+    const searchInput = document.getElementById('pathologySearch');
+    if (searchInput) {
+        searchInput.addEventListener('input', function () {
+            renderPathologyTable(searchInput.value);
+        });
+    }
+
+    renderPathologyTable();
+}
+
+function loadPathology() {
+    const target = document.getElementById('pathologyBody');
+    if (!target) return;
+
+    const url = encodeURI('/raw/Quản lý mô bệnh học.html');
+
+    // Ưu tiên load dữ liệu đã lưu trên server
+    fetch('/api/pathology/export')
+        .then(r => (r.ok ? r.json() : []))
+        .then(serverData => {
+            if (Array.isArray(serverData) && serverData.length) {
+                pathoData = serverData;
+                buildPathologyUI(target);
+                return;
+            }
+
+            // Nếu server chưa có dữ liệu, đọc từ file HTML gốc
+            return fetch(url)
+                .then(r => {
+                    if (!r.ok) throw new Error('Không tải được file Quản lý mô bệnh học.html');
+                    return r.text();
+                })
+                .then(html => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    const container = doc.querySelector('.container');
+                    if (!container) {
+                        target.textContent = 'Không tìm thấy nội dung mô bệnh học trong file nguồn.';
+                        return;
+                    }
+                    const table = container.querySelector('#moBenhHocTable');
+                    if (!table) {
+                        target.textContent = 'Không tìm thấy bảng mô bệnh học.';
+                        return;
+                    }
+
+                    const rows = table.querySelectorAll('tbody tr');
+                    pathoData = [];
+                    rows.forEach(tr => {
+                        const cells = tr.querySelectorAll('td');
+                        if (cells.length < 5) return;
+                        const loai = (cells[1].innerText || '').trim();
+                        const maSo = (cells[2].innerText || '').trim();
+                        const ten = (cells[3].innerText || '').trim();
+                        const giaText = (cells[4].innerText || '').replace(/[^\d]/g, '');
+                        const gia = parseInt(giaText, 10) || 0;
+                        if (loai && maSo && ten) {
+                            pathoData.push({ loai, maSo, tenDichVu: ten, gia });
+                        }
+                    });
+
+                    buildPathologyUI(target);
+                    // Seed dữ liệu ban đầu lên server để lần sau load nhanh từ API
+                    persistPathology();
+                });
+        })
+        .catch(err => {
+            console.error(err);
+            target.textContent = 'Không thể tải nội dung mô bệnh học.';
+        });
+}
+
+document.addEventListener('DOMContentLoaded', loadPathology);
+</script>
+</body>
+</html>
+
