@@ -110,11 +110,10 @@ def get_all_icd() -> Dict[str, str]:
         return override
 
     data = _extract_icd_from_html()
+    # Nếu không còn file 'Mã ICD.html' hoặc file rỗng thì trả về dict rỗng
+    # để frontend vẫn hoạt động (sử dụng favorites/manual/Excel upload).
     if not data:
-        raise HTTPException(
-            status_code=500,
-            detail="Không đọc được dữ liệu ICD từ file 'Mã ICD.html'.",
-        )
+        return {}
     return data
 
 
