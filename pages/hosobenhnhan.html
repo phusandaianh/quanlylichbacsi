@@ -221,17 +221,18 @@
         }
     </style>
 </head>
-<body data-current-tab="hosobenhan">
+<body data-current-tab="hosobenhnhan">
     <div class="container">
         <div id="header-placeholder"></div>
-        <div id="hosobenhan" class="tab-content active">
+        <div id="hosobenhnhan" class="tab-content active">
             <div class="form-container">
                 <h2>📁 Hồ Sơ Bệnh Án</h2>
                 <p></p>
                 <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px;">
                     <button id="protocolBtn" class="btn btn-primary" style="padding:8px 14px;">Protocol Phẫu Thuật</button>
                     <button id="restModeBtn" class="btn btn-primary" style="padding:8px 14px;">Chế độ nghỉ</button>
-                    <button id="icdBtn" class="btn btn-primary" style="padding:8px 14px;">Mã ICD</button>
+                    <button id="icdBtn" class="btn btn-primary" style="padding:8px 14px;">Bảng mã</button>
+                    <button id="thuocBtn" class="btn btn-primary" style="padding:8px 14px;">Thuốc</button>
                     <button id="pathologyBtn" class="btn btn-primary" style="padding:8px 14px;">Mô bệnh học</button>
                     <!-- Add more action buttons here as needed -->
                 </div>
@@ -245,11 +246,12 @@
     <script src="../assets/js/app.js"></script>
 
     <script>
-        // Nút Protocol Phẫu Thuật, Chế độ nghỉ, Mã ICD, Mô bệnh học: mở các trang con riêng
+        // Nút Protocol Phẫu Thuật, Chế độ nghỉ, Mã ICD, Thuốc, Mô bệnh học: mở các trang con riêng
         (function () {
             const protocolBtn = document.getElementById('protocolBtn');
             const restModeBtn = document.getElementById('restModeBtn');
             const icdBtn = document.getElementById('icdBtn');
+            const thuocBtn = document.getElementById('thuocBtn');
             const pathologyBtn = document.getElementById('pathologyBtn');
             if (protocolBtn) {
                 protocolBtn.addEventListener('click', function () {
@@ -263,7 +265,12 @@
             }
             if (icdBtn) {
                 icdBtn.addEventListener('click', function () {
-                    window.location.href = 'icd.html';
+                    window.location.href = 'Bangma.html';
+                });
+            }
+            if (thuocBtn) {
+                thuocBtn.addEventListener('click', function () {
+                    window.location.href = 'thuoc.html';
                 });
             }
             if (pathologyBtn) {

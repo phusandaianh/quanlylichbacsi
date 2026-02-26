@@ -820,25 +820,59 @@
         })();
 
         // Ensure every doctor in stored lists has an account (create with default password '1234')
+        // - Không phân biệt hoa/thường, dấu, khoảng trắng khi so khớp (dùng normalizeKey)
+        // - Nếu có nhiều bác sĩ trùng Họ tên, tự sinh thêm số 2,3,4... vào tên đăng nhập để phân biệt
         function ensureDoctorAccounts() {
             const groups = ['lanhdao','cot1','cot2','cot3','partime','khac'];
             let changed = false;
+
+            // Đếm số bác sĩ cho từng key chuẩn hóa theo Họ tên (để biết có trùng hay không)
+            const nameCounts = {};
             groups.forEach(g => {
                 const list = doctors[g] || [];
                 list.forEach(doc => {
-                    const key = normalizeKey(doc.name);
-                    if (!key) return;
-                    if (!accounts[key]) {
-                        accounts[key] = {
-                            username: doc.name,
-                            password: '1234',
-                            role: 'doctor',
-                            name: doc.name
-                        };
-                        changed = true;
-                    }
+                    const nameKey = normalizeKey(doc.name);
+                    if (!nameKey) return;
+                    nameCounts[nameKey] = (nameCounts[nameKey] || 0) + 1;
                 });
             });
+
+            // Theo từng bác sĩ, tạo username duy nhất (thêm số nếu cần)
+            const usedIndex = {};
+            groups.forEach(g => {
+                const list = doctors[g] || [];
+                list.forEach(doc => {
+                    const baseKey = normalizeKey(doc.name);
+                    if (!baseKey) return;
+
+                    const totalForName = nameCounts[baseKey] || 1;
+                    usedIndex[baseKey] = (usedIndex[baseKey] || 0) + 1;
+                    const index = usedIndex[baseKey];
+
+                    // Bác sĩ đầu tiên: giữ nguyên Họ tên làm tên đăng nhập
+                    // Bác sĩ thứ 2 trở đi (trùng Họ tên): thêm số 2,3,4... phía sau
+                    const usernameCandidate = (totalForName === 1 || index === 1)
+                        ? doc.name
+                        : (doc.name + ' ' + index);
+
+                    const accountKey = normalizeKey(usernameCandidate);
+                    if (!accountKey) return;
+
+                    // Nếu tài khoản với key này đã tồn tại thì bỏ qua (đã tạo trước đó)
+                    if (accounts[accountKey]) {
+                        return;
+                    }
+
+                    accounts[accountKey] = {
+                        username: usernameCandidate,
+                        password: '1234',
+                        role: 'doctor',
+                        name: doc.name
+                    };
+                    changed = true;
+                });
+            });
+
             if (changed) {
                 StorageUtil.saveJson(STORAGE_KEYS.accounts, accounts);
             }
@@ -1674,14 +1708,62 @@
                 return;
             }
             
+            // Chuẩn hóa key từ những gì người dùng nhập (bỏ dấu, khoảng trắng, hoa/thường)
             const key = normalizeKey(username);
 
-            if (!accountsToUse[key]) {
+            // Ưu tiên tìm trực tiếp theo key trong object accounts
+            let account = accountsToUse[key] || null;
+
+            // Nếu không tìm thấy theo key (do dữ liệu cũ, key khác username), duyệt toàn bộ accounts:
+            // - so khớp normalizeKey(username) với normalizeKey(acc.username hoặc acc.name)
+            if (!account) {
+                const allAccounts = Object.values(accountsToUse || {});
+                account = allAccounts.find(function (acc) {
+                    return normalizeKey(acc && (acc.username || acc.name || '')) === key;
+                }) || null;
+            }
+
+            // Nếu vẫn không có account, thử tìm trong danh sách bác sĩ theo Họ tên,
+            // và tự tạo tài khoản (mật khẩu mặc định 1234) nếu khớp.
+            if (!account) {
+                let matchedDoctor = null;
+                ['lanhdao','cot1','cot2','cot3','partime','khac'].forEach(function (g) {
+                    if (matchedDoctor) return;
+                    const list = doctors[g] || [];
+                    for (let i = 0; i < list.length; i++) {
+                        const doc = list[i];
+                        if (normalizeKey(doc && doc.name) === key) {
+                            matchedDoctor = doc;
+                            break;
+                        }
+                    }
+                });
+
+                if (matchedDoctor) {
+                    const newKey = key;
+                    const newAccount = {
+                        username: matchedDoctor.name,
+                        password: '1234',
+                        role: 'doctor',
+                        name: matchedDoctor.name
+                    };
+                    accounts[newKey] = newAccount;
+                    accountsToUse[newKey] = newAccount;
+                    try {
+                        StorageUtil.saveJson(STORAGE_KEYS.accounts, accounts);
+                    } catch (e) {
+                        console.error('Lỗi khi lưu tài khoản mới từ đăng nhập:', e);
+                    }
+                    account = newAccount;
+                }
+            }
+
+            if (!account) {
                 showError('❌ Tên đăng nhập không tồn tại! Vui lòng kiểm tra lại.', 'username');
                 return;
             }
 
-            if (accountsToUse[key].password !== password) {
+            if (account.password !== password) {
                 showError('❌ Mật khẩu không đúng! Vui lòng thử lại.', 'password');
                 return;
             }
@@ -1694,17 +1776,14 @@
                     errorMsg.style.display = 'none';
                 }
                 
-                // Kiểm tra lại account trước khi đăng nhập
-                if (!accountsToUse[key]) {
-                    showError('❌ Tài khoản không tồn tại! Vui lòng kiểm tra lại.', 'username');
-                    return;
-                }
+                // Xác định lại key chuẩn từ account tìm được (phòng trường hợp khác với key người dùng gõ)
+                const resolvedKey = normalizeKey(account.username || account.name || username);
                 
                 currentUser = {
-                    key: key,
-                    username: accountsToUse[key].username,
-                    name: accountsToUse[key].name,
-                    role: accountsToUse[key].role
+                    key: resolvedKey,
+                    username: account.username || username,
+                    name: account.name || account.username || username,
+                    role: account.role || 'doctor'
                 };
                 
                 // Lưu currentUser vào localStorage
@@ -2666,7 +2745,7 @@
             { id: 'khamhotropk', name: 'Khám hỗ trợ PK' },
             { id: 'nghiphep', name: 'Đăng Ký Nghỉ Phép' },
             { id: 'lichtruc', name: 'Lịch Trực' },
-            { id: 'hosobenhan', name: 'Hồ Sơ Bệnh Án' },
+            { id: 'hosobenhnhan', name: 'Hồ Sơ Bệnh Án' },
             { id: 'quanlynghiphep_ld', name: 'Quản lý & Duyệt nghỉ phép - Lãnh đạo (LĐ)' },
             { id: 'quanlynghiphep_c1', name: 'Quản lý & Duyệt nghỉ phép - cột1' },
             { id: 'quanlynghiphep_c2', name: 'Quản lý & Duyệt nghỉ phép - cột2' },
@@ -3674,7 +3753,7 @@
                     'editDoctorModal',
                     'requestModal',
                     'adminReviewModal',
-                    'hosobenhan', // Không tạo nút Xuất PDF cho tab Hồ Sơ Bệnh Án
+                    'hosobenhnhan', // Không tạo nút Xuất PDF cho tab Hồ Sơ Bệnh Án
                 ].includes(tabId)) {
                     return;
                 }

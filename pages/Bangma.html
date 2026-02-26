@@ -1,0 +1,1971 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>Bảng mã</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+        }
+        .home-button {
+            display: inline-block;
+            padding: 8px 15px;
+            background-color: #f0f0f0;
+            color: #333;
+            text-decoration: none;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            margin-bottom: 10px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .home-button:hover {
+            background-color: #e0e0e0;
+        }
+        h2 {
+            margin: 5px 0 15px 0;
+            color: #880088;
+        }
+        .icd-section {
+            margin-top: 10px;
+        }
+        .icd-title {
+            font-weight: 600;
+            margin: 16px 0 8px;
+            color: #444;
+        }
+        .icd-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+        }
+        .icd-table th,
+        .icd-table td {
+            border: 1px solid #ddd;
+            padding: 6px 8px;
+            text-align: left;
+        }
+        .icd-table th {
+            background: #f8f8f8;
+        }
+        .icd-fav {
+            cursor: pointer;
+            font-size: 1.1em;
+        }
+        .icd-fav.active {
+            color: #ffa000;
+        }
+        .manual-form {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        .manual-form input[type="text"],
+        .manual-form input[type="file"] {
+            padding: 6px 8px;
+            border-radius: 4px;
+            border: 1px solid #bbb;
+            font-size: 0.95em;
+        }
+        .manual-form button {
+            padding: 6px 14px;
+            border-radius: 4px;
+            border: none;
+            background: #880088;
+            color: #fff;
+            cursor: pointer;
+            font-size: 0.95em;
+        }
+        .manual-form button:hover {
+            background: #a000a0;
+        }
+        .copy-hint {
+            margin-top: 6px;
+            font-size: 0.9em;
+            color: #555;
+        }
+        .code-tab-container {
+            margin-top: 10px;
+            margin-bottom: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .code-tab {
+            padding: 6px 14px;
+            border-radius: 20px;
+            border: 1px solid #880088;
+            background: #fff;
+            color: #880088;
+            cursor: pointer;
+            font-size: 0.95em;
+            transition: all 0.2s ease;
+        }
+        .code-tab:hover {
+            background: #f7e6f7;
+        }
+        .code-tab.active {
+            background: #880088;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <button class="home-button" onclick="window.location.href='hosobenhnhan.html'">⬅️ Quay lại Hồ Sơ Bệnh Án</button>
+    <h2>Bảng mã</h2>
+    <p style="font-size:0.95em; color:#555;">
+        
+    </p>
+    <div class="code-tab-container">
+        <button class="code-tab active" data-target="icdSection">Mã ICD</button>
+        <button class="code-tab" data-target="staffSection">Mã nhân viên</button>
+        <button class="code-tab" data-target="surgeryCodeSection">Mã phẫu thuật</button>
+        <button class="code-tab" data-target="packageCodeSection">Mã gói mổ+đẻ</button>
+        <button class="code-tab" data-target="nutritionCodeSection">Mã dinh dưỡng</button>
+    </div>
+    <div id="icdSection" class="icd-section"></div>
+    <div id="staffSection" class="icd-section" style="display:none;"></div>
+    <div id="surgeryCodeSection" class="icd-section" style="display:none;"></div>
+    <div id="packageCodeSection" class="icd-section" style="display:none;"></div>
+    <div id="nutritionCodeSection" class="icd-section" style="display:none;">
+        <div style="font-size:0.95em; color:#555;">
+            Nội dung bảng <strong>Mã dinh dưỡng</strong> sẽ được cấu hình tại đây.
+        </div>
+    </div>
+    <div class="copy-hint">
+        
+    </div>
+</div>
+
+<script>
+// Các biến toàn cục cho ICD
+let allICD = {};
+let favICD = {};
+let manualICDCache = {};
+let icdSearch = '';
+let showAllICD = false;
+let editingICD = null;
+
+// Các biến cho Mã nhân viên
+let staffData = {};
+let staffFav = {};
+let staffSearch = '';
+let staffShowAll = true;
+let staffEditingKey = null;
+let staffInitialized = false;
+
+const STAFF_STORAGE_KEY = 'bangma_staff_codes';
+const STAFF_FAV_STORAGE_KEY = 'bangma_staff_favorites';
+
+// Các biến cho Mã phẫu thuật
+let surgeryData = {};
+let surgeryFav = {};
+let surgerySearch = '';
+let surgeryShowAll = true;
+let surgeryEditingCode = null;
+let surgeryInitialized = false;
+
+const SURGERY_STORAGE_KEY = 'bangma_surgery_codes';
+const SURGERY_FAV_STORAGE_KEY = 'bangma_surgery_favorites';
+
+// Các biến cho Mã gói mổ + đẻ
+let packageData = {};
+let packageFav = {};
+let packageSearch = '';
+let packageShowAll = true;
+let packageEditingCode = null;
+let packageInitialized = false;
+
+const PACKAGE_STORAGE_KEY = 'bangma_package_codes';
+const PACKAGE_FAV_STORAGE_KEY = 'bangma_package_favorites';
+
+// Các biến cho Mã dinh dưỡng
+let nutritionData = {};
+let nutritionFav = {};
+let nutritionSearch = '';
+let nutritionShowAll = true;
+let nutritionEditingCode = null;
+let nutritionInitialized = false;
+
+const NUTRITION_STORAGE_KEY = 'bangma_nutrition_codes';
+const NUTRITION_FAV_STORAGE_KEY = 'bangma_nutrition_favorites';
+
+/**
+ * Load dữ liệu ICD cho trang:
+ * - Lấy danh sách mã chuẩn từ backend: GET /api/icd/all
+ * - Ghép thêm ICD yêu thích + ICD thủ công (nếu backend có lưu)
+ */
+function loadICD() {
+    fetch('/api/icd/all')
+        .then(r => {
+            if (!r.ok) {
+                throw new Error('API /api/icd/all không khả dụng');
+            }
+            return r.json();
+        })
+        .then(data => {
+            allICD = data || {};
+            return fetch('/api/icd/favorites')
+                .then(r => (r.ok ? r.json() : {}))
+                .then(fav => {
+                    favICD = fav || {};
+                    return fetch('/api/icd/manual')
+                        .then(r => (r.ok ? r.json() : {}))
+                        .then(manual => {
+                            manualICDCache = manual || {};
+                        })
+                        .catch(() => {
+                            manualICDCache = {};
+                        });
+                })
+                .catch(() => {
+                    favICD = {};
+                    manualICDCache = {};
+                });
+        })
+        .then(() => {
+            renderICD();
+        })
+        .catch(err => {
+            console.error('Không thể load dữ liệu ICD:', err);
+            document.getElementById('icdSection').innerHTML =
+                '<div style="color:red;">Không tải được danh sách mã ICD từ API /api/icd/all.</div>';
+        });
+}
+
+function initCodeTabs() {
+    const buttons = document.querySelectorAll('.code-tab');
+    const sectionIds = [
+        'icdSection',
+        'staffSection',
+        'surgeryCodeSection',
+        'packageCodeSection',
+        'nutritionCodeSection'
+    ];
+
+    buttons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            buttons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            const targetId = btn.getAttribute('data-target');
+            sectionIds.forEach(id => {
+                const sec = document.getElementById(id);
+                if (sec) {
+                    sec.style.display = (id === targetId) ? 'block' : 'none';
+                }
+            });
+
+            // Khi chuyển sang tab Mã nhân viên thì render nội dung (nếu chưa)
+            if (targetId === 'staffSection') {
+                renderStaffSection();
+            }
+
+            // Khi chuyển sang tab Mã phẫu thuật thì render nội dung (nếu chưa)
+            if (targetId === 'surgeryCodeSection') {
+                renderSurgerySection();
+            }
+
+            // Khi chuyển sang tab Mã gói mổ+đẻ thì render nội dung (nếu chưa)
+            if (targetId === 'packageCodeSection') {
+                renderPackageSection();
+            }
+
+            // Khi chuyển sang tab Mã dinh dưỡng thì render nội dung (nếu chưa)
+            if (targetId === 'nutritionCodeSection') {
+                renderNutritionSection();
+            }
+        });
+    });
+}
+
+function renderICD() {
+    let html = '';
+    // Ô tìm kiếm
+    html += `<div style='margin-bottom:16px;'>
+        <input id="icdSearchBox" type="text"
+            placeholder="Tìm kiếm mã ICD hoặc mô tả..."
+            style="width:350px; font-size:1.1em; padding:6px 10px; border-radius:6px; border:1px solid #bbb;"
+            autocomplete="off">
+    </div>`;
+    html += '<div id="icdTables"></div>';
+    document.getElementById('icdSection').innerHTML = html;
+    const searchBox = document.getElementById('icdSearchBox');
+    searchBox.value = icdSearch;
+    searchBox.addEventListener('input', function () {
+        icdSearch = searchBox.value;
+        renderICDTables();
+    });
+    renderICDTables();
+}
+
+function renderICDTables() {
+    let html = '';
+    // Favorites
+    html += '<div class="icd-title">Mã ICD yêu thích</div>';
+    html += '<table class="icd-table">';
+    html += '<tr><th></th><th>Mã ICD</th><th>Mô tả</th><th></th></tr>';
+    for (const code in favICD) {
+        if (!icdMatch(code, favICD[code])) continue;
+        html += renderICDRow(code, favICD[code], false);
+    }
+    html += '</table>';
+
+    // Toggle button for all ICD
+    html += `<button id="toggleAllICD" style="margin:12px 0 8px 0; padding:8px 22px; font-size:1em; border-radius:6px; border:1px solid #a000a0; background:#fff; color:#a000a0; cursor:pointer;">Tất cả mã ICD</button>`;
+
+    // All ICD
+    html += `<div id="allICDTable" style="display:${showAllICD ? '' : 'none'};">`;
+    html += '<div class="icd-title">Tất cả mã ICD</div>';
+    html += '<table class="icd-table">';
+    html += '<tr><th></th><th>Mã ICD</th><th>Mô tả</th><th></th></tr>';
+    for (const code in allICD) {
+        if (favICD[code]) continue;
+        if (!icdMatch(code, allICD[code])) continue;
+        html += renderICDRow(code, allICD[code], true);
+    }
+    html += '</table></div>';
+
+    // Manual add
+    html += '<div class="icd-title">Thêm mã ICD thủ công</div>';
+    html += `<form class="manual-form" onsubmit="addManualICD(event)">
+        <input id="manualCode" placeholder="Mã ICD" required maxlength="10">
+        <input id="manualDesc" placeholder="Mô tả" required maxlength="200">
+        <button type="submit">Thêm</button>
+    </form>`;
+
+    // Excel upload
+    html += '<div class="icd-title">Cập nhật mã ICD từ file Excel</div>';
+    html += `<form class="manual-form" onsubmit="uploadExcelICD(event)" enctype="multipart/form-data">
+        <input type="file" id="excelFile" accept=".xlsx,.xls" required>
+        <button type="submit">Cập nhật từ Excel</button>
+    </form>`;
+    html += '<div style="margin-top: 10px; font-size: 0.9em; color: #666;">';
+    html += '📋 <strong>Hướng dẫn:</strong> File Excel phải có cột "Code" và "Description". Mã ICD từ Excel sẽ thay thế toàn bộ danh sách hiện tại.';
+    html += '</div>';
+
+    document.getElementById('icdTables').innerHTML = html;
+    document.getElementById('toggleAllICD').onclick = function () {
+        showAllICD = !showAllICD;
+        renderICDTables();
+    };
+}
+
+function renderICDRow(code, desc, isAll) {
+    const isManual = manualICDCache && Object.prototype.hasOwnProperty.call(manualICDCache, code);
+
+    if (editingICD === code && isManual) {
+        return `<tr>
+            <td></td>
+            <td>${code}</td>
+            <td><input id='editICDDesc' value="${(desc || '').replace(/"/g, '&quot;')}" style='width:90%'></td>
+            <td>
+                <button onclick="saveEditICD('${code}')">Lưu</button>
+                <button onclick="cancelEditICD()">Hủy</button>
+                <button onclick="deleteICD('${code}')">Xóa</button>
+            </td>
+        </tr>`;
+    }
+
+    let editBtn = isManual ? `<button onclick="editICD('${code}')">Sửa</button>` : '';
+    let delBtn = isManual ? `<button onclick="deleteICD('${code}')">Xóa</button>` : '';
+    let favStar = favICD[code]
+        ? `<span class="icd-fav active" onclick="toggleFavICD('${code}')">★</span>`
+        : `<span class="icd-fav" onclick="toggleFavICD('${code}')">☆</span>`;
+
+    // Chuẩn hóa mã hiển thị: bỏ các tag như [Excel], [Manual] ở cuối nếu có
+    const displayCode = code.replace(/\s*\[[^\]]*\]\s*$/i, '');
+
+    // Khi click vào mô tả, copy code + desc
+
+    return `<tr>
+        <td>${favStar}</td>
+        <td>${highlightICD(displayCode)}</td>
+        <td onclick="copyICDText('${displayCode.replace(/'/g, "\\'")}', '${(desc || '').replace(/'/g, "\\'")}')" style="cursor:pointer;">
+            ${highlightICD(desc)}
+        </td>
+        <td>${editBtn} ${delBtn}</td>
+    </tr>`;
+}
+
+function icdMatch(code, desc) {
+    if (!icdSearch) return true;
+    const s = icdSearch.toLowerCase();
+    return code.toLowerCase().includes(s) || (desc && desc.toLowerCase().includes(s));
+}
+
+function highlightICD(text) {
+    if (!icdSearch || !text) return text || '';
+    const s = icdSearch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return text.replace(new RegExp(s, 'gi'), match => `<span style='background:yellow;'>${match}</span>`);
+}
+
+// =========================
+// MÃ NHÂN VIÊN (localStorage)
+// =========================
+
+function initStaffData() {
+    if (staffInitialized) return;
+    staffInitialized = true;
+    // Load từ localStorage nếu có
+    try {
+        const raw = localStorage.getItem(STAFF_STORAGE_KEY);
+        if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed && typeof parsed === 'object') {
+                staffData = parsed;
+            }
+        }
+    } catch (e) {
+        console.error('Không đọc được staffData từ localStorage:', e);
+    }
+    if (!staffData || typeof staffData !== 'object') {
+        staffData = {};
+    }
+    // Nếu chưa có dữ liệu thì khởi tạo từ bảng mẫu (ảnh)
+    if (Object.keys(staffData).length === 0) {
+        staffData = {
+            daihn:      { name: 'Hà Ngọc Đại',             staffId: '022398' },
+            nhungnth5:  { name: 'Nguyễn Thị Hồng Nhung',   staffId: '' },
+            daund:      { name: 'Nguyễn Dư Đậu',           staffId: '014366' },
+            hinhnd:     { name: 'Nguyễn Đức Hinh',         staffId: '012563' },
+            honglt:     { name: 'Lưu Thị Hồng',            staffId: '025623' },
+            tungn:      { name: 'Nguyễn Hoàng Tùng',       staffId: '001650' },
+            xuanptv:    { name: 'Nguyễn Thị Vạn Xuân',     staffId: '031441' },
+            anhhn:      { name: 'Hoàng Ngọc Anh',          staffId: '381556' },
+            trangtt20:  { name: 'Nguyễn Thị Trang',        staffId: '000087' },
+            luongnt:    { name: 'Nguyễn Thị Lương',        staffId: '040298' },
+            nhungtt2:   { name: 'Tô Thị Hồng Nhung',       staffId: '' },
+            bacdv:      { name: 'Dương Việt Bắc',          staffId: '000691' },
+            quypn:      { name: 'Phan Ngọc Quý',           staffId: '982033' },
+            giangpth2:  { name: 'Phạm Thị Hương Giang',    staffId: '012855' }
+        };
+    }
+
+    // Load danh sách yêu thích
+    try {
+        const favRaw = localStorage.getItem(STAFF_FAV_STORAGE_KEY);
+        if (favRaw) {
+            const parsedFav = JSON.parse(favRaw);
+            if (parsedFav && typeof parsedFav === 'object') {
+                staffFav = parsedFav;
+            }
+        }
+    } catch (e) {
+        console.error('Không đọc được staffFav từ localStorage:', e);
+    }
+    if (!staffFav || typeof staffFav !== 'object') {
+        staffFav = {};
+    }
+}
+
+function saveStaffData() {
+    try {
+        localStorage.setItem(STAFF_STORAGE_KEY, JSON.stringify(staffData || {}));
+        localStorage.setItem(STAFF_FAV_STORAGE_KEY, JSON.stringify(staffFav || {}));
+    } catch (e) {
+        console.error('Không lưu được staffData vào localStorage:', e);
+    }
+    // Đồng bộ server (best-effort)
+    syncBangmaToServer();
+}
+
+function renderStaffSection() {
+    initStaffData();
+    const container = document.getElementById('staffSection');
+    if (!container) return;
+
+    let html = '';
+    html += `<div style='margin-bottom:16px;'>
+        <input id="staffSearchBox" type="text"
+            placeholder="Tìm kiếm theo tên, tên đăng nhập hoặc mã nhân viên..."
+            style="width:350px; font-size:1.1em; padding:6px 10px; border-radius:6px; border:1px solid #bbb;"
+            autocomplete="off">
+    </div>`;
+    html += '<div id="staffTables"></div>';
+    container.innerHTML = html;
+
+    const searchBox = document.getElementById('staffSearchBox');
+    searchBox.value = staffSearch;
+    searchBox.addEventListener('input', function () {
+        staffSearch = searchBox.value;
+        renderStaffTables();
+    });
+
+    renderStaffTables();
+}
+
+function renderStaffTables() {
+    const wrapper = document.getElementById('staffTables');
+    if (!wrapper) return;
+
+    let html = '';
+
+    // Bảng yêu thích
+    html += '<div class="icd-title">Mã nhân viên yêu thích</div>';
+    html += '<table class="icd-table">';
+    html += '<tr><th></th><th>Tên đăng nhập</th><th>Họ tên</th><th>Mã nhân viên</th><th></th></tr>';
+    Object.keys(staffFav || {}).forEach(function (username) {
+        const item = staffData[username];
+        if (!item) return;
+        if (!staffMatch(username, item)) return;
+        html += renderStaffRow(username, item);
+    });
+    html += '</table>';
+
+    // Toggle hiển thị tất cả
+    html += `<button id="toggleAllStaff" style="margin:12px 0 8px 0; padding:8px 22px; font-size:1em; border-radius:6px; border:1px solid #a000a0; background:#fff; color:#a000a0; cursor:pointer;">Tất cả mã nhân viên</button>`;
+
+    // Bảng tất cả mã nhân viên
+    html += `<div id="allStaffTable" style="display:${staffShowAll ? '' : 'none'};">`;
+    html += '<div class="icd-title">Tất cả mã nhân viên</div>';
+    html += '<table class="icd-table">';
+    html += '<tr><th></th><th>Tên đăng nhập</th><th>Họ tên</th><th>Mã nhân viên</th><th></th></tr>';
+    Object.keys(staffData || {}).forEach(function (username) {
+        if (staffFav[username]) return; // đã hiển thị ở bảng yêu thích
+        const item = staffData[username];
+        if (!item) return;
+        if (!staffMatch(username, item)) return;
+        html += renderStaffRow(username, item);
+    });
+    html += '</table></div>';
+
+    // Form thêm mới
+    html += '<div class="icd-title">Thêm mã nhân viên</div>';
+    html += `<form class="manual-form" onsubmit="addStaff(event)">
+        <input id="staffUsernameInput" placeholder="Tên đăng nhập" required maxlength="50">
+        <input id="staffNameInput" placeholder="Họ tên" required maxlength="100">
+        <input id="staffIdInput" placeholder="Mã nhân viên" maxlength="20">
+        <button type="submit">Thêm</button>
+    </form>`;
+
+    wrapper.innerHTML = html;
+
+    const toggleBtn = document.getElementById('toggleAllStaff');
+    if (toggleBtn) {
+        toggleBtn.onclick = function () {
+            staffShowAll = !staffShowAll;
+            renderStaffTables();
+        };
+    }
+}
+
+function staffMatch(username, item) {
+    if (!staffSearch) return true;
+    const s = staffSearch.toLowerCase();
+    return (username && username.toLowerCase().includes(s)) ||
+        (item.name && item.name.toLowerCase().includes(s)) ||
+        (item.staffId && item.staffId.toLowerCase().includes(s));
+}
+
+function highlightStaff(text) {
+    if (!staffSearch || !text) return text || '';
+    const s = staffSearch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return text.replace(new RegExp(s, 'gi'), function (match) {
+        return "<span style='background:yellow;'>" + match + "</span>";
+    });
+}
+
+function renderStaffRow(username, item) {
+    const safeUsername = (username || '').replace(/"/g, '&quot;');
+    const safeName = (item.name || '').replace(/"/g, '&quot;');
+    const safeId = (item.staffId || '').replace(/"/g, '&quot;');
+
+    if (staffEditingKey === username) {
+        return `<tr>
+            <td></td>
+            <td><input id="editStaffUsername" value="${safeUsername}" style="width:95%"></td>
+            <td><input id="editStaffName" value="${safeName}" style="width:95%"></td>
+            <td><input id="editStaffId" value="${safeId}" style="width:95%"></td>
+            <td>
+                <button onclick="saveEditStaff('${safeUsername}')">Lưu</button>
+                <button onclick="cancelEditStaff()">Hủy</button>
+                <button onclick="deleteStaff('${safeUsername}')">Xóa</button>
+            </td>
+        </tr>`;
+    }
+
+    const isFav = !!staffFav[username];
+    const star = isFav
+        ? `<span class="icd-fav active" onclick="toggleStaffFav('${safeUsername}')">★</span>`
+        : `<span class="icd-fav" onclick="toggleStaffFav('${safeUsername}')">☆</span>`;
+
+    return `<tr>
+        <td>${star}</td>
+        <td>${highlightStaff(username)}</td>
+        <td>${highlightStaff(item.name || '')}</td>
+        <td>${highlightStaff(item.staffId || '')}</td>
+        <td>
+            <button onclick="editStaff('${safeUsername}')">Sửa</button>
+            <button onclick="deleteStaff('${safeUsername}')">Xóa</button>
+        </td>
+    </tr>`;
+}
+
+function addStaff(e) {
+    e.preventDefault();
+    initStaffData();
+    const usernameInput = document.getElementById('staffUsernameInput');
+    const nameInput = document.getElementById('staffNameInput');
+    const idInput = document.getElementById('staffIdInput');
+    const username = (usernameInput && usernameInput.value || '').trim();
+    const name = (nameInput && nameInput.value || '').trim();
+    const staffId = (idInput && idInput.value || '').trim();
+
+    if (!username || !name) {
+        alert('Vui lòng nhập đầy đủ Tên đăng nhập và Họ tên.');
+        return;
+    }
+    const key = username;
+    if (staffData[key]) {
+        alert('Đã tồn tại mã nhân viên với Tên đăng nhập này. Vui lòng chọn tên khác.');
+        return;
+    }
+    staffData[key] = { name: name, staffId: staffId };
+    saveStaffData();
+
+    if (usernameInput) usernameInput.value = '';
+    if (nameInput) nameInput.value = '';
+    if (idInput) idInput.value = '';
+
+    renderStaffTables();
+}
+
+function editStaff(username) {
+    staffEditingKey = username;
+    renderStaffTables();
+}
+
+function cancelEditStaff() {
+    staffEditingKey = null;
+    renderStaffTables();
+}
+
+function saveEditStaff(oldUsername) {
+    initStaffData();
+    const usernameInput = document.getElementById('editStaffUsername');
+    const nameInput = document.getElementById('editStaffName');
+    const idInput = document.getElementById('editStaffId');
+    if (!usernameInput || !nameInput || !idInput) return;
+
+    const newUsername = usernameInput.value.trim();
+    const newName = nameInput.value.trim();
+    const newId = idInput.value.trim();
+    if (!newUsername || !newName) {
+        alert('Vui lòng nhập đầy đủ Tên đăng nhập và Họ tên.');
+        return;
+    }
+    if (newUsername !== oldUsername && staffData[newUsername]) {
+        alert('Đã tồn tại mã nhân viên với Tên đăng nhập này. Vui lòng chọn tên khác.');
+        return;
+    }
+
+    const existing = staffData[oldUsername] || {};
+    delete staffData[oldUsername];
+    staffData[newUsername] = {
+        name: newName,
+        staffId: newId
+    };
+
+    if (staffFav[oldUsername]) {
+        delete staffFav[oldUsername];
+        staffFav[newUsername] = true;
+    }
+
+    staffEditingKey = null;
+    saveStaffData();
+    renderStaffTables();
+}
+
+function deleteStaff(username) {
+    initStaffData();
+    if (!confirm('Bạn có chắc muốn xóa mã nhân viên này?')) return;
+    if (staffData[username]) {
+        delete staffData[username];
+    }
+    if (staffFav[username]) {
+        delete staffFav[username];
+    }
+    saveStaffData();
+    renderStaffTables();
+}
+
+function toggleStaffFav(username) {
+    initStaffData();
+    if (staffFav[username]) {
+        delete staffFav[username];
+    } else {
+        staffFav[username] = true;
+    }
+    saveStaffData();
+    renderStaffTables();
+}
+
+// =========================
+// MÃ PHẪU THUẬT (localStorage)
+// =========================
+
+function initSurgeryData() {
+    if (surgeryInitialized) return;
+    surgeryInitialized = true;
+
+    // Load từ localStorage nếu có
+    try {
+        const raw = localStorage.getItem(SURGERY_STORAGE_KEY);
+        if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed && typeof parsed === 'object') {
+                surgeryData = parsed;
+            }
+        }
+    } catch (e) {
+        console.error('Không đọc được surgeryData từ localStorage:', e);
+    }
+    if (!surgeryData || typeof surgeryData !== 'object') {
+        surgeryData = {};
+    }
+
+    // Nếu chưa có dữ liệu thì khởi tạo từ bảng mẫu (ảnh)
+    if (Object.keys(surgeryData).length === 0) {
+        surgeryData = {
+            '4539':  { desc: 'Nội soi vô sinh' },
+            '1085':  { desc: 'Polyp BTC + Nội soi ổ bụng' },
+            '1635':  { desc: 'Polyp BTC (Không nội soi OB)' },
+            '1086':  { desc: 'Dính buồng TC (Không nội soi OB)' },
+            '4554':  { desc: 'Dính buồng TC + nội soi OB' },
+            '10026': { desc: 'Mổ mở U buồng trứng' },
+            '4548':  { desc: 'Nội soi U buồng trứng' },
+            '4879':  { desc: 'Nội soi buộc cổ lạc nội mạc tử cung' },
+            '4549':  { desc: 'Nội soi GEU' },
+            '4900':  { desc: 'Nội soi viêm PP' },
+            '4553':  { desc: 'Nội soi cắt tử cung hoàn toàn' },
+            '10027': { desc: 'Nội soi bóc UXTC' },
+            '3500':  { desc: 'Nội soi cầm máu sau mổ' },
+            '4894':  { desc: 'Nội soi bóc UXTC (mã khác)' },
+            'P22069': { desc: 'Nội soi buồng TC cắt dính' },
+            '3487':  { desc: 'Phẫu tích các loại bệnh phẩm CTC, khoét chóp CTC, LEEP' },
+            '9999':  { desc: 'Nội soi buồng tử cung cắt polyp + nội soi ổ bụng chẩn đoán' }
+        };
+    }
+
+    // Load danh sách yêu thích
+    try {
+        const favRaw = localStorage.getItem(SURGERY_FAV_STORAGE_KEY);
+        if (favRaw) {
+            const parsedFav = JSON.parse(favRaw);
+            if (parsedFav && typeof parsedFav === 'object') {
+                surgeryFav = parsedFav;
+            }
+        }
+    } catch (e) {
+        console.error('Không đọc được surgeryFav từ localStorage:', e);
+    }
+    if (!surgeryFav || typeof surgeryFav !== 'object') {
+        surgeryFav = {};
+    }
+}
+
+function saveSurgeryData() {
+    try {
+        localStorage.setItem(SURGERY_STORAGE_KEY, JSON.stringify(surgeryData || {}));
+        localStorage.setItem(SURGERY_FAV_STORAGE_KEY, JSON.stringify(surgeryFav || {}));
+    } catch (e) {
+        console.error('Không lưu được surgeryData vào localStorage:', e);
+    }
+    // Đồng bộ server (best-effort)
+    syncBangmaToServer();
+}
+
+function renderSurgerySection() {
+    initSurgeryData();
+    const container = document.getElementById('surgeryCodeSection');
+    if (!container) return;
+
+    let html = '';
+    html += `<div style='margin-bottom:16px;'>
+        <input id="surgerySearchBox" type="text"
+            placeholder="Tìm kiếm theo mã hoặc mô tả phẫu thuật..."
+            style="width:350px; font-size:1.1em; padding:6px 10px; border-radius:6px; border:1px solid #bbb;"
+            autocomplete="off">
+    </div>`;
+    html += '<div id="surgeryTables"></div>';
+    container.innerHTML = html;
+
+    const searchBox = document.getElementById('surgerySearchBox');
+    surgerySearch = surgerySearch || '';
+    searchBox.value = surgerySearch;
+    searchBox.addEventListener('input', function () {
+        surgerySearch = searchBox.value;
+        renderSurgeryTables();
+    });
+
+    renderSurgeryTables();
+}
+
+function renderSurgeryTables() {
+    const wrapper = document.getElementById('surgeryTables');
+    if (!wrapper) return;
+
+    let html = '';
+
+    // Bảng yêu thích
+    html += '<div class="icd-title">Mã phẫu thuật yêu thích</div>';
+    html += '<table class="icd-table">';
+    html += '<tr><th></th><th>Mã</th><th>Mô tả</th><th></th></tr>';
+    Object.keys(surgeryFav || {}).forEach(function (code) {
+        const item = surgeryData[code];
+        if (!item) return;
+        if (!surgeryMatch(code, item)) return;
+        html += renderSurgeryRow(code, item);
+    });
+    html += '</table>';
+
+    // Toggle hiển thị tất cả
+    html += `<button id="toggleAllSurgery" style="margin:12px 0 8px 0; padding:8px 22px; font-size:1em; border-radius:6px; border:1px solid #a000a0; background:#fff; color:#a000a0; cursor:pointer;">Tất cả mã phẫu thuật</button>`;
+
+    // Bảng tất cả mã phẫu thuật
+    html += `<div id="allSurgeryTable" style="display:${surgeryShowAll ? '' : 'none'};">`;
+    html += '<div class="icd-title">Tất cả mã phẫu thuật</div>';
+    html += '<table class="icd-table">';
+    html += '<tr><th></th><th>Mã</th><th>Mô tả</th><th></th></tr>';
+    Object.keys(surgeryData || {}).forEach(function (code) {
+        if (surgeryFav[code]) return;
+        const item = surgeryData[code];
+        if (!item) return;
+        if (!surgeryMatch(code, item)) return;
+        html += renderSurgeryRow(code, item);
+    });
+    html += '</table></div>';
+
+    // Form thêm mới
+    html += '<div class="icd-title">Thêm mã phẫu thuật</div>';
+    html += `<form class="manual-form" onsubmit="addSurgery(event)">
+        <input id="surgeryCodeInput" placeholder="Mã phẫu thuật" required maxlength="20">
+        <input id="surgeryDescInput" placeholder="Mô tả phẫu thuật" required maxlength="200">
+        <button type="submit">Thêm</button>
+    </form>`;
+
+    wrapper.innerHTML = html;
+
+    const toggleBtn = document.getElementById('toggleAllSurgery');
+    if (toggleBtn) {
+        toggleBtn.onclick = function () {
+            surgeryShowAll = !surgeryShowAll;
+            renderSurgeryTables();
+        };
+    }
+}
+
+function surgeryMatch(code, item) {
+    if (!surgerySearch) return true;
+    const s = surgerySearch.toLowerCase();
+    return (code && code.toLowerCase().includes(s)) ||
+        (item.desc && item.desc.toLowerCase().includes(s));
+}
+
+function highlightSurgery(text) {
+    if (!surgerySearch || !text) return text || '';
+    const s = surgerySearch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return text.replace(new RegExp(s, 'gi'), function (match) {
+        return "<span style='background:yellow;'>" + match + "</span>";
+    });
+}
+
+function renderSurgeryRow(code, item) {
+    const safeCode = (code || '').replace(/"/g, '&quot;');
+    const safeDesc = (item.desc || '').replace(/"/g, '&quot;');
+
+    if (surgeryEditingCode === code) {
+        return `<tr>
+            <td></td>
+            <td><input id="editSurgeryCode" value="${safeCode}" style="width:95%"></td>
+            <td><input id="editSurgeryDesc" value="${safeDesc}" style="width:95%"></td>
+            <td>
+                <button onclick="saveEditSurgery('${safeCode}')">Lưu</button>
+                <button onclick="cancelEditSurgery()">Hủy</button>
+                <button onclick="deleteSurgery('${safeCode}')">Xóa</button>
+            </td>
+        </tr>`;
+    }
+
+    const isFav = !!surgeryFav[code];
+    const star = isFav
+        ? `<span class="icd-fav active" onclick="toggleSurgeryFav('${safeCode}')">★</span>`
+        : `<span class="icd-fav" onclick="toggleSurgeryFav('${safeCode}')">☆</span>`;
+
+    return `<tr>
+        <td>${star}</td>
+        <td>${highlightSurgery(code)}</td>
+        <td>${highlightSurgery(item.desc || '')}</td>
+        <td>
+            <button onclick="editSurgery('${safeCode}')">Sửa</button>
+            <button onclick="deleteSurgery('${safeCode}')">Xóa</button>
+        </td>
+    </tr>`;
+}
+
+function addSurgery(e) {
+    e.preventDefault();
+    initSurgeryData();
+    const codeInput = document.getElementById('surgeryCodeInput');
+    const descInput = document.getElementById('surgeryDescInput');
+    const code = (codeInput && codeInput.value || '').trim();
+    const desc = (descInput && descInput.value || '').trim();
+    if (!code || !desc) {
+        alert('Vui lòng nhập đầy đủ Mã phẫu thuật và Mô tả.');
+        return;
+    }
+    if (surgeryData[code]) {
+        alert('Đã tồn tại mã phẫu thuật này. Vui lòng nhập mã khác.');
+        return;
+    }
+    surgeryData[code] = { desc: desc };
+    saveSurgeryData();
+    if (codeInput) codeInput.value = '';
+    if (descInput) descInput.value = '';
+    renderSurgeryTables();
+}
+
+function editSurgery(code) {
+    surgeryEditingCode = code;
+    renderSurgeryTables();
+}
+
+function cancelEditSurgery() {
+    surgeryEditingCode = null;
+    renderSurgeryTables();
+}
+
+function saveEditSurgery(oldCode) {
+    initSurgeryData();
+    const codeInput = document.getElementById('editSurgeryCode');
+    const descInput = document.getElementById('editSurgeryDesc');
+    if (!codeInput || !descInput) return;
+    const newCode = codeInput.value.trim();
+    const newDesc = descInput.value.trim();
+    if (!newCode || !newDesc) {
+        alert('Vui lòng nhập đầy đủ Mã phẫu thuật và Mô tả.');
+        return;
+    }
+    if (newCode !== oldCode && surgeryData[newCode]) {
+        alert('Đã tồn tại mã phẫu thuật này. Vui lòng nhập mã khác.');
+        return;
+    }
+    const existing = surgeryData[oldCode] || {};
+    delete surgeryData[oldCode];
+    surgeryData[newCode] = {
+        desc: newDesc
+    };
+
+    if (surgeryFav[oldCode]) {
+        delete surgeryFav[oldCode];
+        surgeryFav[newCode] = true;
+    }
+
+    surgeryEditingCode = null;
+    saveSurgeryData();
+    renderSurgeryTables();
+}
+
+function deleteSurgery(code) {
+    initSurgeryData();
+    if (!confirm('Bạn có chắc muốn xóa mã phẫu thuật này?')) return;
+    if (surgeryData[code]) {
+        delete surgeryData[code];
+    }
+    if (surgeryFav[code]) {
+        delete surgeryFav[code];
+    }
+    saveSurgeryData();
+    renderSurgeryTables();
+}
+
+function toggleSurgeryFav(code) {
+    initSurgeryData();
+    if (surgeryFav[code]) {
+        delete surgeryFav[code];
+    } else {
+        surgeryFav[code] = true;
+    }
+    saveSurgeryData();
+    renderSurgeryTables();
+}
+
+// =========================
+// MÃ GÓI MỔ + ĐẺ (localStorage)
+// =========================
+
+function initPackageData() {
+    if (packageInitialized) return;
+    packageInitialized = true;
+
+    // Load từ localStorage nếu có
+    try {
+        const raw = localStorage.getItem(PACKAGE_STORAGE_KEY);
+        if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed && typeof parsed === 'object') {
+                packageData = parsed;
+            }
+        }
+    } catch (e) {
+        console.error('Không đọc được packageData từ localStorage:', e);
+    }
+    if (!packageData || typeof packageData !== 'object') {
+        packageData = {};
+    }
+
+    // Nếu chưa có dữ liệu thì khởi tạo từ bảng mẫu (ảnh)
+    if (Object.keys(packageData).length === 0) {
+        packageData = {
+            '33515': {
+                week: '32',
+                name: 'Thai đơn - đẻ thường 32 tuần 1 giường 25/3/2024',
+                price: ''
+            },
+            '33303': {
+                week: '36',
+                name: 'Thai đơn - đẻ thường 36 tuần 1 giường 25/3/2024',
+                price: '31.330.000'
+            },
+            '33539': {
+                week: '36',
+                name: 'Thai đơn - đẻ thường 36 tuần 1 giường 25/3/2024',
+                price: '28.240.000'
+            },
+            '33715': {
+                week: '38',
+                name: 'Thai đơn - đẻ thường 38 tuần 1 giường 25/3/2024',
+                price: ''
+            },
+            '33736': {
+                week: '38',
+                name: 'Thai đơn - đẻ thường 38 tuần 2 giường 25/3/2024',
+                price: ''
+            }
+        };
+    }
+
+    // Load danh sách yêu thích
+    try {
+        const favRaw = localStorage.getItem(PACKAGE_FAV_STORAGE_KEY);
+        if (favRaw) {
+            const parsedFav = JSON.parse(favRaw);
+            if (parsedFav && typeof parsedFav === 'object') {
+                packageFav = parsedFav;
+            }
+        }
+    } catch (e) {
+        console.error('Không đọc được packageFav từ localStorage:', e);
+    }
+    if (!packageFav || typeof packageFav !== 'object') {
+        packageFav = {};
+    }
+}
+
+function savePackageData() {
+    try {
+        localStorage.setItem(PACKAGE_STORAGE_KEY, JSON.stringify(packageData || {}));
+        localStorage.setItem(PACKAGE_FAV_STORAGE_KEY, JSON.stringify(packageFav || {}));
+    } catch (e) {
+        console.error('Không lưu được packageData vào localStorage:', e);
+    }
+    // Đồng bộ server (best-effort)
+    syncBangmaToServer();
+}
+
+function renderPackageSection() {
+    initPackageData();
+    const container = document.getElementById('packageCodeSection');
+    if (!container) return;
+
+    let html = '';
+    html += `<div style='margin-bottom:16px;'>
+        <input id="packageSearchBox" type="text"
+            placeholder="Tìm kiếm theo mã, tuần, tên gói hoặc giá..."
+            style="width:350px; font-size:1.1em; padding:6px 10px; border-radius:6px; border:1px solid #bbb;"
+            autocomplete="off">
+    </div>`;
+    html += '<div id="packageTables"></div>';
+    container.innerHTML = html;
+
+    const searchBox = document.getElementById('packageSearchBox');
+    packageSearch = packageSearch || '';
+    searchBox.value = packageSearch;
+    searchBox.addEventListener('input', function () {
+        packageSearch = searchBox.value;
+        renderPackageTables();
+    });
+
+    renderPackageTables();
+}
+
+function renderPackageTables() {
+    const wrapper = document.getElementById('packageTables');
+    if (!wrapper) return;
+
+    let html = '';
+
+    // Bảng yêu thích
+    html += '<div class="icd-title">Mã gói mổ+đẻ yêu thích</div>';
+    html += '<table class="icd-table">';
+    html += '<tr><th></th><th>Mã</th><th>Tuần</th><th>Tên gói</th><th>Giá</th><th></th></tr>';
+    Object.keys(packageFav || {}).forEach(function (code) {
+        const item = packageData[code];
+        if (!item) return;
+        if (!packageMatch(code, item)) return;
+        html += renderPackageRow(code, item);
+    });
+    html += '</table>';
+
+    // Toggle hiển thị tất cả
+    html += `<button id="toggleAllPackage" style="margin:12px 0 8px 0; padding:8px 22px; font-size:1em; border-radius:6px; border:1px solid #a000a0; background:#fff; color:#a000a0; cursor:pointer;">Tất cả mã gói mổ+đẻ</button>`;
+
+    // Bảng tất cả gói
+    html += `<div id="allPackageTable" style="display:${packageShowAll ? '' : 'none'};">`;
+    html += '<div class="icd-title">Tất cả mã gói mổ+đẻ</div>';
+    html += '<table class="icd-table">';
+    html += '<tr><th></th><th>Mã</th><th>Tuần</th><th>Tên gói</th><th>Giá</th><th></th></tr>';
+    Object.keys(packageData || {}).forEach(function (code) {
+        if (packageFav[code]) return;
+        const item = packageData[code];
+        if (!item) return;
+        if (!packageMatch(code, item)) return;
+        html += renderPackageRow(code, item);
+    });
+    html += '</table></div>';
+
+    // Form thêm mới
+    html += '<div class="icd-title">Thêm mã gói mổ+đẻ</div>';
+    html += `<form class="manual-form" onsubmit="addPackageCode(event)">
+        <input id="packageCodeInput" placeholder="Mã" required maxlength="20">
+        <input id="packageWeekInput" placeholder="Tuần" maxlength="10">
+        <input id="packageNameInput" placeholder="Tên gói" required maxlength="200">
+        <input id="packagePriceInput" placeholder="Giá" maxlength="50">
+        <button type="submit">Thêm</button>
+    </form>`;
+
+    wrapper.innerHTML = html;
+
+    const toggleBtn = document.getElementById('toggleAllPackage');
+    if (toggleBtn) {
+        toggleBtn.onclick = function () {
+            packageShowAll = !packageShowAll;
+            renderPackageTables();
+        };
+    }
+}
+
+function packageMatch(code, item) {
+    if (!packageSearch) return true;
+    const s = packageSearch.toLowerCase();
+    return (code && code.toLowerCase().includes(s)) ||
+        (item.week && item.week.toLowerCase().includes(s)) ||
+        (item.name && item.name.toLowerCase().includes(s)) ||
+        (item.price && item.price.toLowerCase().includes(s));
+}
+
+function highlightPackage(text) {
+    if (!packageSearch || !text) return text || '';
+    const s = packageSearch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return text.replace(new RegExp(s, 'gi'), function (match) {
+        return "<span style='background:yellow;'>" + match + "</span>";
+    });
+}
+
+function renderPackageRow(code, item) {
+    const safeCode = (code || '').replace(/"/g, '&quot;');
+    const safeWeek = (item.week || '').replace(/"/g, '&quot;');
+    const safeName = (item.name || '').replace(/"/g, '&quot;');
+    const safePrice = (item.price || '').replace(/"/g, '&quot;');
+
+    if (packageEditingCode === code) {
+        return `<tr>
+            <td></td>
+            <td><input id="editPackageCode" value="${safeCode}" style="width:95%"></td>
+            <td><input id="editPackageWeek" value="${safeWeek}" style="width:95%"></td>
+            <td><input id="editPackageName" value="${safeName}" style="width:95%"></td>
+            <td><input id="editPackagePrice" value="${safePrice}" style="width:95%"></td>
+            <td>
+                <button onclick="saveEditPackage('${safeCode}')">Lưu</button>
+                <button onclick="cancelEditPackage()">Hủy</button>
+                <button onclick="deletePackageCode('${safeCode}')">Xóa</button>
+            </td>
+        </tr>`;
+    }
+
+    const isFav = !!packageFav[code];
+    const star = isFav
+        ? `<span class="icd-fav active" onclick="togglePackageFav('${safeCode}')">★</span>`
+        : `<span class="icd-fav" onclick="togglePackageFav('${safeCode}')">☆</span>`;
+
+    return `<tr>
+        <td>${star}</td>
+        <td>${highlightPackage(code)}</td>
+        <td>${highlightPackage(item.week || '')}</td>
+        <td>${highlightPackage(item.name || '')}</td>
+        <td>${highlightPackage(item.price || '')}</td>
+        <td>
+            <button onclick="editPackage('${safeCode}')">Sửa</button>
+            <button onclick="deletePackageCode('${safeCode}')">Xóa</button>
+        </td>
+    </tr>`;
+}
+
+function addPackageCode(e) {
+    e.preventDefault();
+    initPackageData();
+    const codeInput = document.getElementById('packageCodeInput');
+    const weekInput = document.getElementById('packageWeekInput');
+    const nameInput = document.getElementById('packageNameInput');
+    const priceInput = document.getElementById('packagePriceInput');
+
+    const code = (codeInput && codeInput.value || '').trim();
+    const week = (weekInput && weekInput.value || '').trim();
+    const name = (nameInput && nameInput.value || '').trim();
+    const price = (priceInput && priceInput.value || '').trim();
+
+    if (!code || !name) {
+        alert('Vui lòng nhập ít nhất Mã và Tên gói.');
+        return;
+    }
+    if (packageData[code]) {
+        alert('Đã tồn tại mã gói này. Vui lòng nhập mã khác.');
+        return;
+    }
+
+    packageData[code] = { week: week, name: name, price: price };
+    savePackageData();
+
+    if (codeInput) codeInput.value = '';
+    if (weekInput) weekInput.value = '';
+    if (nameInput) nameInput.value = '';
+    if (priceInput) priceInput.value = '';
+
+    renderPackageTables();
+}
+
+function editPackage(code) {
+    packageEditingCode = code;
+    renderPackageTables();
+}
+
+function cancelEditPackage() {
+    packageEditingCode = null;
+    renderPackageTables();
+}
+
+function saveEditPackage(oldCode) {
+    initPackageData();
+    const codeInput = document.getElementById('editPackageCode');
+    const weekInput = document.getElementById('editPackageWeek');
+    const nameInput = document.getElementById('editPackageName');
+    const priceInput = document.getElementById('editPackagePrice');
+    if (!codeInput || !nameInput || !weekInput || !priceInput) return;
+
+    const newCode = codeInput.value.trim();
+    const newWeek = weekInput.value.trim();
+    const newName = nameInput.value.trim();
+    const newPrice = priceInput.value.trim();
+
+    if (!newCode || !newName) {
+        alert('Vui lòng nhập ít nhất Mã và Tên gói.');
+        return;
+    }
+    if (newCode !== oldCode && packageData[newCode]) {
+        alert('Đã tồn tại mã gói này. Vui lòng nhập mã khác.');
+        return;
+    }
+
+    const existing = packageData[oldCode] || {};
+    delete packageData[oldCode];
+    packageData[newCode] = {
+        week: newWeek,
+        name: newName,
+        price: newPrice
+    };
+
+    if (packageFav[oldCode]) {
+        delete packageFav[oldCode];
+        packageFav[newCode] = true;
+    }
+
+    packageEditingCode = null;
+    savePackageData();
+    renderPackageTables();
+}
+
+function deletePackageCode(code) {
+    initPackageData();
+    if (!confirm('Bạn có chắc muốn xóa mã gói này?')) return;
+    if (packageData[code]) {
+        delete packageData[code];
+    }
+    if (packageFav[code]) {
+        delete packageFav[code];
+    }
+    savePackageData();
+    renderPackageTables();
+}
+
+function togglePackageFav(code) {
+    initPackageData();
+    if (packageFav[code]) {
+        delete packageFav[code];
+    } else {
+        packageFav[code] = true;
+    }
+    savePackageData();
+    renderPackageTables();
+}
+
+// =========================
+// MÃ DINH DƯỠNG (localStorage)
+// =========================
+
+function initNutritionData() {
+    if (nutritionInitialized) return;
+    nutritionInitialized = true;
+
+    // Load từ localStorage nếu có
+    try {
+        const raw = localStorage.getItem(NUTRITION_STORAGE_KEY);
+        if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed && typeof parsed === 'object') {
+                nutritionData = parsed;
+            }
+        }
+    } catch (e) {
+        console.error('Không đọc được nutritionData từ localStorage:', e);
+    }
+    if (!nutritionData || typeof nutritionData !== 'object') {
+        nutritionData = {};
+    }
+
+    // Nếu chưa có dữ liệu thì khởi tạo từ bảng mẫu (ảnh)
+    if (Object.keys(nutritionData).length === 0) {
+        nutritionData = {
+            'BT01': {
+                name: 'Cơm 3 bữa chính + 1 bữa phụ',
+                nutrition: 'E kcal: 2000 - 2200; P: 60 - 80; L: 40 - 60; G: 300 - 350',
+                usage: 'Các bệnh thông thường'
+            },
+            'BT02': {
+                name: 'Cơm 3 bữa chính + 1 bữa phụ',
+                nutrition: 'E kcal: 1800 - 2000; P: 55 - 95; L: 30 - 50; G: 260 - 300',
+                usage: 'Các bệnh thông thường'
+            },
+            'BT03': {
+                name: '4 bữa mềm',
+                nutrition: 'E kcal: 1600 - 1800; P: 65 - 75; L: 35 - 45; G: 200 - 250',
+                usage: 'Các bệnh rối loạn tiêu hóa nhẹ'
+            },
+            'BT04': {
+                name: 'Mềm hơi lỏng (cháo súp, sữa pha loãng)',
+                nutrition: 'E kcal: 1500 - 1900; P: 55 - 60; L: 40 - 50; G: 200 - 240',
+                usage: 'Suy nhược, hậu phẫu, bệnh nặng sau hồi sức'
+            },
+            'PT01': {
+                name: 'Cháo loãng thịt nạc 4 bữa',
+                nutrition: 'E kcal: 770 - 900; P: 30 - 40; L: 15 - 20; G: 120 - 150',
+                usage: 'Khởi động lại tiêu hóa sau mổ, khai thông lưu thông ngoài đường tiêu hóa'
+            },
+            'PT02': {
+                name: 'Cháo 4 bữa',
+                nutrition: 'E kcal: 800 - 1000; P: 30 - 40; L: 15 - 20; G: 130 - 160',
+                usage: 'Sau phẫu thuật trong thời gian chuyển tiếp (1-3 ngày đầu)'
+            },
+            'PT03': {
+                name: 'Cơm 2 bữa + cơm 2 bữa phụ',
+                nutrition: 'E kcal: 1200 - 1400; P: 40 - 50; L: 25 - 35; G: 160 - 200',
+                usage: 'Giai đoạn trung gian phục hồi chức năng tiêu hóa'
+            },
+            'PT04': {
+                name: 'Cơm 3 bữa chính + 1 bữa phụ',
+                nutrition: 'E kcal: 1500 - 1900; P: 55 - 65; L: 40 - 55; G: 200 - 250',
+                usage: 'Giai đoạn hồi phục, chuẩn bị ra viện'
+            },
+            'PT05': {
+                name: 'Ngày 1-2 sau mổ: Cháo lỏng 5 bữa; Ngày 3-4: cháo đặc; Ngày 5-6: cơm mềm 4 bữa',
+                nutrition: 'E kcal: 1400 - 1800; P: 40 - 50; L: 25 - 35; G: 160 - 220',
+                usage: 'Các bệnh nhân hậu phẫu đại phẫu đường tiêu hóa hỗn hợp'
+            },
+            'SP01': {
+                name: 'Cơm 3 bữa chính + 2 bữa phụ',
+                nutrition: 'E kcal: 2000 - 2300; P: 80 - 100; L: 60 - 75; G: 280 - 320',
+                usage: 'Phụ nữ sau sinh'
+            },
+            'SP02': {
+                name: 'Cơm 3 bữa chính + 2 bữa phụ',
+                nutrition: 'E kcal: 2200 - 2500; P: 90 - 110; L: 60 - 80; G: 300 - 350',
+                usage: 'Phụ nữ cho con bú 6 tháng đầu'
+            },
+            'SP03': {
+                name: 'Cơm 3 bữa chính + 2 bữa phụ',
+                nutrition: 'E kcal: 2000 - 2300; P: 80 - 100; L: 60 - 75; G: 280 - 320',
+                usage: 'Phụ nữ cho con bú từ tháng thứ 3 trở đi'
+            },
+            'SP04': {
+                name: 'Cơm 3 bữa chính + 2 bữa phụ',
+                nutrition: 'E kcal: 1900 - 2200; P: 80 - 100; L: 60 - 70; G: 260 - 300',
+                usage: 'Nhiễm độc thai nghén'
+            },
+            'SP05': {
+                name: 'Cơm 3 bữa chính + 2 bữa phụ',
+                nutrition: 'E kcal: 1900 - 2200; P: 80 - 100; L: 60 - 70; G: 260 - 300',
+                usage: 'Phụ nữ sau sinh + tăng huyết áp'
+            },
+            'SP06': {
+                name: 'Cơm 3 bữa chính + 1 bữa phụ',
+                nutrition: 'E kcal: 1900 - 2200; P: 70 - 90; L: 50 - 60; G: 260 - 300',
+                usage: 'Phụ nữ sau sinh, ăn kiêng'
+            }
+        };
+    }
+
+    // Load danh sách yêu thích
+    try {
+        const favRaw = localStorage.getItem(NUTRITION_FAV_STORAGE_KEY);
+        if (favRaw) {
+            const parsedFav = JSON.parse(favRaw);
+            if (parsedFav && typeof parsedFav === 'object') {
+                nutritionFav = parsedFav;
+            }
+        }
+    } catch (e) {
+        console.error('Không đọc được nutritionFav từ localStorage:', e);
+    }
+    if (!nutritionFav || typeof nutritionFav !== 'object') {
+        nutritionFav = {};
+    }
+}
+
+function saveNutritionData() {
+    try {
+        localStorage.setItem(NUTRITION_STORAGE_KEY, JSON.stringify(nutritionData || {}));
+        localStorage.setItem(NUTRITION_FAV_STORAGE_KEY, JSON.stringify(nutritionFav || {}));
+    } catch (e) {
+        console.error('Không lưu được nutritionData vào localStorage:', e);
+    }
+    // Đồng bộ server (best-effort)
+    syncBangmaToServer();
+}
+
+// Gửi toàn bộ dữ liệu Bangma lên server (AppStorage.bangmaCodes)
+function syncBangmaToServer() {
+    try {
+        const payload = {
+            staff: staffData || {},
+            surgery: surgeryData || {},
+            packages: packageData || {},
+            nutrition: nutritionData || {}
+        };
+        fetch('/api/bangma_codes/export', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        }).catch(function (e) {
+            console.warn('Không đồng bộ được Bangma lên server:', e);
+        });
+    } catch (e) {
+        console.warn('Lỗi khi chuẩn bị đồng bộ Bangma lên server:', e);
+    }
+}
+
+function renderNutritionSection() {
+    initNutritionData();
+    const container = document.getElementById('nutritionCodeSection');
+    if (!container) return;
+
+    let html = '';
+    html += `<div style='margin-bottom:16px;'>
+        <input id="nutritionSearchBox" type="text"
+            placeholder="Tìm kiếm theo mã, tên suất ăn, thành phần hoặc áp dụng điều trị..."
+            style="width:350px; font-size:1.1em; padding:6px 10px; border-radius:6px; border:1px solid #bbb;"
+            autocomplete="off">
+    </div>`;
+    html += '<div id="nutritionTables"></div>';
+    container.innerHTML = html;
+
+    const searchBox = document.getElementById('nutritionSearchBox');
+    nutritionSearch = nutritionSearch || '';
+    searchBox.value = nutritionSearch;
+    searchBox.addEventListener('input', function () {
+        nutritionSearch = searchBox.value;
+        renderNutritionTables();
+    });
+
+    renderNutritionTables();
+}
+
+function renderNutritionTables() {
+    const wrapper = document.getElementById('nutritionTables');
+    if (!wrapper) return;
+
+    let html = '';
+
+    // Bảng yêu thích
+    html += '<div class="icd-title">Mã dinh dưỡng yêu thích</div>';
+    html += '<table class="icd-table">';
+    html += '<tr><th></th><th>Ký hiệu</th><th>Dạng chế biến</th><th>Thành phần dinh dưỡng</th><th>Áp dụng điều trị</th><th></th></tr>';
+    Object.keys(nutritionFav || {}).forEach(function (code) {
+        const item = nutritionData[code];
+        if (!item) return;
+        if (!nutritionMatch(code, item)) return;
+        html += renderNutritionRow(code, item);
+    });
+    html += '</table>';
+
+    // Toggle hiển thị tất cả
+    html += `<button id="toggleAllNutrition" style="margin:12px 0 8px 0; padding:8px 22px; font-size:1em; border-radius:6px; border:1px solid #a000a0; background:#fff; color:#a000a0; cursor:pointer;">Tất cả mã dinh dưỡng</button>`;
+
+    // Bảng tất cả
+    html += `<div id="allNutritionTable" style="display:${nutritionShowAll ? '' : 'none'};">`;
+    html += '<div class="icd-title">Tất cả mã dinh dưỡng</div>';
+    html += '<table class="icd-table">';
+    html += '<tr><th></th><th>Ký hiệu</th><th>Dạng chế biến</th><th>Thành phần dinh dưỡng</th><th>Áp dụng điều trị</th><th></th></tr>';
+    Object.keys(nutritionData || {}).forEach(function (code) {
+        if (nutritionFav[code]) return;
+        const item = nutritionData[code];
+        if (!item) return;
+        if (!nutritionMatch(code, item)) return;
+        html += renderNutritionRow(code, item);
+    });
+    html += '</table></div>';
+
+    // Form thêm mới
+    html += '<div class="icd-title">Thêm mã dinh dưỡng</div>';
+    html += `<form class="manual-form" onsubmit="addNutritionCode(event)">
+        <input id="nutritionCodeInput" placeholder="Ký hiệu" required maxlength="20">
+        <input id="nutritionNameInput" placeholder="Dạng chế biến" required maxlength="200">
+        <input id="nutritionCompInput" placeholder="Thành phần dinh dưỡng" required maxlength="300">
+        <input id="nutritionUsageInput" placeholder="Áp dụng điều trị" maxlength="200">
+        <button type="submit">Thêm</button>
+    </form>`;
+
+    wrapper.innerHTML = html;
+
+    const toggleBtn = document.getElementById('toggleAllNutrition');
+    if (toggleBtn) {
+        toggleBtn.onclick = function () {
+            nutritionShowAll = !nutritionShowAll;
+            renderNutritionTables();
+        };
+    }
+}
+
+function nutritionMatch(code, item) {
+    if (!nutritionSearch) return true;
+    const s = nutritionSearch.toLowerCase();
+    return (code && code.toLowerCase().includes(s)) ||
+        (item.name && item.name.toLowerCase().includes(s)) ||
+        (item.nutrition && item.nutrition.toLowerCase().includes(s)) ||
+        (item.usage && item.usage.toLowerCase().includes(s));
+}
+
+function highlightNutrition(text) {
+    if (!nutritionSearch || !text) return text || '';
+    const s = nutritionSearch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return text.replace(new RegExp(s, 'gi'), function (match) {
+        return "<span style='background:yellow;'>" + match + "</span>";
+    });
+}
+
+function renderNutritionRow(code, item) {
+    const safeCode = (code || '').replace(/"/g, '&quot;');
+    const safeName = (item.name || '').replace(/"/g, '&quot;');
+    const safeNutri = (item.nutrition || '').replace(/"/g, '&quot;');
+    const safeUsage = (item.usage || '').replace(/"/g, '&quot;');
+
+    if (nutritionEditingCode === code) {
+        return `<tr>
+            <td></td>
+            <td><input id="editNutritionCode" value="${safeCode}" style="width:95%"></td>
+            <td><input id="editNutritionName" value="${safeName}" style="width:95%"></td>
+            <td><input id="editNutritionComp" value="${safeNutri}" style="width:95%"></td>
+            <td><input id="editNutritionUsage" value="${safeUsage}" style="width:95%"></td>
+            <td>
+                <button onclick="saveEditNutrition('${safeCode}')">Lưu</button>
+                <button onclick="cancelEditNutrition()">Hủy</button>
+                <button onclick="deleteNutritionCode('${safeCode}')">Xóa</button>
+            </td>
+        </tr>`;
+    }
+
+    const isFav = !!nutritionFav[code];
+    const star = isFav
+        ? `<span class="icd-fav active" onclick="toggleNutritionFav('${safeCode}')">★</span>`
+        : `<span class="icd-fav" onclick="toggleNutritionFav('${safeCode}')">☆</span>`;
+
+    return `<tr>
+        <td>${star}</td>
+        <td>${highlightNutrition(code)}</td>
+        <td>${highlightNutrition(item.name || '')}</td>
+        <td>${highlightNutrition(item.nutrition || '')}</td>
+        <td>${highlightNutrition(item.usage || '')}</td>
+        <td>
+            <button onclick="editNutrition('${safeCode}')">Sửa</button>
+            <button onclick="deleteNutritionCode('${safeCode}')">Xóa</button>
+        </td>
+    </tr>`;
+}
+
+function addNutritionCode(e) {
+    e.preventDefault();
+    initNutritionData();
+    const codeInput = document.getElementById('nutritionCodeInput');
+    const nameInput = document.getElementById('nutritionNameInput');
+    const compInput = document.getElementById('nutritionCompInput');
+    const usageInput = document.getElementById('nutritionUsageInput');
+
+    const code = (codeInput && codeInput.value || '').trim();
+    const name = (nameInput && nameInput.value || '').trim();
+    const comp = (compInput && compInput.value || '').trim();
+    const usage = (usageInput && usageInput.value || '').trim();
+
+    if (!code || !name || !comp) {
+        alert('Vui lòng nhập đầy đủ Ký hiệu, Dạng chế biến và Thành phần dinh dưỡng.');
+        return;
+    }
+    if (nutritionData[code]) {
+        alert('Đã tồn tại mã dinh dưỡng này. Vui lòng nhập mã khác.');
+        return;
+    }
+
+    nutritionData[code] = { name: name, nutrition: comp, usage: usage };
+    saveNutritionData();
+
+    if (codeInput) codeInput.value = '';
+    if (nameInput) nameInput.value = '';
+    if (compInput) compInput.value = '';
+    if (usageInput) usageInput.value = '';
+
+    renderNutritionTables();
+}
+
+function editNutrition(code) {
+    nutritionEditingCode = code;
+    renderNutritionTables();
+}
+
+function cancelEditNutrition() {
+    nutritionEditingCode = null;
+    renderNutritionTables();
+}
+
+function saveEditNutrition(oldCode) {
+    initNutritionData();
+    const codeInput = document.getElementById('editNutritionCode');
+    const nameInput = document.getElementById('editNutritionName');
+    const compInput = document.getElementById('editNutritionComp');
+    const usageInput = document.getElementById('editNutritionUsage');
+    if (!codeInput || !nameInput || !compInput || !usageInput) return;
+
+    const newCode = codeInput.value.trim();
+    const newName = nameInput.value.trim();
+    const newComp = compInput.value.trim();
+    const newUsage = usageInput.value.trim();
+
+    if (!newCode || !newName || !newComp) {
+        alert('Vui lòng nhập đầy đủ Ký hiệu, Dạng chế biến và Thành phần dinh dưỡng.');
+        return;
+    }
+    if (newCode !== oldCode && nutritionData[newCode]) {
+        alert('Đã tồn tại mã dinh dưỡng này. Vui lòng nhập mã khác.');
+        return;
+    }
+
+    const existing = nutritionData[oldCode] || {};
+    delete nutritionData[oldCode];
+    nutritionData[newCode] = {
+        name: newName,
+        nutrition: newComp,
+        usage: newUsage
+    };
+
+    if (nutritionFav[oldCode]) {
+        delete nutritionFav[oldCode];
+        nutritionFav[newCode] = true;
+    }
+
+    nutritionEditingCode = null;
+    saveNutritionData();
+    renderNutritionTables();
+}
+
+function deleteNutritionCode(code) {
+    initNutritionData();
+    if (!confirm('Bạn có chắc muốn xóa mã dinh dưỡng này?')) return;
+    if (nutritionData[code]) {
+        delete nutritionData[code];
+    }
+    if (nutritionFav[code]) {
+        delete nutritionFav[code];
+    }
+    saveNutritionData();
+    renderNutritionTables();
+}
+
+function toggleNutritionFav(code) {
+    initNutritionData();
+    if (nutritionFav[code]) {
+        delete nutritionFav[code];
+    } else {
+        nutritionFav[code] = true;
+    }
+    saveNutritionData();
+    renderNutritionTables();
+}
+
+function toggleFavICD(code) {
+    const desc = allICD[code] || manualICDCache[code] || '';
+    if (favICD[code]) {
+        fetch('/api/icd/favorites', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code })
+        }).then(loadICD);
+    } else {
+        fetch('/api/icd/favorites', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code, desc })
+        }).then(loadICD);
+    }
+}
+
+function addManualICD(e) {
+    e.preventDefault();
+    const code = document.getElementById('manualCode').value.trim();
+    const desc = document.getElementById('manualDesc').value.trim();
+    if (!code || !desc) return;
+    fetch('/api/icd/manual', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code, desc })
+    }).then(response => response.json()).then(result => {
+        if (result.success) {
+            document.getElementById('manualCode').value = '';
+            document.getElementById('manualDesc').value = '';
+            updateManualICDCache();
+            alert('Thêm mã ICD thành công!');
+        } else {
+            alert('Lỗi khi thêm mã ICD');
+        }
+    }).catch(error => {
+        console.error('Error adding ICD:', error);
+        alert('Lỗi khi thêm mã ICD: ' + error.message);
+    });
+}
+
+function uploadExcelICD(e) {
+    e.preventDefault();
+    const fileInput = document.getElementById('excelFile');
+    const file = fileInput.files[0];
+
+    if (!file) {
+        alert('Vui lòng chọn file Excel');
+        return;
+    }
+
+    if (!confirm('⚠️ CẢNH BÁO: Việc này sẽ thay thế toàn bộ danh sách mã ICD hiện tại bằng dữ liệu từ file Excel. Bạn có chắc muốn tiếp tục?')) {
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    const originalText = submitBtn.textContent;
+    submitBtn.textContent = 'Đang xử lý...';
+    submitBtn.disabled = true;
+
+    fetch('/api/icd/upload-excel', {
+        method: 'POST',
+        body: formData
+    })
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                alert(`✅ Cập nhật thành công! Đã import ${result.count} mã ICD từ file Excel.`);
+                loadICD();
+            } else {
+                alert('❌ Lỗi khi cập nhật: ' + (result.error || 'Không thể xử lý file Excel'));
+            }
+        })
+        .catch(error => {
+            console.error('Error uploading Excel:', error);
+            alert('❌ Lỗi khi upload file Excel: ' + error.message);
+        })
+        .finally(() => {
+            submitBtn.textContent = originalText;
+            submitBtn.disabled = false;
+            fileInput.value = '';
+        });
+}
+
+function manualICDList() {
+    return Object.keys(manualICDCache || {});
+}
+
+function updateManualICDCache() {
+    fetch('/api/icd/manual').then(r => r.json()).then(manual => {
+        manualICDCache = manual || {};
+        renderICDTables();
+    });
+}
+
+function editICD(code) {
+    editingICD = code;
+    renderICDTables();
+}
+
+function cancelEditICD() {
+    editingICD = null;
+    renderICDTables();
+}
+
+function saveEditICD(code) {
+    const descInput = document.getElementById('editICDDesc');
+    if (!descInput) return;
+    const desc = descInput.value.trim();
+    if (!desc) {
+        alert('Vui lòng nhập mô tả cho mã ICD');
+        return;
+    }
+
+    fetch('/api/icd/manual', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code, desc })
+    })
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                editingICD = null;
+                updateManualICDCache();
+                alert('Cập nhật mã ICD thành công!');
+            } else {
+                alert('Lỗi khi cập nhật mã ICD');
+            }
+        })
+        .catch(error => {
+            console.error('Error updating ICD:', error);
+            alert('Lỗi khi cập nhật mã ICD: ' + error.message);
+        });
+}
+
+function deleteICD(code) {
+    if (!confirm('Bạn có chắc muốn xóa mã ICD này?')) return;
+    fetch('/api/icd/manual', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code })
+    })
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                editingICD = null;
+                updateManualICDCache();
+                alert('Xóa mã ICD thành công!');
+            } else {
+                alert('Lỗi khi xóa mã ICD');
+            }
+        })
+        .catch(error => {
+            console.error('Error deleting ICD:', error);
+            alert('Lỗi khi xóa mã ICD: ' + error.message);
+        });
+}
+
+function copyICDText(code, desc) {
+    const text = `${code} - ${desc}`;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+            alert('Đã sao chép: ' + text);
+        }).catch(err => {
+            console.error('Clipboard error:', err);
+            fallbackICDCopy(text);
+        });
+    } else {
+        fallbackICDCopy(text);
+    }
+}
+
+function fallbackICDCopy(text) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    alert('Đã sao chép: ' + text);
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    initCodeTabs();
+    loadICD();
+    // Chuẩn bị dữ liệu Mã nhân viên, Mã phẫu thuật, Mã gói mổ+đẻ, Mã dinh dưỡng (để lần đầu mở tab là có sẵn)
+    // Ưu tiên load từ server, nếu lỗi thì fallback localStorage + dữ liệu mặc định
+    (async function () {
+        try {
+            const res = await fetch('/api/bangma_codes/export');
+            if (res.ok) {
+                const data = await res.json();
+                if (data && typeof data === 'object') {
+                    if (data.staff && typeof data.staff === 'object') {
+                        staffData = data.staff;
+                        try {
+                            localStorage.setItem(STAFF_STORAGE_KEY, JSON.stringify(staffData));
+                        } catch (e) { console.warn('Không lưu được staffData từ server:', e); }
+                    }
+                    if (data.surgery && typeof data.surgery === 'object') {
+                        surgeryData = data.surgery;
+                        try {
+                            localStorage.setItem(SURGERY_STORAGE_KEY, JSON.stringify(surgeryData));
+                        } catch (e) { console.warn('Không lưu được surgeryData từ server:', e); }
+                    }
+                    if (data.packages && typeof data.packages === 'object') {
+                        packageData = data.packages;
+                        try {
+                            localStorage.setItem(PACKAGE_STORAGE_KEY, JSON.stringify(packageData));
+                        } catch (e) { console.warn('Không lưu được packageData từ server:', e); }
+                    }
+                    if (data.nutrition && typeof data.nutrition === 'object') {
+                        nutritionData = data.nutrition;
+                        try {
+                            localStorage.setItem(NUTRITION_STORAGE_KEY, JSON.stringify(nutritionData));
+                        } catch (e) { console.warn('Không lưu được nutritionData từ server:', e); }
+                    }
+                }
+            }
+        } catch (e) {
+            console.warn('Không load được dữ liệu Bangma từ server, dùng localStorage/dữ liệu mặc định.', e);
+        } finally {
+            initStaffData();
+            initSurgeryData();
+            initPackageData();
+            initNutritionData();
+        }
+    })();
+});
+</script>
+</body>
+</html>
+

@@ -38,7 +38,7 @@
         { id: 'lichlamviec', label: 'Lịch làm việc', href: 'lichlamviec.html', adminOnly: true },
         { id: 'nghiphep', label: 'Đăng Ký Nghỉ Phép', href: 'nghiphep.html', adminOnly: false },
         { id: 'lichtruc', label: 'Lịch Trực', href: 'lichtruc.html', adminOnly: true },
-        { id: 'hosobenhan', label: 'Hồ Sơ Bệnh Án', href: 'hosobenhan.html', adminOnly: false }
+        { id: 'hosobenhnhan', label: 'Hồ Sơ Bệnh Án', href: 'hosobenhnhan.html', adminOnly: false }
     ];
 
     var tabHtml = tabs.map(function (t) {
