@@ -13,7 +13,12 @@ if DATABASE_URL:
     if os.environ.get("RENDER") == "true" and "postgresql" in DATABASE_URL and "sslmode=" not in DATABASE_URL:
         sep = "&" if "?" in DATABASE_URL else "?"
         DATABASE_URL = DATABASE_URL + sep + "sslmode=require"
-    engine = create_engine(DATABASE_URL)
+    engine = create_engine(
+        DATABASE_URL,
+        pool_pre_ping=True,  # Kiểm tra kết nối trước mỗi request (tránh 503 khi wake từ sleep)
+        pool_size=1,
+        max_overflow=2,
+    )
 else:
     _db_path = Path(__file__).resolve().parent.parent / "app.db"
     SQLALCHEMY_DATABASE_URL = f"sqlite:///{_db_path}"

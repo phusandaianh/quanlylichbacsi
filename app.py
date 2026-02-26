@@ -20,8 +20,14 @@ from backend.app.routers import api_router
 
 BASE_DIR = Path(__file__).resolve().parent
 
-# Khởi tạo DB (nếu chưa có bảng)
-models.Base.metadata.create_all(bind=engine)
+# Khởi tạo DB (nếu chưa có bảng) — lỗi ở đây thường gây 503 trên Render
+import logging
+_log = logging.getLogger(__name__)
+try:
+    models.Base.metadata.create_all(bind=engine)
+except Exception as e:
+    _log.exception("Khởi tạo DB thất bại (kiểm tra DATABASE_URL trên Render): %s", e)
+    raise
 
 app = FastAPI(
     title="Quan ly lich truc",
