@@ -53,7 +53,7 @@
     var headerHtml =
         '<div class="header">' +
         '  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">' +
-        '    <h1 style="margin: 0; flex: 1;">🏥 Quản Lý Lịch làm việc Bác Sĩ & Đăng Ký Nghỉ Phép</h1>' +
+        '    <h1 style="margin: 0; flex: 1;">🏥 TRỢ LÝ BÁC SĨ</h1>' +
         '    <div style="display: flex; gap: 10px; align-items: center;">' +
         '      <a href="/" class="change-password-btn" style="margin: 0; text-decoration: none; color: inherit;">🔗 BVTA_link</a>' +
         '      <a href="/" class="change-password-btn" style="margin: 0; text-decoration: none; color: inherit;">📋 Quy định chung</a>' +

@@ -2985,12 +2985,19 @@
                 return;
             }
 
-            let html = '<div style="display: grid; gap: 15px;">';
+            let html = `
+                <div style="margin-bottom: 15px;">
+                    <input type="text" id="permissionsDoctorSearch" placeholder="🔍 Tìm bác sĩ theo tên..." 
+                           style="width: 100%; padding: 10px 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box;"
+                           oninput="filterPermissionsDoctorList(this.value)">
+                </div>
+                <div id="permissionsDoctorList" style="display: grid; gap: 15px;">`;
             
             doctorAccounts.forEach(account => {
                 const doctorKey = normalizeKey(account.username || account.name);
+                const searchText = ((account.name || '') + ' ' + (account.username || '')).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
                 html += `
-                    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #667eea;">
+                    <div class="permission-doctor-card" data-doctor-search="${(searchText || '').replace(/"/g, '&quot;')}" style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #667eea;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                             <h4 style="margin: 0; color: #333;">${account.name}</h4>
                             <div style="display: flex; gap: 8px;">
@@ -3032,6 +3039,17 @@
             html += '</div>';
             content.innerHTML = html;
             modal.classList.add('active');
+        }
+
+        // Lọc danh sách bác sĩ trong modal phân quyền theo từ khóa tìm kiếm
+        function filterPermissionsDoctorList(searchVal) {
+            const cards = document.querySelectorAll('.permission-doctor-card');
+            const q = (searchVal || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+            cards.forEach(card => {
+                const text = (card.getAttribute('data-doctor-search') || '');
+                const show = !q || text.indexOf(q) !== -1;
+                card.style.display = show ? '' : 'none';
+            });
         }
 
         // Đóng modal phân quyền

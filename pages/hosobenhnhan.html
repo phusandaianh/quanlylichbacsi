@@ -230,10 +230,11 @@
                 <p></p>
                 <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px;">
                     <button id="protocolBtn" class="btn btn-primary" style="padding:8px 14px;">Protocol Phẫu Thuật</button>
-                    <button id="restModeBtn" class="btn btn-primary" style="padding:8px 14px;">Chế độ nghỉ</button>
+                    <button id="pathologyBtn" class="btn btn-primary" style="padding:8px 14px;">Mô bệnh học</button>
                     <button id="icdBtn" class="btn btn-primary" style="padding:8px 14px;">Bảng mã</button>
                     <button id="thuocBtn" class="btn btn-primary" style="padding:8px 14px;">Thuốc</button>
-                    <button id="pathologyBtn" class="btn btn-primary" style="padding:8px 14px;">Mô bệnh học</button>
+                    <button id="tiemchungBtn" class="btn btn-primary" style="padding:8px 14px;">Tiêm chủng</button>
+                    <button id="restModeBtn" class="btn btn-primary" style="padding:8px 14px;">Chế độ nghỉ</button>
                     <!-- Add more action buttons here as needed -->
                 </div>
 
@@ -246,21 +247,22 @@
     <script src="../assets/js/app.js"></script>
 
     <script>
-        // Nút Protocol Phẫu Thuật, Chế độ nghỉ, Mã ICD, Thuốc, Mô bệnh học: mở các trang con riêng
+        // Nút mở các trang con: Protocol, Mô bệnh học, Bảng mã, Thuốc, Tiêm chủng, Chế độ nghỉ
         (function () {
             const protocolBtn = document.getElementById('protocolBtn');
-            const restModeBtn = document.getElementById('restModeBtn');
+            const pathologyBtn = document.getElementById('pathologyBtn');
             const icdBtn = document.getElementById('icdBtn');
             const thuocBtn = document.getElementById('thuocBtn');
-            const pathologyBtn = document.getElementById('pathologyBtn');
+            const tiemchungBtn = document.getElementById('tiemchungBtn');
+            const restModeBtn = document.getElementById('restModeBtn');
             if (protocolBtn) {
                 protocolBtn.addEventListener('click', function () {
                     window.location.href = 'protocol.html';
                 });
             }
-            if (restModeBtn) {
-                restModeBtn.addEventListener('click', function () {
-                    window.location.href = 'restmode.html';
+            if (pathologyBtn) {
+                pathologyBtn.addEventListener('click', function () {
+                    window.location.href = 'pathology.html';
                 });
             }
             if (icdBtn) {
@@ -273,9 +275,14 @@
                     window.location.href = 'thuoc.html';
                 });
             }
-            if (pathologyBtn) {
-                pathologyBtn.addEventListener('click', function () {
-                    window.location.href = 'pathology.html';
+            if (tiemchungBtn) {
+                tiemchungBtn.addEventListener('click', function () {
+                    window.location.href = 'tiemchung.html';
+                });
+            }
+            if (restModeBtn) {
+                restModeBtn.addEventListener('click', function () {
+                    window.location.href = 'restmode.html';
                 });
             }
         })();

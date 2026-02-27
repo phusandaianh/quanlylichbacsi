@@ -328,61 +328,33 @@ function loadPathology() {
     const target = document.getElementById('pathologyBody');
     if (!target) return;
 
-    const url = encodeURI('/raw/Quản lý mô bệnh học.html');
-
-    // Ưu tiên load dữ liệu đã lưu trên server
+    // Ưu tiên load dữ liệu đã lưu trên server (kể cả khi trả về mảng rỗng)
     fetch('/api/pathology/export')
         .then(r => (r.ok ? r.json() : []))
         .then(serverData => {
-            if (Array.isArray(serverData) && serverData.length) {
+            if (Array.isArray(serverData) && serverData.length > 0) {
                 pathoData = serverData;
-                buildPathologyUI(target);
-                return;
+            } else {
+                pathoData = [];
             }
-
-            // Nếu server chưa có dữ liệu, đọc từ file HTML gốc
-            return fetch(url)
-                .then(r => {
-                    if (!r.ok) throw new Error('Không tải được file Quản lý mô bệnh học.html');
-                    return r.text();
-                })
-                .then(html => {
-                    const parser = new DOMParser();
-                    const doc = parser.parseFromString(html, 'text/html');
-                    const container = doc.querySelector('.container');
-                    if (!container) {
-                        target.textContent = 'Không tìm thấy nội dung mô bệnh học trong file nguồn.';
-                        return;
-                    }
-                    const table = container.querySelector('#moBenhHocTable');
-                    if (!table) {
-                        target.textContent = 'Không tìm thấy bảng mô bệnh học.';
-                        return;
-                    }
-
-                    const rows = table.querySelectorAll('tbody tr');
-                    pathoData = [];
-                    rows.forEach(tr => {
-                        const cells = tr.querySelectorAll('td');
-                        if (cells.length < 5) return;
-                        const loai = (cells[1].innerText || '').trim();
-                        const maSo = (cells[2].innerText || '').trim();
-                        const ten = (cells[3].innerText || '').trim();
-                        const giaText = (cells[4].innerText || '').replace(/[^\d]/g, '');
-                        const gia = parseInt(giaText, 10) || 0;
-                        if (loai && maSo && ten) {
-                            pathoData.push({ loai, maSo, tenDichVu: ten, gia });
-                        }
-                    });
-
-                    buildPathologyUI(target);
-                    // Seed dữ liệu ban đầu lên server để lần sau load nhanh từ API
-                    persistPathology();
-                });
+            buildPathologyUI(target);
+            if (pathoData.length === 0) {
+                const hint = document.createElement('p');
+                hint.style.cssText = 'margin-bottom:12px; padding:10px; background:#f0f0f0; border-radius:6px; color:#555; font-size:0.95em;';
+                hint.textContent = 'Chưa có dữ liệu trên server. Dùng form bên dưới để thêm mới; dữ liệu sẽ tự động lưu lên server.';
+                const firstChild = target.querySelector('div');
+                if (firstChild) target.insertBefore(hint, firstChild);
+            }
         })
         .catch(err => {
             console.error(err);
-            target.textContent = 'Không thể tải nội dung mô bệnh học.';
+            pathoData = [];
+            buildPathologyUI(target);
+            const hint = document.createElement('p');
+            hint.style.cssText = 'margin-bottom:12px; padding:10px; background:#fff3cd; border-radius:6px; color:#856404; font-size:0.95em;';
+            hint.textContent = 'Không kết nối được server. Bạn vẫn có thể thêm/sửa/xóa tạm; dữ liệu sẽ lưu lên server khi kết nối lại.';
+            const firstChild = target.querySelector('div');
+            if (firstChild) target.insertBefore(hint, firstChild);
         });
 }
 
