@@ -70,14 +70,10 @@ def put_pathology_export(
 ) -> dict:
     """
     Ghi đè toàn bộ danh sách mô bệnh học trên server bằng dữ liệu từ client.
-    Dùng cho chức năng "Đồng bộ server" từ trang pathology.html.
+    Tự động đồng bộ giống tab Mã ICD (Bangma) - gọi mỗi khi thêm/sửa/xóa.
+    Cho phép mảng rỗng để xóa hết dữ liệu trên server.
     """
-
-    if not body:
-        raise HTTPException(
-            status_code=400,
-            detail="Danh sách gửi lên đang rỗng.",
-        )
+    body = body or []
 
     unique_codes = set()
     for item in body:

@@ -99,7 +99,8 @@
 </div>
 
 <script>
-// Dữ liệu mô bệnh học (loai, maSo, tenDichVu, gia)
+// Dữ liệu mô bệnh học (loai, maSo, tenDichVu, gia) - đồng bộ server giống tab Mã ICD
+const PATHOLOGY_STORAGE_KEY = 'pathologyData';
 let pathoData = [];
 let editingIndex = null;
 
@@ -219,7 +220,7 @@ function saveEdit(idx) {
 }
 
 function deleteRow(idx) {
-    if (!confirm('Bạn có chắc chắn muốn xóa dịch vụ này (chỉ xóa trên màn hình, không lưu)?')) return;
+    if (!confirm('Bạn có chắc chắn muốn xóa dịch vụ này? Dữ liệu sẽ tự động đồng bộ lên server.')) return;
     pathoData.splice(idx, 1);
     if (editingIndex === idx) editingIndex = null;
     renderPathologyTable(document.getElementById('pathologySearch')?.value || '');
@@ -261,15 +262,24 @@ function addNewPathology() {
     persistPathology();
 }
 
-// Gửi toàn bộ pathoData lên server để lưu lại tự động
+// Đồng bộ mô bệnh học lên server (giống tab Mã ICD - gọi sau mỗi thêm/sửa/xóa)
 function persistPathology() {
-    if (!pathoData || !pathoData.length) return;
+    const data = pathoData || [];
+    try {
+        localStorage.setItem(PATHOLOGY_STORAGE_KEY, JSON.stringify(data));
+    } catch (e) {
+        console.warn('Không lưu được pathology vào localStorage:', e);
+    }
     fetch('/api/pathology/export', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(pathoData),
+        body: JSON.stringify(data),
+    }).then(r => {
+        if (r.ok) {
+            console.log('✅ Đã đồng bộ mô bệnh học lên server.');
+        }
     }).catch(err => {
-        console.error('Lỗi khi tự động lưu mô bệnh học lên server:', err);
+        console.error('Lỗi khi đồng bộ mô bệnh học lên server:', err);
     });
 }
 
@@ -328,31 +338,55 @@ function loadPathology() {
     const target = document.getElementById('pathologyBody');
     if (!target) return;
 
-    // Ưu tiên load dữ liệu đã lưu trên server (kể cả khi trả về mảng rỗng)
+    // Ưu tiên load từ server (giống tab Mã ICD), fallback localStorage khi lỗi
     fetch('/api/pathology/export')
-        .then(r => (r.ok ? r.json() : []))
+        .then(r => (r.ok ? r.json() : null))
         .then(serverData => {
-            if (Array.isArray(serverData) && serverData.length > 0) {
+            if (Array.isArray(serverData)) {
                 pathoData = serverData;
+                try {
+                    localStorage.setItem(PATHOLOGY_STORAGE_KEY, JSON.stringify(pathoData));
+                } catch (e) { console.warn('Không lưu pathology từ server vào localStorage:', e); }
             } else {
-                pathoData = [];
+                // Server trả lỗi hoặc không phải mảng → thử localStorage
+                try {
+                    const raw = localStorage.getItem(PATHOLOGY_STORAGE_KEY);
+                    if (raw) {
+                        const parsed = JSON.parse(raw);
+                        pathoData = Array.isArray(parsed) ? parsed : [];
+                    } else {
+                        pathoData = [];
+                    }
+                } catch (e) {
+                    pathoData = [];
+                }
             }
             buildPathologyUI(target);
             if (pathoData.length === 0) {
                 const hint = document.createElement('p');
                 hint.style.cssText = 'margin-bottom:12px; padding:10px; background:#f0f0f0; border-radius:6px; color:#555; font-size:0.95em;';
-                hint.textContent = 'Chưa có dữ liệu trên server. Dùng form bên dưới để thêm mới; dữ liệu sẽ tự động lưu lên server.';
+                hint.textContent = 'Chưa có dữ liệu. Dùng form bên dưới để thêm mới; dữ liệu sẽ tự động đồng bộ lên server.';
                 const firstChild = target.querySelector('div');
                 if (firstChild) target.insertBefore(hint, firstChild);
             }
         })
         .catch(err => {
             console.error(err);
-            pathoData = [];
+            try {
+                const raw = localStorage.getItem(PATHOLOGY_STORAGE_KEY);
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    pathoData = Array.isArray(parsed) ? parsed : [];
+                } else {
+                    pathoData = [];
+                }
+            } catch (e) {
+                pathoData = [];
+            }
             buildPathologyUI(target);
             const hint = document.createElement('p');
             hint.style.cssText = 'margin-bottom:12px; padding:10px; background:#fff3cd; border-radius:6px; color:#856404; font-size:0.95em;';
-            hint.textContent = 'Không kết nối được server. Bạn vẫn có thể thêm/sửa/xóa tạm; dữ liệu sẽ lưu lên server khi kết nối lại.';
+            hint.textContent = 'Không kết nối được server. Dùng dữ liệu từ bộ nhớ tạm; dữ liệu sẽ tự động đồng bộ lên server khi kết nối lại.';
             const firstChild = target.querySelector('div');
             if (firstChild) target.insertBefore(hint, firstChild);
         });
