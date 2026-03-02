@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Quản lý các mẫu protocol phẫu thuật</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -263,6 +263,22 @@
         /* Dropdown giới tính */
         .gender-select .gender-options {
             display: none;
+        }
+        /* Responsive: Tablet & Smartphone */
+        @media (max-width: 1024px) {
+            .container { margin: 12px auto; padding: 16px; max-width: 100%; }
+        }
+        @media (max-width: 768px) {
+            .container { margin: 10px; padding: 14px; }
+            .home-button { min-height: 44px; padding: 10px 16px; }
+            .category-card { padding: 14px; }
+            .template-header { padding: 12px; }
+            .button-row { flex-wrap: wrap; padding: 12px; }
+            .btn { min-height: 40px; }
+        }
+        @media (max-width: 480px) {
+            .container { margin: 8px; padding: 12px; }
+            h1 { font-size: 1.2rem; }
         }
     </style>
 </head>

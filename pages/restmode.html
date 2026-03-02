@@ -2,13 +2,18 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
     <title>Chế độ nghỉ làm việc</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             background: #fff;
             margin: 0;
+            padding-left: env(safe-area-inset-left, 0);
+            padding-right: env(safe-area-inset-right, 0);
+            padding-bottom: env(safe-area-inset-bottom, 0);
+            min-height: 100vh;
+            -webkit-text-size-adjust: 100%;
         }
         .container {
             max-width: 1200px;
@@ -79,6 +84,36 @@
         }
         .copied-highlight {
             background: #d2f8d2 !important;
+        }
+
+        /* ========== Responsive: Tablet & Smartphone ========== */
+        @media (max-width: 1024px) {
+            .container { margin: 12px auto; padding: 16px; max-width: 100%; }
+            .rest-mode { padding: 12px; }
+        }
+        @media (max-width: 768px) {
+            .container { margin: 10px; padding: 14px; }
+            .home-button {
+                padding: 10px 16px;
+                min-height: 44px;
+                font-size: 14px;
+            }
+            .rest-mode-header { flex-wrap: wrap; gap: 8px; }
+            .rest-mode-controls { margin-left: 0; width: 100%; }
+            .icon-btn {
+                padding: 8px 12px;
+                min-height: 40px;
+                font-size: 14px;
+            }
+            div[style*="display:flex"][style*="flex-wrap"] {
+                flex-direction: column !important;
+            }
+            #newTitle { min-width: 100% !important; }
+        }
+        @media (max-width: 480px) {
+            .container { margin: 8px; padding: 12px; }
+            .rest-mode { padding: 10px; }
+            .rest-mode-title { font-size: 1em; }
         }
     </style>
 </head>

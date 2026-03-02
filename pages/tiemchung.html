@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
     <title>Tiêm chủng - Quản Lý Lịch Bác Sĩ</title>
     <link rel="stylesheet" href="../assets/css/common.css">
     <style>
@@ -20,6 +20,13 @@
             cursor: pointer;
         }
         .home-button:hover { background-color: #e0e0e0; }
+        @media (max-width: 768px) {
+            .container { margin: 10px; padding: 14px; }
+            .home-button { min-height: 44px; padding: 10px 16px; }
+        }
+        @media (max-width: 480px) {
+            .container { margin: 8px; padding: 12px; }
+        }
     </style>
 </head>
 <body>

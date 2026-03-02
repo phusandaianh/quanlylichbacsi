@@ -2,14 +2,19 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
     <title>Quản lý mô bệnh học</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 0;
+            padding-left: env(safe-area-inset-left, 0);
+            padding-right: env(safe-area-inset-right, 0);
+            padding-bottom: env(safe-area-inset-bottom, 0);
             background: #f8f8f8;
+            min-height: 100vh;
+            -webkit-text-size-adjust: 100%;
         }
         .container {
             max-width: 1200px;
@@ -83,6 +88,54 @@
         .copy-highlight {
             background: #fff3cd !important;
             transition: background 0.3s ease;
+        }
+
+        /* ========== Responsive: Tablet & Smartphone ========== */
+        .pathology-wrapper {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            margin: 0 -10px;
+            padding: 0 10px;
+        }
+        @media (max-width: 1024px) {
+            .container {
+                margin: 12px auto;
+                padding: 18px;
+                max-width: 100%;
+            }
+            h1 { font-size: 1.25rem; margin-bottom: 16px; }
+            #pathologyTable { font-size: 0.9em; }
+            #pathologyTable th, #pathologyTable td { padding: 8px 6px; }
+        }
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                padding: 14px;
+                border-radius: 6px;
+            }
+            h1 { font-size: 1.1rem; margin-bottom: 12px; }
+            .home-button {
+                padding: 10px 16px;
+                min-height: 44px;
+                font-size: 14px;
+            }
+            #pathologyTable { font-size: 0.85em; min-width: 500px; }
+            #pathologyTable th, #pathologyTable td { padding: 6px 4px; }
+            .actions .btn {
+                padding: 8px 10px;
+                min-height: 40px;
+                font-size: 13px;
+            }
+            div[style*="display:flex"][style*="flex-wrap"] {
+                flex-direction: column !important;
+            }
+            div[style*="min-width:220px"] { min-width: 100% !important; }
+            div[style*="min-width:260px"] { min-width: 100% !important; }
+        }
+        @media (max-width: 480px) {
+            .container { margin: 8px; padding: 12px; }
+            h1 { font-size: 1rem; }
+            #pathologyTable { font-size: 0.8em; min-width: 450px; }
         }
     </style>
 </head>
@@ -306,9 +359,10 @@ function buildPathologyUI(target) {
                 <input id="newGia" type="number" min="0" step="1000" placeholder="Nhập giá" style="width:100%; padding:6px 8px; border:1px solid #ccc; border-radius:4px;">
             </div>
             <div>
-                <button type="button" onclick="addNewPathology()" style="padding:8px 16px; border:none; border-radius:6px; background:#880088; color:#fff; cursor:pointer;">Thêm mới</button>
+                <button type="button" onclick="addNewPathology()" style="padding:8px 16px; min-height:44px; border:none; border-radius:6px; background:#880088; color:#fff; cursor:pointer;">Thêm mới</button>
             </div>
         </div>
+        <div class="pathology-wrapper">
         <table id="pathologyTable" style="width:100%; border-collapse:collapse;">
             <thead>
                 <tr>
@@ -322,6 +376,7 @@ function buildPathologyUI(target) {
             </thead>
             <tbody></tbody>
         </table>
+        </div>
     `;
 
     const searchInput = document.getElementById('pathologySearch');

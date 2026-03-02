@@ -49,11 +49,12 @@ body {
 }
 
 /* ========== RESPONSIVE BREAKPOINTS ==========
-   Mobile: < 576px
+   Smartphone: < 576px
    Tablet: 576px - 991px  
    Desktop: >= 992px
    Large: >= 1200px
 */
+
 
 /* Desktop: giới hạn chiều rộng tối đa, căn giữa */
 @media (min-width: 992px) {
@@ -2793,6 +2794,38 @@ table {
     .tab-content {
         margin: 6px;
         border-radius: 8px;
+    }
+}
+
+/* ========== TABLET (768px - 1024px) - Máy tính bảng ========== */
+@media (min-width: 768px) and (max-width: 1024px) {
+    .container {
+        padding-left: max(8px, env(safe-area-inset-left));
+        padding-right: max(8px, env(safe-area-inset-right));
+    }
+    .tab-content {
+        margin: 12px 10px;
+        border-radius: 14px;
+    }
+    .form-container {
+        padding: 24px 20px;
+    }
+    .doctor-item {
+        padding: 14px 18px;
+    }
+    .submission-item {
+        padding: 14px 18px;
+    }
+}
+
+/* ========== SMARTPHONE - Tối ưu cuộn & touch ========== */
+@media (max-width: 767px) {
+    .container {
+        -webkit-overflow-scrolling: touch;
+    }
+    .tab-content.active {
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
     }
 }
 
