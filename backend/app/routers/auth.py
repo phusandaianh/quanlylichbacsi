@@ -1,7 +1,5 @@
 """
-API xác thực: đặt lại mật khẩu admin qua email.
-Chỉ cho phép email admin đã đăng ký (hangocdai.pkq3@gmail.com).
-Gửi mật khẩu tạm qua SMTP (Gmail) nếu cấu hình .env.
+API xác thực: đăng nhập (JWT), đặt lại mật khẩu admin qua email.
 """
 import json
 import os
@@ -12,14 +10,24 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
+from ..auth_utils import (
+    create_access_token,
+    hash_password,
+    normalize_key,
+    verify_password,
+)
 from ..database import get_db
 from .. import models
 from ..email_sender import is_smtp_configured, send_email
 
 router = APIRouter(tags=["auth"])
 
-# Email admin được phép đặt lại mật khẩu (có thể ghi đè bằng biến môi trường)
 ADMIN_RESET_EMAIL = os.getenv("ADMIN_RESET_EMAIL", "hangocdai.pkq3@gmail.com").strip().lower()
+
+
+class LoginBody(BaseModel):
+    username: str
+    password: str
 
 
 class RequestAdminResetBody(BaseModel):
@@ -47,6 +55,46 @@ def _save_accounts_to_db(db: Session, accounts: dict) -> None:
         row = models.AppStorage(key="accounts", value_json=value_json)
         db.add(row)
     db.commit()
+
+
+@router.post("/login")
+def login(body: LoginBody, db: Session = Depends(get_db)):
+    """
+    Đăng nhập: xác minh username/password, trả về JWT.
+    Mật khẩu được hash bằng bcrypt trên server.
+    """
+    username = (body.username or "").strip()
+    password = body.password or ""
+    if not username or not password:
+        raise HTTPException(status_code=400, detail="Vui lòng nhập tên đăng nhập và mật khẩu.")
+
+    key = normalize_key(username)
+    accounts = _get_accounts_from_db(db)
+
+    account = accounts.get(key)
+    if not account and isinstance(accounts, dict):
+        for k, acc in accounts.items():
+            if isinstance(acc, dict) and normalize_key(acc.get("username") or acc.get("name") or "") == key:
+                account = acc
+                key = k
+                break
+
+    if not account or not isinstance(account, dict):
+        raise HTTPException(status_code=401, detail="Tên đăng nhập hoặc mật khẩu không đúng.")
+
+    stored_pw = account.get("password", "")
+    if not verify_password(password, stored_pw):
+        raise HTTPException(status_code=401, detail="Tên đăng nhập hoặc mật khẩu không đúng.")
+
+    role = account.get("role", "doctor")
+    name = account.get("name") or account.get("username") or username
+    token = create_access_token(key=key, username=account.get("username", username), role=role, name=name)
+
+    return {
+        "ok": True,
+        "token": token,
+        "user": {"key": key, "username": account.get("username", username), "name": name, "role": role},
+    }
 
 
 def _generate_temp_password(length: int = 8) -> str:
@@ -92,7 +140,7 @@ def request_admin_reset(body: RequestAdminResetBody, db: Session = Depends(get_d
         )
 
     temp_password = _generate_temp_password()
-    accounts[admin_key]["password"] = temp_password
+    accounts[admin_key]["password"] = hash_password(temp_password)
     _save_accounts_to_db(db, accounts)
 
     # Gửi mật khẩu tạm qua email nếu đã cấu hình SMTP

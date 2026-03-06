@@ -1,15 +1,18 @@
 """
 API đọc/ghi dữ liệu ứng dụng (thay localStorage).
-Format trả về giống backup export để frontend dùng thay cho load từ localStorage.
+- GET: công khai (strip mật khẩu khỏi accounts)
+- PUT: yêu cầu JWT (hash mật khẩu trước khi lưu)
 """
 import json
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from ..auth_utils import hash_accounts_passwords, strip_passwords_from_accounts
 from ..database import get_db
 from .. import models
+from ..deps import get_current_user_optional
 
 router = APIRouter(tags=["storage"])
 
@@ -24,8 +27,8 @@ STORAGE_KEYS_ORDER = [
 ]
 
 
-def _storage_to_export_shape(rows: List[models.AppStorage]) -> Dict[str, Any]:
-    """Chuyển danh sách row app_storage thành object giống backup (có doctors: { lanhdao, cot1, ... })."""
+def _storage_to_export_shape(rows: List[models.AppStorage], strip_passwords: bool = True) -> Dict[str, Any]:
+    """Chuyển danh sách row app_storage thành object giống backup. strip_passwords: loại mật khẩu khỏi accounts."""
     by_key = {r.key: r.value_json for r in rows}
     out = {}
     doctors = {}
@@ -51,14 +54,17 @@ def _storage_to_export_shape(rows: List[models.AppStorage]) -> Dict[str, Any]:
         if key in doctor_storage_keys:
             continue
         try:
-            out[key] = json.loads(by_key[key] or "null")
+            val = json.loads(by_key[key] or "null")
+            if key == "accounts" and strip_passwords and isinstance(val, dict):
+                val = strip_passwords_from_accounts(val)
+            out[key] = val
         except Exception:
             out[key] = None
     return out
 
 
 def _export_shape_to_storage(data: Dict[str, Any]) -> Dict[str, str]:
-    """Chuyển object dạng backup thành key -> value_json cho app_storage."""
+    """Chuyển object dạng backup thành key -> value_json. Hash mật khẩu trong accounts trước khi lưu."""
     out = {}
     doctors = data.get("doctors") or {}
     for g, storage_key in [
@@ -75,6 +81,8 @@ def _export_shape_to_storage(data: Dict[str, Any]) -> Dict[str, str]:
     for key, value in data.items():
         if key in skip:
             continue
+        if key == "accounts" and isinstance(value, dict):
+            value = hash_accounts_passwords(value)
         out[key] = json.dumps(value) if value is not None else "null"
     return out
 
@@ -89,12 +97,34 @@ def get_full_export(db: Session = Depends(get_db)):
     return _storage_to_export_shape(rows)
 
 
+def _has_any_accounts(db: Session) -> bool:
+    """Kiểm tra DB đã có accounts chưa."""
+    row = db.query(models.AppStorage).filter(models.AppStorage.key == "accounts").first()
+    if not row or not row.value_json:
+        return False
+    try:
+        data = json.loads(row.value_json)
+        return isinstance(data, dict) and len(data) > 0
+    except Exception:
+        return False
+
+
 @router.put("/export")
-def put_full_export(body: Dict[str, Any], db: Session = Depends(get_db)):
+def put_full_export(
+    body: Dict[str, Any],
+    db: Session = Depends(get_db),
+    current_user: Optional[dict] = Depends(get_current_user_optional),
+):
     """
     Ghi toàn bộ dữ liệu (format giống backup).
-    Frontend gọi khi cần lưu (thay cho ghi localStorage).
+    Yêu cầu JWT (trừ lần bootstrap đầu tiên khi DB chưa có accounts).
+    Mật khẩu trong accounts được hash trước khi lưu.
     """
+    if not current_user and _has_any_accounts(db):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Chưa đăng nhập. Vui lòng đăng nhập để đồng bộ dữ liệu.",
+        )
     try:
         flat = _export_shape_to_storage(body)
         for key, value_json in flat.items():

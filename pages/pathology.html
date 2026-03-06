@@ -315,7 +315,7 @@ function addNewPathology() {
     persistPathology();
 }
 
-// Đồng bộ mô bệnh học lên server (giống tab Mã ICD - gọi sau mỗi thêm/sửa/xóa)
+// Đồng bộ mô bệnh học lên server (yêu cầu đăng nhập - JWT)
 function persistPathology() {
     const data = pathoData || [];
     try {
@@ -323,13 +323,19 @@ function persistPathology() {
     } catch (e) {
         console.warn('Không lưu được pathology vào localStorage:', e);
     }
+    const headers = { 'Content-Type': 'application/json' };
+    const token = localStorage.getItem('authToken');
+    if (token) headers['Authorization'] = 'Bearer ' + token;
     fetch('/api/pathology/export', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: headers,
         body: JSON.stringify(data),
     }).then(r => {
         if (r.ok) {
             console.log('✅ Đã đồng bộ mô bệnh học lên server.');
+        } else if (r.status === 401) {
+            alert('Phiên đăng nhập hết hạn. Vui lòng đăng nhập tại trang chủ.');
+            window.location.href = '/';
         }
     }).catch(err => {
         console.error('Lỗi khi đồng bộ mô bệnh học lên server:', err);

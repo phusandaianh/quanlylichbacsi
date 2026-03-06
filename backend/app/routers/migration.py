@@ -8,8 +8,10 @@ from typing import Any, Dict, List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
+from ..auth_utils import hash_accounts_passwords
 from ..database import get_db
 from .. import models
+from ..deps import require_admin
 
 router = APIRouter(tags=["migration"])
 
@@ -34,20 +36,26 @@ def _flatten_backup_to_storage(backup: Dict[str, Any]) -> Dict[str, str]:
         val = doctors.get(g)
         out[storage_key] = json.dumps(val if val is not None else [])
 
-    # Các key còn lại giữ nguyên tên (top-level trong backup)
+    # Các key còn lại giữ nguyên tên. Hash mật khẩu trong accounts.
     skip = {"doctors", "version", "exportDate"}
     for key, value in backup.items():
         if key in skip:
             continue
+        if key == "accounts" and isinstance(value, dict):
+            value = hash_accounts_passwords(value)
         out[key] = json.dumps(value) if value is not None else "null"
     return out
 
 
 @router.post("/import")
-def import_backup(body: Dict[str, Any], db: Session = Depends(get_db)):
+def import_backup(
+    body: Dict[str, Any],
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(require_admin),
+):
     """
     Import dữ liệu từ file backup (format export của ứng dụng).
-    Gửi body JSON đúng format export (có doctors, accounts, leaveSubmissions, ...).
+    Chỉ admin. Gửi body JSON đúng format export.
     Sẽ ghi đè toàn bộ dữ liệu hiện có trong app_storage.
     """
     if not body:

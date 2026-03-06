@@ -10,7 +10,7 @@ except ImportError:
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.responses import FileResponse, PlainTextResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from backend.app import models
@@ -65,6 +65,12 @@ async def health_check():
     Gọi mỗi 5 phút để giữ web không bị sleep.
     """
     return {"status": "ok", "timestamp": datetime.now().isoformat()}
+
+
+@app.get("/ping", tags=["Health"])
+async def ping():
+    """Route ping riêng: trả plain text 'ok', 200 — dùng cho cron/uptime nếu cần."""
+    return PlainTextResponse("ok", status_code=200)
 
 
 @app.get("/", include_in_schema=False)

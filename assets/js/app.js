@@ -18,6 +18,7 @@
             accounts: 'accounts',
             passwordRequests: 'passwordRequests',
             currentUser: 'currentUser',
+            authToken: 'authToken',
             permissions: 'permissions',
             permissionTabs: 'permissionTabs',
 
@@ -755,6 +756,13 @@
             };
         }
 
+        function getAuthHeaders() {
+            const h = { 'Content-Type': 'application/json' };
+            const token = StorageUtil.loadString(STORAGE_KEYS.authToken, '');
+            if (token) h['Authorization'] = 'Bearer ' + token;
+            return h;
+        }
+
         async function syncToBackend() {
             if (!USE_DATABASE_BACKEND) {
                 if (typeof alert !== 'undefined') alert('Tính năng đồng bộ server đang tắt (USE_DATABASE_BACKEND = false).');
@@ -764,11 +772,15 @@
                 const url = (STORAGE_API_BASE || '') + '/api/storage/export';
                 const r = await fetch(url, {
                     method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: getAuthHeaders(),
                     body: JSON.stringify(getExportData())
                 });
                 if (r.ok) {
                     console.log('✅ Đã đồng bộ dữ liệu lên server.');
+                } else if (r.status === 401) {
+                    StorageUtil.remove(STORAGE_KEYS.authToken);
+                    if (typeof showLoginModal === 'function') showLoginModal();
+                    if (typeof alert !== 'undefined') alert('Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.');
                 } else {
                     if (typeof alert !== 'undefined') alert('❌ Đồng bộ thất bại: ' + r.status);
                 }
@@ -913,9 +925,14 @@
         // Kiểm tra đăng nhập khi trang tải
         function checkLoginStatus() {
             initAdminAccount();
-            if (currentUser) {
+            const token = StorageUtil.loadString(STORAGE_KEYS.authToken, '');
+            if (currentUser && token) {
                 showMainContent();
             } else {
+                if (currentUser && !token) {
+                    currentUser = null;
+                    StorageUtil.remove(STORAGE_KEYS.currentUser);
+                }
                 showLoginModal();
             }
         }
@@ -1707,24 +1724,16 @@
                 showError('❌ Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu!', 'both');
                 return;
             }
-            
-            // Chuẩn hóa key từ những gì người dùng nhập (bỏ dấu, khoảng trắng, hoa/thường)
+
+            // Nếu chưa có account trên server: tạo account từ bác sĩ nếu khớp, rồi sync (bootstrap)
             const key = normalizeKey(username);
-
-            // Ưu tiên tìm trực tiếp theo key trong object accounts
             let account = accountsToUse[key] || null;
-
-            // Nếu không tìm thấy theo key (do dữ liệu cũ, key khác username), duyệt toàn bộ accounts:
-            // - so khớp normalizeKey(username) với normalizeKey(acc.username hoặc acc.name)
-            if (!account) {
+            if (!account && typeof accountsToUse === 'object') {
                 const allAccounts = Object.values(accountsToUse || {});
                 account = allAccounts.find(function (acc) {
                     return normalizeKey(acc && (acc.username || acc.name || '')) === key;
                 }) || null;
             }
-
-            // Nếu vẫn không có account, thử tìm trong danh sách bác sĩ theo Họ tên,
-            // và tự tạo tài khoản (mật khẩu mặc định 1234) nếu khớp.
             if (!account) {
                 let matchedDoctor = null;
                 ['lanhdao','cot1','cot2','cot3','partime','khac'].forEach(function (g) {
@@ -1738,90 +1747,75 @@
                         }
                     }
                 });
-
                 if (matchedDoctor) {
-                    const newKey = key;
                     const newAccount = {
                         username: matchedDoctor.name,
                         password: '1234',
                         role: 'doctor',
                         name: matchedDoctor.name
                     };
-                    accounts[newKey] = newAccount;
-                    accountsToUse[newKey] = newAccount;
+                    accounts[key] = newAccount;
+                    accountsToUse[key] = newAccount;
                     try {
                         StorageUtil.saveJson(STORAGE_KEYS.accounts, accounts);
-                    } catch (e) {
-                        console.error('Lỗi khi lưu tài khoản mới từ đăng nhập:', e);
+                    } catch (e) { console.warn('Lỗi lưu tài khoản mới:', e); }
+                }
+            }
+
+            async function doLogin() {
+                try {
+                    const url = (typeof STORAGE_API_BASE !== 'undefined' ? STORAGE_API_BASE : '') + '/api/auth/login';
+                    const r = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username: username, password: password })
+                    });
+                    const data = r.ok ? await r.json() : null;
+                    if (r.ok && data && data.token && data.user) {
+                        if (usernameInput) usernameInput.classList.remove('input-error');
+                        if (passwordInput) passwordInput.classList.remove('input-error');
+                        if (errorMsg) errorMsg.style.display = 'none';
+                        currentUser = data.user;
+                        StorageUtil.saveJson(STORAGE_KEYS.currentUser, currentUser);
+                        StorageUtil.saveJson(STORAGE_KEYS.authToken, data.token);
+                        showMainContent();
+                        return;
                     }
-                    account = newAccount;
+                    if (r.status === 401) {
+                        const msg = (data && data.detail) || 'Tên đăng nhập hoặc mật khẩu không đúng.';
+                        showError('❌ ' + msg, 'password');
+                    } else {
+                        showError('❌ Lỗi đăng nhập: ' + (r.status || 'Không kết nối được server.'), 'both');
+                    }
+                } catch (e) {
+                    console.error('Lỗi khi gọi API đăng nhập:', e);
+                    showError('❌ Không kết nối được server. Vui lòng thử lại.', 'both');
                 }
             }
 
-            if (!account) {
-                showError('❌ Tên đăng nhập không tồn tại! Vui lòng kiểm tra lại.', 'username');
-                return;
-            }
-
-            if (account.password !== password) {
-                showError('❌ Mật khẩu không đúng! Vui lòng thử lại.', 'password');
-                return;
-            }
-
-            try {
-                // Xóa highlight và thông báo lỗi trước khi đăng nhập thành công
-                if (usernameInput) usernameInput.classList.remove('input-error');
-                if (passwordInput) passwordInput.classList.remove('input-error');
-                if (errorMsg) {
-                    errorMsg.style.display = 'none';
-                }
-                
-                // Xác định lại key chuẩn từ account tìm được (phòng trường hợp khác với key người dùng gõ)
-                const resolvedKey = normalizeKey(account.username || account.name || username);
-                
-                currentUser = {
-                    key: resolvedKey,
-                    username: account.username || username,
-                    name: account.name || account.username || username,
-                    role: account.role || 'doctor'
-                };
-                
-                // Lưu currentUser vào localStorage
-                try {
-                    StorageUtil.saveJson(STORAGE_KEYS.currentUser, currentUser);
-                } catch (storageError) {
-                    console.error('Lỗi khi lưu vào localStorage:', storageError);
-                    showError('❌ Lỗi: Không thể lưu thông tin đăng nhập. Vui lòng kiểm tra cài đặt trình duyệt.');
-                    return;
-                }
-                
-                // Hiển thị nội dung chính
-                try {
-                    showMainContent();
-                } catch (contentError) {
-                    console.error('Lỗi khi hiển thị nội dung:', contentError);
-                    showError('❌ Lỗi: Không thể hiển thị nội dung. Vui lòng tải lại trang.');
-                    return;
-                }
-                
-                // Chỉ gọi các hàm này nếu là admin
-                if (currentUser && currentUser.role === 'admin') {
+            // Nếu login thất bại 401, thử bootstrap (sync khi DB có thể chưa có dữ liệu)
+            async function tryLoginWithBootstrap() {
+                await doLogin();
+                if (currentUser) return;
+                if (USE_DATABASE_BACKEND && typeof syncToBackend === 'function') {
                     try {
-                        if (typeof displayAccounts === 'function') {
-                            displayAccounts();
+                        const url = (STORAGE_API_BASE || '') + '/api/storage/export';
+                        const bootstrapRes = await fetch(url, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(getExportData())
+                        });
+                        if (bootstrapRes.ok) {
+                            await doLogin();
                         }
-                        if (typeof displayPasswordRequests === 'function') {
-                            displayPasswordRequests();
-                        }
-                    } catch (adminError) {
-                        console.error('Lỗi khi hiển thị thông tin admin:', adminError);
-                        // Không hiển thị lỗi cho user vì đã đăng nhập thành công
-                    }
+                    } catch (e) { /* ignore */ }
                 }
-            } catch (error) {
-                console.error('Lỗi khi đăng nhập:', error);
-                showError('❌ Lỗi hệ thống: ' + (error.message || 'Lỗi không xác định') + '. Vui lòng thử lại sau hoặc tải lại trang.');
             }
+
+            tryLoginWithBootstrap().catch(function (err) {
+                console.error('Lỗi đăng nhập:', err);
+                showError('❌ Lỗi: Không thể đăng nhập. Vui lòng thử lại.', 'both');
+            });
         }
         window.handleLogin = handleLogin;
 
@@ -1829,7 +1823,8 @@
         function logout() {
             if (confirm('Bạn có chắc chắn muốn đăng xuất?')) {
                 currentUser = null;
-                localStorage.removeItem('currentUser');
+                StorageUtil.remove(STORAGE_KEYS.currentUser);
+                StorageUtil.remove(STORAGE_KEYS.authToken);
                 var loginForm = document.getElementById('loginForm');
                 if (loginForm) loginForm.reset();
                 var loginModal = document.getElementById('loginModal');

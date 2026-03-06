@@ -16,8 +16,8 @@ if DATABASE_URL:
     engine = create_engine(
         DATABASE_URL,
         pool_pre_ping=True,  # Kiểm tra kết nối trước mỗi request (tránh 503 khi wake từ sleep)
-        pool_size=1,
-        max_overflow=2,
+        pool_size=5,
+        max_overflow=10,
     )
 else:
     _db_path = Path(__file__).resolve().parent.parent / "app.db"

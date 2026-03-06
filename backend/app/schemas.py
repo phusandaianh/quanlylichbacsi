@@ -1,6 +1,6 @@
 from typing import Optional, List
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 
 class DoctorBase(BaseModel):
@@ -24,8 +24,7 @@ class DoctorUpdate(BaseModel):
 class Doctor(DoctorBase):
     id: int
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class DoctorsResponse(BaseModel):

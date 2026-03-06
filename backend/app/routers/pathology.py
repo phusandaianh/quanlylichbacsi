@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from .. import models
+from ..deps import get_current_user
 
 
 router = APIRouter(tags=["pathology"])
@@ -67,6 +68,7 @@ def get_pathology_export(db: Session = Depends(get_db)) -> List[dict]:
 def put_pathology_export(
     body: List[PathologyItem],
     db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
 ) -> dict:
     """
     Ghi đè toàn bộ danh sách mô bệnh học trên server bằng dữ liệu từ client.

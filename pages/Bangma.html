@@ -1522,7 +1522,7 @@ function saveNutritionData() {
     syncBangmaToServer();
 }
 
-// Gửi toàn bộ dữ liệu Bangma lên server (AppStorage.bangmaCodes)
+// Gửi toàn bộ dữ liệu Bangma lên server (yêu cầu đăng nhập - JWT)
 function syncBangmaToServer() {
     try {
         const payload = {
@@ -1531,10 +1531,18 @@ function syncBangmaToServer() {
             packages: packageData || {},
             nutrition: nutritionData || {}
         };
+        const headers = { 'Content-Type': 'application/json' };
+        const token = localStorage.getItem('authToken');
+        if (token) headers['Authorization'] = 'Bearer ' + token;
         fetch('/api/bangma_codes/export', {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: headers,
             body: JSON.stringify(payload)
+        }).then(function (r) {
+            if (r.status === 401) {
+                alert('Phiên đăng nhập hết hạn. Vui lòng đăng nhập tại trang chủ.');
+                window.location.href = '/';
+            }
         }).catch(function (e) {
             console.warn('Không đồng bộ được Bangma lên server:', e);
         });

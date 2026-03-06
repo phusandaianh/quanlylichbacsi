@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from .. import models
+from ..deps import get_current_user
 
 
 router = APIRouter(tags=["bangma"])
@@ -76,7 +77,11 @@ def get_bangma_export(db: Session = Depends(get_db)) -> Dict[str, Any]:
 
 
 @router.put("/export")
-def put_bangma_export(body: BangmaPayload, db: Session = Depends(get_db)) -> Dict[str, Any]:
+def put_bangma_export(
+    body: BangmaPayload,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+) -> Dict[str, Any]:
     """
     Ghi đè toàn bộ dữ liệu bảng mã của trang Bangma.
     Được gọi từ frontend mỗi khi người dùng chỉnh sửa / thêm / xóa.
