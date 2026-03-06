@@ -187,13 +187,13 @@
         
     </p>
     <div class="code-tab-container">
-        <button class="code-tab active" data-target="icdSection">Mã ICD</button>
+        <button class="code-tab active" data-target="icdLocalSection">ICD</button>
         <button class="code-tab" data-target="staffSection">Mã nhân viên</button>
         <button class="code-tab" data-target="surgeryCodeSection">Mã phẫu thuật</button>
         <button class="code-tab" data-target="packageCodeSection">Mã gói mổ+đẻ</button>
         <button class="code-tab" data-target="nutritionCodeSection">Mã dinh dưỡng</button>
     </div>
-    <div id="icdSection" class="icd-section"></div>
+    <div id="icdLocalSection" class="icd-section"></div>
     <div id="staffSection" class="icd-section" style="display:none;"></div>
     <div id="surgeryCodeSection" class="icd-section" style="display:none;"></div>
     <div id="packageCodeSection" class="icd-section" style="display:none;"></div>
@@ -215,6 +215,21 @@ let manualICDCache = {};
 let icdSearch = '';
 let showAllICD = false;
 let editingICD = null;
+
+// =========================
+// ICD (tab mới - nhập/sửa/lưu giống Mã nhân viên)
+// - dữ liệu copy từ tab "Mã ICD" (allICD + manual + favorites) khi lần đầu khởi tạo
+// - lưu localStorage + sync lên server qua /api/bangma_codes/export
+// =========================
+let icdLocalData = {};   // { code: { desc } }
+let icdLocalFav = {};    // { code: true }
+let icdLocalSearch = '';
+let icdLocalShowAll = true;
+let icdLocalEditingCode = null;
+let icdLocalInitialized = false;
+
+const ICD_LOCAL_STORAGE_KEY = 'bangma_icd_codes';
+const ICD_LOCAL_FAV_STORAGE_KEY = 'bangma_icd_favorites';
 
 // Các biến cho Mã nhân viên
 let staffData = {};
@@ -294,19 +309,18 @@ function loadICD() {
                 });
         })
         .then(() => {
-            renderICD();
+            bootstrapICDLocalFromStandardIfEmpty();
+            if (typeof renderICDLocalSection === 'function') renderICDLocalSection();
         })
         .catch(err => {
-            console.error('Không thể load dữ liệu ICD:', err);
-            document.getElementById('icdSection').innerHTML =
-                '<div style="color:red;">Không tải được danh sách mã ICD từ API /api/icd/all.</div>';
+            console.warn('Không load được dữ liệu ICD từ API (tab ICD dùng dữ liệu local/server):', err);
         });
 }
 
 function initCodeTabs() {
     const buttons = document.querySelectorAll('.code-tab');
     const sectionIds = [
-        'icdSection',
+        'icdLocalSection',
         'staffSection',
         'surgeryCodeSection',
         'packageCodeSection',
@@ -331,6 +345,11 @@ function initCodeTabs() {
                 renderStaffSection();
             }
 
+            // Khi chuyển sang tab ICD (tab mới) thì render nội dung
+            if (targetId === 'icdLocalSection') {
+                renderICDLocalSection();
+            }
+
             // Khi chuyển sang tab Mã phẫu thuật thì render nội dung (nếu chưa)
             if (targetId === 'surgeryCodeSection') {
                 renderSurgerySection();
@@ -349,125 +368,285 @@ function initCodeTabs() {
     });
 }
 
-function renderICD() {
+// =========================
+// ICD (tab nhập/sửa/lưu giống Mã nhân viên)
+// =========================
+
+function initICDLocalData() {
+    if (icdLocalInitialized) return;
+    icdLocalInitialized = true;
+
+    // Load từ localStorage nếu có
+    try {
+        const raw = localStorage.getItem(ICD_LOCAL_STORAGE_KEY);
+        if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed && typeof parsed === 'object') icdLocalData = parsed;
+        }
+    } catch (e) {
+        console.error('Không đọc được icdLocalData từ localStorage:', e);
+    }
+    if (!icdLocalData || typeof icdLocalData !== 'object') icdLocalData = {};
+
+    // Load favorites
+    try {
+        const favRaw = localStorage.getItem(ICD_LOCAL_FAV_STORAGE_KEY);
+        if (favRaw) {
+            const parsedFav = JSON.parse(favRaw);
+            if (parsedFav && typeof parsedFav === 'object') icdLocalFav = parsedFav;
+        }
+    } catch (e) {
+        console.error('Không đọc được icdLocalFav từ localStorage:', e);
+    }
+    if (!icdLocalFav || typeof icdLocalFav !== 'object') icdLocalFav = {};
+}
+
+function bootstrapICDLocalFromStandardIfEmpty() {
+    // Chỉ copy 1 lần khi local chưa có dữ liệu
+    try {
+        initICDLocalData();
+        if (icdLocalData && typeof icdLocalData === 'object' && Object.keys(icdLocalData).length > 0) return;
+
+        const merged = {};
+        // Copy từ tab "Mã ICD": allICD + manual + favorites (ưu tiên manual/fav nếu trùng code)
+        Object.keys(allICD || {}).forEach(function (code) {
+            merged[code] = { desc: allICD[code] || '' };
+        });
+        Object.keys(manualICDCache || {}).forEach(function (code) {
+            merged[code] = { desc: manualICDCache[code] || '' };
+        });
+        Object.keys(favICD || {}).forEach(function (code) {
+            merged[code] = { desc: favICD[code] || (allICD && allICD[code]) || (manualICDCache && manualICDCache[code]) || '' };
+            icdLocalFav[code] = true;
+        });
+
+        icdLocalData = merged;
+        saveICDLocalData(false); // lưu localStorage, chưa cần sync ngay
+    } catch (e) {
+        console.warn('Không bootstrap được ICD local từ Mã ICD:', e);
+    }
+}
+
+function saveICDLocalData(shouldSync = true) {
+    try {
+        localStorage.setItem(ICD_LOCAL_STORAGE_KEY, JSON.stringify(icdLocalData || {}));
+        localStorage.setItem(ICD_LOCAL_FAV_STORAGE_KEY, JSON.stringify(icdLocalFav || {}));
+    } catch (e) {
+        console.error('Không lưu được ICD local vào localStorage:', e);
+    }
+    if (shouldSync) {
+        syncBangmaToServer();
+    }
+}
+
+function renderICDLocalSection() {
+    initICDLocalData();
+    const container = document.getElementById('icdLocalSection');
+    if (!container) return;
+
     let html = '';
-    // Ô tìm kiếm
     html += `<div style='margin-bottom:16px;'>
-        <input id="icdSearchBox" type="text"
+        <input id="icdLocalSearchBox" type="text"
             placeholder="Tìm kiếm mã ICD hoặc mô tả..."
             style="width:350px; font-size:1.1em; padding:6px 10px; border-radius:6px; border:1px solid #bbb;"
             autocomplete="off">
     </div>`;
-    html += '<div id="icdTables"></div>';
-    document.getElementById('icdSection').innerHTML = html;
-    const searchBox = document.getElementById('icdSearchBox');
-    searchBox.value = icdSearch;
-    searchBox.addEventListener('input', function () {
-        icdSearch = searchBox.value;
-        renderICDTables();
-    });
-    renderICDTables();
+    html += '<div id="icdLocalTables"></div>';
+    container.innerHTML = html;
+
+    const searchBox = document.getElementById('icdLocalSearchBox');
+    if (searchBox) {
+        searchBox.value = icdLocalSearch || '';
+        searchBox.addEventListener('input', function () {
+            icdLocalSearch = searchBox.value;
+            renderICDLocalTables();
+        });
+    }
+
+    renderICDLocalTables();
 }
 
-function renderICDTables() {
+function icdLocalMatch(code, item) {
+    if (!icdLocalSearch) return true;
+    const s = (icdLocalSearch || '').toLowerCase();
+    const desc = (item && item.desc) ? String(item.desc) : '';
+    return (code || '').toLowerCase().includes(s) || desc.toLowerCase().includes(s);
+}
+
+function highlightICDLocal(text) {
+    if (!icdLocalSearch || !text) return text || '';
+    const s = icdLocalSearch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return String(text).replace(new RegExp(s, 'gi'), function (match) {
+        return "<span style='background:yellow;'>" + match + "</span>";
+    });
+}
+
+function renderICDLocalTables() {
+    const wrapper = document.getElementById('icdLocalTables');
+    if (!wrapper) return;
+
     let html = '';
+
     // Favorites
-    html += '<div class="icd-title">Mã ICD yêu thích</div>';
+    html += '<div class="icd-title">ICD yêu thích</div>';
     html += '<table class="icd-table">';
     html += '<tr><th></th><th>Mã ICD</th><th>Mô tả</th><th></th></tr>';
-    for (const code in favICD) {
-        if (!icdMatch(code, favICD[code])) continue;
-        html += renderICDRow(code, favICD[code], false);
-    }
+    Object.keys(icdLocalFav || {}).forEach(function (code) {
+        const item = icdLocalData[code];
+        if (!item) return;
+        if (!icdLocalMatch(code, item)) return;
+        html += renderICDLocalRow(code, item);
+    });
     html += '</table>';
 
-    // Toggle button for all ICD
-    html += `<button id="toggleAllICD" style="margin:12px 0 8px 0; padding:8px 22px; font-size:1em; border-radius:6px; border:1px solid #a000a0; background:#fff; color:#a000a0; cursor:pointer;">Tất cả mã ICD</button>`;
+    // Toggle show all
+    html += `<button id="toggleAllICDLocal" style="margin:12px 0 8px 0; padding:8px 22px; font-size:1em; border-radius:6px; border:1px solid #a000a0; background:#fff; color:#a000a0; cursor:pointer;">Tất cả ICD</button>`;
 
-    // All ICD
-    html += `<div id="allICDTable" style="display:${showAllICD ? '' : 'none'};">`;
-    html += '<div class="icd-title">Tất cả mã ICD</div>';
+    // All
+    html += `<div id="allICDLocalTable" style="display:${icdLocalShowAll ? '' : 'none'};">`;
+    html += '<div class="icd-title">Tất cả ICD</div>';
     html += '<table class="icd-table">';
     html += '<tr><th></th><th>Mã ICD</th><th>Mô tả</th><th></th></tr>';
-    for (const code in allICD) {
-        if (favICD[code]) continue;
-        if (!icdMatch(code, allICD[code])) continue;
-        html += renderICDRow(code, allICD[code], true);
-    }
+    Object.keys(icdLocalData || {}).forEach(function (code) {
+        if (icdLocalFav[code]) return;
+        const item = icdLocalData[code];
+        if (!item) return;
+        if (!icdLocalMatch(code, item)) return;
+        html += renderICDLocalRow(code, item);
+    });
     html += '</table></div>';
 
-    // Manual add
-    html += '<div class="icd-title">Thêm mã ICD thủ công</div>';
-    html += `<form class="manual-form" onsubmit="addManualICD(event)">
-        <input id="manualCode" placeholder="Mã ICD" required maxlength="10">
-        <input id="manualDesc" placeholder="Mô tả" required maxlength="200">
+    // Add form
+    html += '<div class="icd-title">Thêm ICD</div>';
+    html += `<form class="manual-form" onsubmit="addICDLocal(event)">
+        <input id="icdLocalCodeInput" placeholder="Mã ICD" required maxlength="20">
+        <input id="icdLocalDescInput" placeholder="Mô tả" required maxlength="200">
         <button type="submit">Thêm</button>
     </form>`;
 
-    // Excel upload
-    html += '<div class="icd-title">Cập nhật mã ICD từ file Excel</div>';
-    html += `<form class="manual-form" onsubmit="uploadExcelICD(event)" enctype="multipart/form-data">
-        <input type="file" id="excelFile" accept=".xlsx,.xls" required>
-        <button type="submit">Cập nhật từ Excel</button>
-    </form>`;
-    html += '<div style="margin-top: 10px; font-size: 0.9em; color: #666;">';
-    html += '📋 <strong>Hướng dẫn:</strong> File Excel phải có cột "Code" và "Description". Mã ICD từ Excel sẽ thay thế toàn bộ danh sách hiện tại.';
-    html += '</div>';
+    wrapper.innerHTML = html;
 
-    document.getElementById('icdTables').innerHTML = html;
-    document.getElementById('toggleAllICD').onclick = function () {
-        showAllICD = !showAllICD;
-        renderICDTables();
-    };
+    const toggleBtn = document.getElementById('toggleAllICDLocal');
+    if (toggleBtn) {
+        toggleBtn.onclick = function () {
+            icdLocalShowAll = !icdLocalShowAll;
+            renderICDLocalTables();
+        };
+    }
 }
 
-function renderICDRow(code, desc, isAll) {
-    const isManual = manualICDCache && Object.prototype.hasOwnProperty.call(manualICDCache, code);
+function renderICDLocalRow(code, item) {
+    const safeCode = (code || '').replace(/"/g, '&quot;');
+    const desc = (item && item.desc) ? String(item.desc) : '';
+    const safeDesc = desc.replace(/"/g, '&quot;');
+    const onclickCopy = `copyICDText(${JSON.stringify(code || '')}, ${JSON.stringify(desc || '')})`;
 
-    if (editingICD === code && isManual) {
+    if (icdLocalEditingCode === code) {
         return `<tr>
             <td></td>
-            <td>${code}</td>
-            <td><input id='editICDDesc' value="${(desc || '').replace(/"/g, '&quot;')}" style='width:90%'></td>
+            <td><input id="editICDLocalCode" value="${safeCode}" style="width:95%"></td>
+            <td><input id="editICDLocalDesc" value="${safeDesc}" style="width:95%"></td>
             <td>
-                <button onclick="saveEditICD('${code}')">Lưu</button>
-                <button onclick="cancelEditICD()">Hủy</button>
-                <button onclick="deleteICD('${code}')">Xóa</button>
+                <button onclick="saveEditICDLocal('${safeCode}')">Lưu</button>
+                <button onclick="cancelEditICDLocal()">Hủy</button>
+                <button onclick="deleteICDLocal('${safeCode}')">Xóa</button>
             </td>
         </tr>`;
     }
 
-    let editBtn = isManual ? `<button onclick="editICD('${code}')">Sửa</button>` : '';
-    let delBtn = isManual ? `<button onclick="deleteICD('${code}')">Xóa</button>` : '';
-    let favStar = favICD[code]
-        ? `<span class="icd-fav active" onclick="toggleFavICD('${code}')">★</span>`
-        : `<span class="icd-fav" onclick="toggleFavICD('${code}')">☆</span>`;
-
-    // Chuẩn hóa mã hiển thị: bỏ các tag như [Excel], [Manual] ở cuối nếu có
-    const displayCode = code.replace(/\s*\[[^\]]*\]\s*$/i, '');
-
-    // Khi click vào mô tả, copy code + desc
+    const isFav = !!icdLocalFav[code];
+    const star = isFav
+        ? `<span class="icd-fav active" onclick="toggleICDLocalFav('${safeCode}')">★</span>`
+        : `<span class="icd-fav" onclick="toggleICDLocalFav('${safeCode}')">☆</span>`;
 
     return `<tr>
-        <td>${favStar}</td>
-        <td>${highlightICD(displayCode)}</td>
-        <td onclick="copyICDText('${displayCode.replace(/'/g, "\\'")}', '${(desc || '').replace(/'/g, "\\'")}')" style="cursor:pointer;">
-            ${highlightICD(desc)}
+        <td>${star}</td>
+        <td onclick="${onclickCopy}" style="cursor:pointer;">
+            ${highlightICDLocal(code)}
         </td>
-        <td>${editBtn} ${delBtn}</td>
+        <td onclick="${onclickCopy}" style="cursor:pointer;">
+            ${highlightICDLocal(desc)}
+        </td>
+        <td>
+            <button onclick="editICDLocal('${safeCode}')">Sửa</button>
+            <button onclick="deleteICDLocal('${safeCode}')">Xóa</button>
+        </td>
     </tr>`;
 }
 
-function icdMatch(code, desc) {
-    if (!icdSearch) return true;
-    const s = icdSearch.toLowerCase();
-    return code.toLowerCase().includes(s) || (desc && desc.toLowerCase().includes(s));
+function addICDLocal(e) {
+    e.preventDefault();
+    initICDLocalData();
+    const codeInput = document.getElementById('icdLocalCodeInput');
+    const descInput = document.getElementById('icdLocalDescInput');
+    const code = (codeInput && codeInput.value || '').trim();
+    const desc = (descInput && descInput.value || '').trim();
+    if (!code || !desc) return;
+    if (icdLocalData[code]) {
+        alert('Đã tồn tại mã ICD này. Vui lòng nhập mã khác.');
+        return;
+    }
+    icdLocalData[code] = { desc: desc };
+    saveICDLocalData(true);
+    if (codeInput) codeInput.value = '';
+    if (descInput) descInput.value = '';
+    renderICDLocalTables();
 }
 
-function highlightICD(text) {
-    if (!icdSearch || !text) return text || '';
-    const s = icdSearch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    return text.replace(new RegExp(s, 'gi'), match => `<span style='background:yellow;'>${match}</span>`);
+function editICDLocal(code) {
+    icdLocalEditingCode = code;
+    renderICDLocalTables();
+}
+
+function cancelEditICDLocal() {
+    icdLocalEditingCode = null;
+    renderICDLocalTables();
+}
+
+function saveEditICDLocal(oldCode) {
+    initICDLocalData();
+    const codeInput = document.getElementById('editICDLocalCode');
+    const descInput = document.getElementById('editICDLocalDesc');
+    if (!codeInput || !descInput) return;
+    const newCode = codeInput.value.trim();
+    const newDesc = descInput.value.trim();
+    if (!newCode || !newDesc) {
+        alert('Vui lòng nhập đầy đủ Mã ICD và Mô tả.');
+        return;
+    }
+    if (newCode !== oldCode && icdLocalData[newCode]) {
+        alert('Đã tồn tại mã ICD này. Vui lòng nhập mã khác.');
+        return;
+    }
+
+    delete icdLocalData[oldCode];
+    icdLocalData[newCode] = { desc: newDesc };
+
+    if (icdLocalFav[oldCode]) {
+        delete icdLocalFav[oldCode];
+        icdLocalFav[newCode] = true;
+    }
+
+    icdLocalEditingCode = null;
+    saveICDLocalData(true);
+    renderICDLocalTables();
+}
+
+function deleteICDLocal(code) {
+    initICDLocalData();
+    if (!confirm('Bạn có chắc muốn xóa ICD này?')) return;
+    if (icdLocalData[code]) delete icdLocalData[code];
+    if (icdLocalFav[code]) delete icdLocalFav[code];
+    saveICDLocalData(true);
+    renderICDLocalTables();
+}
+
+function toggleICDLocalFav(code) {
+    initICDLocalData();
+    if (icdLocalFav[code]) delete icdLocalFav[code];
+    else icdLocalFav[code] = true;
+    saveICDLocalData(true);
+    renderICDLocalTables();
 }
 
 // =========================
@@ -1526,6 +1705,8 @@ function saveNutritionData() {
 function syncBangmaToServer() {
     try {
         const payload = {
+            icdLocal: icdLocalData || {},
+            icdLocalFav: icdLocalFav || {},
             staff: staffData || {},
             surgery: surgeryData || {},
             packages: packageData || {},
@@ -1801,167 +1982,6 @@ function toggleNutritionFav(code) {
     renderNutritionTables();
 }
 
-function toggleFavICD(code) {
-    const desc = allICD[code] || manualICDCache[code] || '';
-    if (favICD[code]) {
-        fetch('/api/icd/favorites', {
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ code })
-        }).then(loadICD);
-    } else {
-        fetch('/api/icd/favorites', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ code, desc })
-        }).then(loadICD);
-    }
-}
-
-function addManualICD(e) {
-    e.preventDefault();
-    const code = document.getElementById('manualCode').value.trim();
-    const desc = document.getElementById('manualDesc').value.trim();
-    if (!code || !desc) return;
-    fetch('/api/icd/manual', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code, desc })
-    }).then(response => response.json()).then(result => {
-        if (result.success) {
-            document.getElementById('manualCode').value = '';
-            document.getElementById('manualDesc').value = '';
-            updateManualICDCache();
-            alert('Thêm mã ICD thành công!');
-        } else {
-            alert('Lỗi khi thêm mã ICD');
-        }
-    }).catch(error => {
-        console.error('Error adding ICD:', error);
-        alert('Lỗi khi thêm mã ICD: ' + error.message);
-    });
-}
-
-function uploadExcelICD(e) {
-    e.preventDefault();
-    const fileInput = document.getElementById('excelFile');
-    const file = fileInput.files[0];
-
-    if (!file) {
-        alert('Vui lòng chọn file Excel');
-        return;
-    }
-
-    if (!confirm('⚠️ CẢNH BÁO: Việc này sẽ thay thế toàn bộ danh sách mã ICD hiện tại bằng dữ liệu từ file Excel. Bạn có chắc muốn tiếp tục?')) {
-        return;
-    }
-
-    const formData = new FormData();
-    formData.append('file', file);
-
-    const submitBtn = e.target.querySelector('button[type="submit"]');
-    const originalText = submitBtn.textContent;
-    submitBtn.textContent = 'Đang xử lý...';
-    submitBtn.disabled = true;
-
-    fetch('/api/icd/upload-excel', {
-        method: 'POST',
-        body: formData
-    })
-        .then(response => response.json())
-        .then(result => {
-            if (result.success) {
-                alert(`✅ Cập nhật thành công! Đã import ${result.count} mã ICD từ file Excel.`);
-                loadICD();
-            } else {
-                alert('❌ Lỗi khi cập nhật: ' + (result.error || 'Không thể xử lý file Excel'));
-            }
-        })
-        .catch(error => {
-            console.error('Error uploading Excel:', error);
-            alert('❌ Lỗi khi upload file Excel: ' + error.message);
-        })
-        .finally(() => {
-            submitBtn.textContent = originalText;
-            submitBtn.disabled = false;
-            fileInput.value = '';
-        });
-}
-
-function manualICDList() {
-    return Object.keys(manualICDCache || {});
-}
-
-function updateManualICDCache() {
-    fetch('/api/icd/manual').then(r => r.json()).then(manual => {
-        manualICDCache = manual || {};
-        renderICDTables();
-    });
-}
-
-function editICD(code) {
-    editingICD = code;
-    renderICDTables();
-}
-
-function cancelEditICD() {
-    editingICD = null;
-    renderICDTables();
-}
-
-function saveEditICD(code) {
-    const descInput = document.getElementById('editICDDesc');
-    if (!descInput) return;
-    const desc = descInput.value.trim();
-    if (!desc) {
-        alert('Vui lòng nhập mô tả cho mã ICD');
-        return;
-    }
-
-    fetch('/api/icd/manual', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code, desc })
-    })
-        .then(response => response.json())
-        .then(result => {
-            if (result.success) {
-                editingICD = null;
-                updateManualICDCache();
-                alert('Cập nhật mã ICD thành công!');
-            } else {
-                alert('Lỗi khi cập nhật mã ICD');
-            }
-        })
-        .catch(error => {
-            console.error('Error updating ICD:', error);
-            alert('Lỗi khi cập nhật mã ICD: ' + error.message);
-        });
-}
-
-function deleteICD(code) {
-    if (!confirm('Bạn có chắc muốn xóa mã ICD này?')) return;
-    fetch('/api/icd/manual', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code })
-    })
-        .then(response => response.json())
-        .then(result => {
-            if (result.success) {
-                editingICD = null;
-                updateManualICDCache();
-                alert('Xóa mã ICD thành công!');
-            } else {
-                alert('Lỗi khi xóa mã ICD');
-            }
-        })
-        .catch(error => {
-            console.error('Error deleting ICD:', error);
-            alert('Lỗi khi xóa mã ICD: ' + error.message);
-        });
-}
-
 function copyICDText(code, desc) {
     const text = `${code} - ${desc}`;
     if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -1989,6 +2009,7 @@ function fallbackICDCopy(text) {
 document.addEventListener('DOMContentLoaded', function () {
     initCodeTabs();
     loadICD();
+    renderICDLocalSection();
     // Chuẩn bị dữ liệu Mã nhân viên, Mã phẫu thuật, Mã gói mổ+đẻ, Mã dinh dưỡng (để lần đầu mở tab là có sẵn)
     // Ưu tiên load từ server, nếu lỗi thì fallback localStorage + dữ liệu mặc định
     (async function () {
@@ -1997,6 +2018,18 @@ document.addEventListener('DOMContentLoaded', function () {
             if (res.ok) {
                 const data = await res.json();
                 if (data && typeof data === 'object') {
+                    if (data.icdLocal && typeof data.icdLocal === 'object') {
+                        icdLocalData = data.icdLocal;
+                        try {
+                            localStorage.setItem(ICD_LOCAL_STORAGE_KEY, JSON.stringify(icdLocalData));
+                        } catch (e) { console.warn('Không lưu được icdLocalData từ server:', e); }
+                    }
+                    if (data.icdLocalFav && typeof data.icdLocalFav === 'object') {
+                        icdLocalFav = data.icdLocalFav;
+                        try {
+                            localStorage.setItem(ICD_LOCAL_FAV_STORAGE_KEY, JSON.stringify(icdLocalFav));
+                        } catch (e) { console.warn('Không lưu được icdLocalFav từ server:', e); }
+                    }
                     if (data.staff && typeof data.staff === 'object') {
                         staffData = data.staff;
                         try {
@@ -2026,6 +2059,7 @@ document.addEventListener('DOMContentLoaded', function () {
         } catch (e) {
             console.warn('Không load được dữ liệu Bangma từ server, dùng localStorage/dữ liệu mặc định.', e);
         } finally {
+            initICDLocalData();
             initStaffData();
             initSurgeryData();
             initPackageData();

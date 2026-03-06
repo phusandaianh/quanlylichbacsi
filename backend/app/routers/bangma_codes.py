@@ -18,6 +18,8 @@ BANGMA_KEY = "bangmaCodes"
 class BangmaPayload(BaseModel):
     """Payload lưu toàn bộ bảng mã trong trang Bangma."""
 
+    icdLocal: Dict[str, Dict[str, Any]] | None = None
+    icdLocalFav: Dict[str, Any] | None = None
     staff: Dict[str, Dict[str, Any]] | None = None
     surgery: Dict[str, Dict[str, Any]] | None = None
     packages: Dict[str, Dict[str, Any]] | None = None
@@ -69,6 +71,8 @@ def get_bangma_export(db: Session = Depends(get_db)) -> Dict[str, Any]:
     data = _get_bangma_codes(db)
     # Đảm bảo luôn trả về đủ 4 khóa để frontend dễ xử lý
     return {
+        "icdLocal": data.get("icdLocal") or {},
+        "icdLocalFav": data.get("icdLocalFav") or {},
         "staff": data.get("staff") or {},
         "surgery": data.get("surgery") or {},
         "packages": data.get("packages") or {},
@@ -89,6 +93,10 @@ def put_bangma_export(
 
     data = _get_bangma_codes(db)
     # Cập nhật từng phần, nếu body nào None thì giữ nguyên dữ liệu cũ (nếu có)
+    if body.icdLocal is not None:
+        data["icdLocal"] = body.icdLocal
+    if body.icdLocalFav is not None:
+        data["icdLocalFav"] = body.icdLocalFav
     if body.staff is not None:
         data["staff"] = body.staff
     if body.surgery is not None:
