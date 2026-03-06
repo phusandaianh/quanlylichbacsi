@@ -104,9 +104,29 @@
                     console.error('⚠️ Lỗi khi lưu localStorage key="' + key + '":', e);
                 }
             },
+            saveString(key, value) {
+                try {
+                    localStorage.setItem(key, (value === null || value === undefined) ? '' : String(value));
+                } catch (e) {
+                    console.error('⚠️ Lỗi khi lưu localStorage string key="' + key + '":', e);
+                }
+            },
             loadString(key, fallback = '') {
                 const v = localStorage.getItem(key);
                 return (v === null || v === undefined) ? fallback : v;
+            },
+            loadToken(key, fallback = '') {
+                // Token JWT phải là string raw. Một số phiên bản trước đã lưu token bằng JSON.stringify
+                // → localStorage chứa "\"<token>\"" và gây 401 do Authorization header bị kèm dấu quote.
+                const raw = localStorage.getItem(key);
+                if (raw === null || raw === undefined || raw === '') return fallback;
+                const s = String(raw).trim();
+                try {
+                    const parsed = JSON.parse(s);
+                    if (typeof parsed === 'string') return parsed.trim();
+                } catch { /* ignore */ }
+                if (s.length >= 2 && s[0] === '"' && s[s.length - 1] === '"') return s.slice(1, -1).trim();
+                return s;
             },
             remove(key) {
                 localStorage.removeItem(key);
@@ -633,7 +653,7 @@
                 const localCg = Object.keys(khamcaugiayData || {}).length;
                 const serverCg = typeof data.khamcaugiayData === 'object' ? Object.keys(data.khamcaugiayData).length : 0;
                 if (serverCg >= localCg) { khamcaugiayData = data.khamcaugiayData; }
-                else if (localCg > 0 && typeof syncToBackend === 'function' && USE_DATABASE_BACKEND) syncToBackend();
+                else if (localCg > 0 && USE_DATABASE_BACKEND && StorageUtil.loadToken(STORAGE_KEYS.authToken, '') && typeof syncToBackend === 'function') syncToBackend();
                 StorageUtil.saveJson(STORAGE_KEYS.khamcaugiayData, khamcaugiayData);
             }
             if (data.khamcaugiayDoctorList != null) { khamcaugiayDoctorList = data.khamcaugiayDoctorList; StorageUtil.saveJson(STORAGE_KEYS.khamcaugiayDoctorList, khamcaugiayDoctorList); }
@@ -644,7 +664,7 @@
                 const localLb = Object.keys(khamlongbienData || {}).length;
                 const serverLb = typeof data.khamlongbienData === 'object' ? Object.keys(data.khamlongbienData).length : 0;
                 if (serverLb >= localLb) { khamlongbienData = data.khamlongbienData; }
-                else if (localLb > 0 && typeof syncToBackend === 'function' && USE_DATABASE_BACKEND) syncToBackend();
+                else if (localLb > 0 && USE_DATABASE_BACKEND && StorageUtil.loadToken(STORAGE_KEYS.authToken, '') && typeof syncToBackend === 'function') syncToBackend();
                 StorageUtil.saveJson(STORAGE_KEYS.khamlongbienData, khamlongbienData);
             }
             if (data.khamsanvipData != null) { khamsanvipData = data.khamsanvipData; StorageUtil.saveJson(STORAGE_KEYS.khamsanvipData, khamsanvipData); }
@@ -678,7 +698,7 @@
                 const serverSlots = countSlots(data.lamviechangngayData);
                 if (serverSlots >= localSlots) {
                     lamviechangngayData = data.lamviechangngayData;
-                } else if (localSlots > 0 && typeof syncToBackend === 'function' && USE_DATABASE_BACKEND) {
+                } else if (localSlots > 0 && USE_DATABASE_BACKEND && StorageUtil.loadToken(STORAGE_KEYS.authToken, '') && typeof syncToBackend === 'function') {
                     syncToBackend();
                 }
                 StorageUtil.saveJson(STORAGE_KEYS.lamviechangngayData, lamviechangngayData);
@@ -758,7 +778,7 @@
 
         function getAuthHeaders() {
             const h = { 'Content-Type': 'application/json' };
-            const token = StorageUtil.loadString(STORAGE_KEYS.authToken, '');
+            const token = StorageUtil.loadToken(STORAGE_KEYS.authToken, '');
             if (token) h['Authorization'] = 'Bearer ' + token;
             return h;
         }
@@ -768,6 +788,7 @@
                 if (typeof alert !== 'undefined') alert('Tính năng đồng bộ server đang tắt (USE_DATABASE_BACKEND = false).');
                 return;
             }
+            var hadToken = !!StorageUtil.loadToken(STORAGE_KEYS.authToken, '');
             try {
                 const url = (STORAGE_API_BASE || '') + '/api/storage/export';
                 const r = await fetch(url, {
@@ -780,7 +801,8 @@
                 } else if (r.status === 401) {
                     StorageUtil.remove(STORAGE_KEYS.authToken);
                     if (typeof showLoginModal === 'function') showLoginModal();
-                    if (typeof alert !== 'undefined') alert('Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.');
+                    // Chỉ báo "hết hạn" khi trước đó có token (đã đăng nhập). Tránh spam khi chưa đăng nhập / chuyển tab.
+                    if (hadToken && typeof alert !== 'undefined') alert('Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.');
                 } else {
                     if (typeof alert !== 'undefined') alert('❌ Đồng bộ thất bại: ' + r.status);
                 }
@@ -925,7 +947,7 @@
         // Kiểm tra đăng nhập khi trang tải
         function checkLoginStatus() {
             initAdminAccount();
-            const token = StorageUtil.loadString(STORAGE_KEYS.authToken, '');
+            const token = StorageUtil.loadToken(STORAGE_KEYS.authToken, '');
             if (currentUser && token) {
                 showMainContent();
             } else {
@@ -1777,7 +1799,7 @@
                         if (errorMsg) errorMsg.style.display = 'none';
                         currentUser = data.user;
                         StorageUtil.saveJson(STORAGE_KEYS.currentUser, currentUser);
-                        StorageUtil.saveJson(STORAGE_KEYS.authToken, data.token);
+                        StorageUtil.saveString(STORAGE_KEYS.authToken, data.token);
                         showMainContent();
                         return;
                     }

@@ -324,7 +324,12 @@ function persistPathology() {
         console.warn('Không lưu được pathology vào localStorage:', e);
     }
     const headers = { 'Content-Type': 'application/json' };
-    const token = localStorage.getItem('authToken');
+    let token = (localStorage.getItem('authToken') || '').trim();
+    // Backward-compatible: token từng bị lưu bằng JSON.stringify → "\"<token>\""
+    try {
+        const parsed = JSON.parse(token);
+        if (typeof parsed === 'string') token = parsed.trim();
+    } catch (e) { /* ignore */ }
     if (token) headers['Authorization'] = 'Bearer ' + token;
     fetch('/api/pathology/export', {
         method: 'PUT',
