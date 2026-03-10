@@ -146,9 +146,12 @@
     <p class="copy-hint">
         
     </p>
-    <div id="pathologyBody">
-        Đang tải danh mục mô bệnh học...
+    <div class="code-tab-container" style="margin: 6px 0 12px; display:flex; flex-wrap:wrap; gap:8px;">
+        <button class="code-tab active" data-target="gpbBody" style="padding:6px 14px; border-radius:20px; border:1px solid #880088; background:#880088; color:#fff; cursor:pointer; font-size:0.95em;">Giải phẫu bệnh</button>
+        <button class="code-tab" data-target="pathologyBody" style="padding:6px 14px; border-radius:20px; border:1px solid #880088; background:#fff; color:#880088; cursor:pointer; font-size:0.95em;">Mô bệnh học</button>
     </div>
+    <div id="gpbBody">Đang tải danh mục giải phẫu bệnh...</div>
+    <div id="pathologyBody" style="display:none;">Đang tải danh mục mô bệnh học...</div>
 </div>
 
 <script>
@@ -156,6 +159,21 @@
 const PATHOLOGY_STORAGE_KEY = 'pathologyData';
 let pathoData = [];
 let editingIndex = null;
+
+// =========================
+// Giải phẫu bệnh (tab mới) - nhập/sửa/lưu giống tab Mã nhân viên
+// =========================
+const GPB_STORAGE_KEY = 'pathologyGpbData';
+const GPB_FAV_STORAGE_KEY = 'pathologyGpbFav';
+let gpbData = {};      // { maSo: { loai, maSo, tenDichVu, gia } }
+let gpbFav = {};       // { maSo: true }
+let gpbSearch = '';
+let gpbShowAll = true;
+let gpbEditingKey = null;
+
+function normalizeCode(code) {
+    return (code || '').toString().trim();
+}
 
 function formatPrice(price) {
     const n = parseInt(price, 10) || 0;
@@ -400,14 +418,331 @@ function buildPathologyUI(target) {
     renderPathologyTable();
 }
 
+// =========================
+// UI + lưu cho tab Giải phẫu bệnh (GPB)
+// =========================
+
+function initGpbData() {
+    // load từ localStorage
+    try {
+        const raw = localStorage.getItem(GPB_STORAGE_KEY);
+        if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed && typeof parsed === 'object') gpbData = parsed;
+        }
+    } catch (e) {
+        console.warn('Không đọc được gpbData từ localStorage:', e);
+    }
+    if (!gpbData || typeof gpbData !== 'object') gpbData = {};
+
+    try {
+        const raw = localStorage.getItem(GPB_FAV_STORAGE_KEY);
+        if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed && typeof parsed === 'object') gpbFav = parsed;
+        }
+    } catch (e) {
+        console.warn('Không đọc được gpbFav từ localStorage:', e);
+    }
+    if (!gpbFav || typeof gpbFav !== 'object') gpbFav = {};
+}
+
+function bootstrapGpbFromPathologyIfEmpty() {
+    // Copy 1 lần từ tab mô bệnh học nếu GPB chưa có dữ liệu
+    try {
+        initGpbData();
+        if (Object.keys(gpbData || {}).length > 0) return;
+        const out = {};
+        (pathoData || []).forEach(function (row) {
+            const code = normalizeCode(row && row.maSo);
+            if (!code) return;
+            out[code] = {
+                loai: (row.loai || '').toString(),
+                maSo: code,
+                tenDichVu: (row.tenDichVu || '').toString(),
+                gia: parseInt(row.gia, 10) || 0
+            };
+        });
+        gpbData = out;
+        saveGpbData(false);
+    } catch (e) {
+        console.warn('Không bootstrap được GPB từ mô bệnh học:', e);
+    }
+}
+
+function saveGpbData(shouldSync = true) {
+    try {
+        localStorage.setItem(GPB_STORAGE_KEY, JSON.stringify(gpbData || {}));
+        localStorage.setItem(GPB_FAV_STORAGE_KEY, JSON.stringify(gpbFav || {}));
+    } catch (e) {
+        console.warn('Không lưu được GPB vào localStorage:', e);
+    }
+    if (shouldSync) syncGpbToServer();
+}
+
+function getAuthHeaders() {
+    const headers = { 'Content-Type': 'application/json' };
+    let token = (localStorage.getItem('authToken') || '').trim();
+    try {
+        const parsed = JSON.parse(token);
+        if (typeof parsed === 'string') token = parsed.trim();
+    } catch (e) { /* ignore */ }
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+    return headers;
+}
+
+function syncGpbToServer() {
+    const items = Object.keys(gpbData || {}).map(function (k) { return gpbData[k]; });
+    const payload = { items: items, fav: gpbFav || {} };
+    fetch('/api/pathology/gpb/export', {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(payload),
+    }).then(function (r) {
+        if (r.ok) {
+            console.log('✅ Đã đồng bộ giải phẫu bệnh lên server.');
+        } else if (r.status === 401) {
+            alert('Phiên đăng nhập hết hạn. Vui lòng đăng nhập tại trang chủ.');
+            window.location.href = '/';
+        }
+    }).catch(function (e) {
+        console.warn('Lỗi khi đồng bộ giải phẫu bệnh lên server:', e);
+    });
+}
+
+function gpbMatch(code, item) {
+    if (!gpbSearch) return true;
+    const s = (gpbSearch || '').toLowerCase();
+    const loai = (item && item.loai) ? String(item.loai).toLowerCase() : '';
+    const ten = (item && item.tenDichVu) ? String(item.tenDichVu).toLowerCase() : '';
+    return (code || '').toLowerCase().includes(s) || loai.includes(s) || ten.includes(s);
+}
+
+function highlight(text) {
+    if (!gpbSearch || !text) return text || '';
+    const s = gpbSearch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return String(text).replace(new RegExp(s, 'gi'), function (m) {
+        return "<span style='background:yellow;'>" + m + "</span>";
+    });
+}
+
+function renderGpbUI(target) {
+    target.innerHTML = `
+        <div style='margin-bottom:16px;'>
+            <input id="gpbSearchBox" type="text"
+                placeholder="Tìm kiếm theo loại / mã số / tên dịch vụ..."
+                style="width:100%; font-size:1.0em; padding:8px 10px; border-radius:6px; border:1px solid #bbb;"
+                autocomplete="off">
+        </div>
+        <div id="gpbTables"></div>
+    `;
+    const searchBox = document.getElementById('gpbSearchBox');
+    if (searchBox) {
+        searchBox.value = gpbSearch || '';
+        searchBox.addEventListener('input', function () {
+            gpbSearch = searchBox.value;
+            renderGpbTables();
+        });
+    }
+    renderGpbTables();
+}
+
+function renderGpbTables() {
+    const wrapper = document.getElementById('gpbTables');
+    if (!wrapper) return;
+    initGpbData();
+
+    let html = '';
+    html += '<div style="font-weight:600; margin: 16px 0 8px; color:#444;">Giải phẫu bệnh yêu thích</div>';
+    html += '<table class="icd-table" style="width:100%; border-collapse:collapse; font-size:0.9em;">';
+    html += '<tr><th></th><th>Loại</th><th>Mã số</th><th>Tên dịch vụ</th><th style="text-align:right;">Giá</th><th></th></tr>';
+    Object.keys(gpbFav || {}).forEach(function (code) {
+        const item = gpbData[code];
+        if (!item) return;
+        if (!gpbMatch(code, item)) return;
+        html += renderGpbRow(code, item);
+    });
+    html += '</table>';
+
+    html += `<button id="toggleAllGpb" style="margin:12px 0 8px 0; padding:8px 22px; font-size:1em; border-radius:6px; border:1px solid #a000a0; background:#fff; color:#a000a0; cursor:pointer;">Tất cả giải phẫu bệnh</button>`;
+
+    html += `<div id="allGpbTable" style="display:${gpbShowAll ? '' : 'none'};">`;
+    html += '<div style="font-weight:600; margin: 16px 0 8px; color:#444;">Tất cả giải phẫu bệnh</div>';
+    html += '<table class="icd-table" style="width:100%; border-collapse:collapse; font-size:0.9em;">';
+    html += '<tr><th></th><th>Loại</th><th>Mã số</th><th>Tên dịch vụ</th><th style="text-align:right;">Giá</th><th></th></tr>';
+    Object.keys(gpbData || {}).forEach(function (code) {
+        if (gpbFav[code]) return;
+        const item = gpbData[code];
+        if (!item) return;
+        if (!gpbMatch(code, item)) return;
+        html += renderGpbRow(code, item);
+    });
+    html += '</table></div>';
+
+    html += '<div style="font-weight:600; margin: 16px 0 8px; color:#444;">Thêm dịch vụ giải phẫu bệnh</div>';
+    html += `<form class="manual-form" onsubmit="addGpb(event)" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
+        <input id="gpbLoaiInput" placeholder="Loại bệnh phẩm" required maxlength="100" style="flex:1; min-width:220px; padding:6px 8px; border-radius:4px; border:1px solid #bbb;">
+        <input id="gpbMaSoInput" placeholder="Mã số" required maxlength="30" style="width:180px; padding:6px 8px; border-radius:4px; border:1px solid #bbb;">
+        <input id="gpbTenInput" placeholder="Tên dịch vụ" required maxlength="200" style="flex:2; min-width:260px; padding:6px 8px; border-radius:4px; border:1px solid #bbb;">
+        <input id="gpbGiaInput" type="number" min="0" step="1000" placeholder="Giá" required style="width:160px; padding:6px 8px; border-radius:4px; border:1px solid #bbb;">
+        <button type="submit" style="padding:6px 14px; border-radius:4px; border:none; background:#880088; color:#fff; cursor:pointer;">Thêm</button>
+    </form>`;
+
+    wrapper.innerHTML = html;
+
+    const toggleBtn = document.getElementById('toggleAllGpb');
+    if (toggleBtn) {
+        toggleBtn.onclick = function () {
+            gpbShowAll = !gpbShowAll;
+            renderGpbTables();
+        };
+    }
+}
+
+function renderGpbRow(code, item) {
+    const safeCode = (code || '').replace(/"/g, '&quot;');
+    const loai = (item && item.loai) ? String(item.loai) : '';
+    const ten = (item && item.tenDichVu) ? String(item.tenDichVu) : '';
+    const gia = parseInt(item && item.gia, 10) || 0;
+    const isFav = !!gpbFav[code];
+    const star = isFav
+        ? `<span class="icd-fav active" onclick="toggleGpbFav('${safeCode}')">★</span>`
+        : `<span class="icd-fav" onclick="toggleGpbFav('${safeCode}')">☆</span>`;
+
+    if (gpbEditingKey === code) {
+        return `<tr>
+            <td>${star}</td>
+            <td><input id="editGpbLoai" value="${loai.replace(/"/g, '&quot;')}" style="width:100%"></td>
+            <td><input id="editGpbMaSo" value="${safeCode}" style="width:100%"></td>
+            <td><input id="editGpbTen" value="${ten.replace(/"/g, '&quot;')}" style="width:100%"></td>
+            <td><input id="editGpbGia" type="number" min="0" step="1000" value="${gia}" style="width:100%; text-align:right;"></td>
+            <td class="actions">
+                <button class="btn" onclick="saveEditGpb('${safeCode}')">💾</button>
+                <button class="btn btn-secondary" onclick="cancelEditGpb()">❌</button>
+                <button class="btn btn-danger" onclick="deleteGpb('${safeCode}')">🗑️</button>
+            </td>
+        </tr>`;
+    }
+
+    const onclickCopy = `copyText(${JSON.stringify(code || '')}, ${JSON.stringify(ten || '')}, ${JSON.stringify(loai || '')}, ${JSON.stringify(gia)})`;
+    return `<tr>
+        <td>${star}</td>
+        <td onclick="${onclickCopy}" style="cursor:pointer;">${highlight(loai)}</td>
+        <td onclick="${onclickCopy}" style="cursor:pointer;">${highlight(code)}</td>
+        <td onclick="${onclickCopy}" style="cursor:pointer;">${highlight(ten)}</td>
+        <td onclick="${onclickCopy}" style="cursor:pointer; text-align:right;">${formatPrice(gia)}</td>
+        <td class="actions">
+            <button class="btn" onclick="editGpb('${safeCode}'); event.stopPropagation();">✏️</button>
+            <button class="btn btn-danger" onclick="deleteGpb('${safeCode}'); event.stopPropagation();">🗑️</button>
+        </td>
+    </tr>`;
+}
+
+function copyText(maSo, ten, loai, gia) {
+    const text = `${maSo} - ${ten} (${loai}, giá ${formatPrice(gia)} VNĐ)`;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).catch(() => { /* ignore */ });
+    } else {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+    }
+}
+
+function addGpb(e) {
+    e.preventDefault();
+    initGpbData();
+    const loaiEl = document.getElementById('gpbLoaiInput');
+    const maSoEl = document.getElementById('gpbMaSoInput');
+    const tenEl = document.getElementById('gpbTenInput');
+    const giaEl = document.getElementById('gpbGiaInput');
+    if (!loaiEl || !maSoEl || !tenEl || !giaEl) return;
+    const loai = loaiEl.value.trim();
+    const maSo = maSoEl.value.trim();
+    const ten = tenEl.value.trim();
+    const gia = parseInt(giaEl.value, 10) || 0;
+    if (!loai || !maSo || !ten || !gia) {
+        alert('Vui lòng nhập đầy đủ Loại bệnh phẩm, Mã số, Tên dịch vụ và Giá.');
+        return;
+    }
+    if (gpbData[maSo]) {
+        alert('Mã số này đã tồn tại trong danh sách.');
+        return;
+    }
+    gpbData[maSo] = { loai: loai, maSo: maSo, tenDichVu: ten, gia: gia };
+    saveGpbData(true);
+    loaiEl.value = ''; maSoEl.value = ''; tenEl.value = ''; giaEl.value = '';
+    renderGpbTables();
+}
+
+function editGpb(code) {
+    gpbEditingKey = code;
+    renderGpbTables();
+}
+
+function cancelEditGpb() {
+    gpbEditingKey = null;
+    renderGpbTables();
+}
+
+function saveEditGpb(oldCode) {
+    initGpbData();
+    const loaiEl = document.getElementById('editGpbLoai');
+    const maSoEl = document.getElementById('editGpbMaSo');
+    const tenEl = document.getElementById('editGpbTen');
+    const giaEl = document.getElementById('editGpbGia');
+    if (!loaiEl || !maSoEl || !tenEl || !giaEl) return;
+    const loai = loaiEl.value.trim();
+    const maSo = maSoEl.value.trim();
+    const ten = tenEl.value.trim();
+    const gia = parseInt(giaEl.value, 10) || 0;
+    if (!loai || !maSo || !ten) {
+        alert('Vui lòng nhập đầy đủ Loại, Mã số, Tên dịch vụ.');
+        return;
+    }
+    if (maSo !== oldCode && gpbData[maSo]) {
+        alert('Mã số này đã tồn tại trong danh sách.');
+        return;
+    }
+    delete gpbData[oldCode];
+    gpbData[maSo] = { loai: loai, maSo: maSo, tenDichVu: ten, gia: gia };
+    if (gpbFav[oldCode]) { delete gpbFav[oldCode]; gpbFav[maSo] = true; }
+    gpbEditingKey = null;
+    saveGpbData(true);
+    renderGpbTables();
+}
+
+function deleteGpb(code) {
+    initGpbData();
+    if (!confirm('Bạn có chắc chắn muốn xóa dịch vụ này? Dữ liệu sẽ tự động đồng bộ lên server.')) return;
+    if (gpbData[code]) delete gpbData[code];
+    if (gpbFav[code]) delete gpbFav[code];
+    if (gpbEditingKey === code) gpbEditingKey = null;
+    saveGpbData(true);
+    renderGpbTables();
+}
+
+function toggleGpbFav(code) {
+    initGpbData();
+    if (gpbFav[code]) delete gpbFav[code];
+    else gpbFav[code] = true;
+    saveGpbData(true);
+    renderGpbTables();
+}
+
 function loadPathology() {
-    const target = document.getElementById('pathologyBody');
-    if (!target) return;
+    const targetPatho = document.getElementById('pathologyBody');
+    const targetGpb = document.getElementById('gpbBody');
+    if (!targetPatho || !targetGpb) return;
 
     // Ưu tiên load từ server (giống tab Mã ICD), fallback localStorage khi lỗi
-    fetch('/api/pathology/export')
-        .then(r => (r.ok ? r.json() : null))
-        .then(serverData => {
+    Promise.all([
+        fetch('/api/pathology/export').then(r => (r.ok ? r.json() : null)).catch(() => null),
+        fetch('/api/pathology/gpb/export').then(r => (r.ok ? r.json() : null)).catch(() => null),
+    ]).then(([serverData, gpbServer]) => {
             if (Array.isArray(serverData)) {
                 pathoData = serverData;
                 try {
@@ -427,17 +762,43 @@ function loadPathology() {
                     pathoData = [];
                 }
             }
-            buildPathologyUI(target);
+            buildPathologyUI(targetPatho);
             if (pathoData.length === 0) {
                 const hint = document.createElement('p');
                 hint.style.cssText = 'margin-bottom:12px; padding:10px; background:#f0f0f0; border-radius:6px; color:#555; font-size:0.95em;';
                 hint.textContent = 'Chưa có dữ liệu. Dùng form bên dưới để thêm mới; dữ liệu sẽ tự động đồng bộ lên server.';
-                const firstChild = target.querySelector('div');
-                if (firstChild) target.insertBefore(hint, firstChild);
+                const firstChild = targetPatho.querySelector('div');
+                if (firstChild) targetPatho.insertBefore(hint, firstChild);
             }
-        })
-        .catch(err => {
+
+            // Load GPB: ưu tiên server, fallback localStorage, nếu rỗng thì copy từ mô bệnh học
+            if (gpbServer && typeof gpbServer === 'object') {
+                if (gpbServer.items && Array.isArray(gpbServer.items)) {
+                    gpbData = {};
+                    gpbServer.items.forEach(function (row) {
+                        const code = normalizeCode(row && row.maSo);
+                        if (!code) return;
+                        gpbData[code] = {
+                            loai: (row.loai || '').toString(),
+                            maSo: code,
+                            tenDichVu: (row.tenDichVu || '').toString(),
+                            gia: parseInt(row.gia, 10) || 0
+                        };
+                    });
+                    try { localStorage.setItem(GPB_STORAGE_KEY, JSON.stringify(gpbData)); } catch (e) { /* ignore */ }
+                }
+                if (gpbServer.fav && typeof gpbServer.fav === 'object') {
+                    gpbFav = gpbServer.fav;
+                    try { localStorage.setItem(GPB_FAV_STORAGE_KEY, JSON.stringify(gpbFav)); } catch (e) { /* ignore */ }
+                }
+            } else {
+                initGpbData();
+            }
+            bootstrapGpbFromPathologyIfEmpty();
+            renderGpbUI(targetGpb);
+        }).catch(function (err) {
             console.error(err);
+            // Fallback full local
             try {
                 const raw = localStorage.getItem(PATHOLOGY_STORAGE_KEY);
                 if (raw) {
@@ -446,19 +807,40 @@ function loadPathology() {
                 } else {
                     pathoData = [];
                 }
-            } catch (e) {
-                pathoData = [];
-            }
-            buildPathologyUI(target);
-            const hint = document.createElement('p');
-            hint.style.cssText = 'margin-bottom:12px; padding:10px; background:#fff3cd; border-radius:6px; color:#856404; font-size:0.95em;';
-            hint.textContent = 'Không kết nối được server. Dùng dữ liệu từ bộ nhớ tạm; dữ liệu sẽ tự động đồng bộ lên server khi kết nối lại.';
-            const firstChild = target.querySelector('div');
-            if (firstChild) target.insertBefore(hint, firstChild);
+            } catch (e) { pathoData = []; }
+            buildPathologyUI(targetPatho);
+            initGpbData();
+            bootstrapGpbFromPathologyIfEmpty();
+            renderGpbUI(targetGpb);
         });
 }
 
-document.addEventListener('DOMContentLoaded', loadPathology);
+function initTabs() {
+    const buttons = document.querySelectorAll('.code-tab-container .code-tab');
+    const sectionIds = ['gpbBody', 'pathologyBody'];
+    buttons.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            buttons.forEach(function (b) {
+                b.classList.remove('active');
+                b.style.background = '#fff';
+                b.style.color = '#880088';
+            });
+            btn.classList.add('active');
+            btn.style.background = '#880088';
+            btn.style.color = '#fff';
+            const targetId = btn.getAttribute('data-target');
+            sectionIds.forEach(function (id) {
+                const el = document.getElementById(id);
+                if (el) el.style.display = (id === targetId) ? 'block' : 'none';
+            });
+        });
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    initTabs();
+    loadPathology();
+});
 </script>
 </body>
 </html>
